@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<title>MINLP Live Monitor</title>
+<script src="/plotly.js"></script>
+<style>
+  :root {
+    --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
+    --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
+    --s1:#2a78d6; --s2:#008300; --good:#0ca30c; --serious:#ec835a;
+    --cmpB:#eb6834; /* run比較モード: run B の系列色(run A は --s1 を流用) */
+    --border:rgba(11,11,11,0.10);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink);
+         font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap { max-width:1080px; margin:0 auto; padding:20px 16px; }
+  .topbar { margin-bottom:6px; }
+  .topbar a { color:var(--ink2); font-size:12px; text-decoration:none; }
+  .topbar a:hover { color:var(--s1); text-decoration:underline; }
+  .head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  h1 { font-size:18px; margin:0; }
+  .sub { color:var(--ink2); font-size:12px; }
+  .bar { display:flex; align-items:center; gap:10px; margin:12px 0; flex-wrap:wrap; }
+  select { font:inherit; padding:5px 8px; border:1px solid var(--border);
+           border-radius:6px; background:var(--surface); color:var(--ink); max-width:360px; }
+  .status { font-size:12px; padding:3px 10px; border-radius:999px; font-weight:600; }
+  .status.running { background:rgba(236,131,90,0.15); color:var(--serious); }
+  .status.done { background:rgba(12,163,12,0.15); color:var(--good); }
+  .dot { display:inline-block; width:7px; height:7px; border-radius:50%;
+         background:currentColor; margin-right:5px; vertical-align:middle; }
+  .running .dot { animation:pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity:.3; } }
+  .cmptoggle { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink2);
+               cursor:pointer; user-select:none; }
+  .cmpbar { display:none; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+  .cmpbar .runA-label { color:var(--s1); font-weight:600; font-size:12px; }
+  .cmpbar .runB-label { color:var(--cmpB); font-weight:600; font-size:12px; }
+  .tiles { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 14px; }
+  .tile { background:var(--surface); border:1px solid var(--border);
+          border-radius:8px; padding:9px 13px; min-width:104px; }
+  .tile-label { font-size:11px; color:var(--muted); }
+  .tile-value { font-size:19px; font-variant-numeric:tabular-nums; }
+  .chart { background:var(--surface); border:1px solid var(--border);
+           border-radius:8px; margin-bottom:12px; height:360px; }
+  .empty { color:var(--muted); font-size:13px; padding:40px 0; text-align:center; }
+</style></head>
+<body><div class="wrap">
+  <div class="topbar"><a href="/results/index.html">&larr; 成果物ギャラリー(index.html)へ</a></div>
+  <div class="head">
+    <h1>MINLP Live Monitor</h1>
+    <span class="sub">SCIP探索のライブモニタ — 書き手(run_monitor)/読み手(server)分離</span>
+  </div>
+  <div class="bar">
+    <label class="sub">Run:</label>
+    <select id="runsel"></select>
+    <span id="status" class="status"></span>
+    <label class="cmptoggle"><input type="checkbox" id="cmptoggle"> 比較モード(2 run重ね描画)</label>
+  </div>
+  <div class="bar cmpbar" id="cmpbar">
+    <span class="runA-label">Run A</span>
+    <select id="runselA"></select>
+    <span class="runB-label">Run B</span>
+    <select id="runselB"></select>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <div class="chart" id="bounds"></div>
+  <div class="chart" id="gap"></div>
+  <div class="empty" id="empty">run を待機中… <code>uv run python run_monitor.py --model plant</code> を実行してください</div>
+</div>
+<script>
+const C = getComputedStyle(document.documentElement);
+const col = n => C.getPropertyValue(n).trim();
+const FONT = 'system-ui,-apple-system,"Segoe UI",sans-serif';
+
+const axis = title => ({
+  gridcolor: col('--grid'), linecolor: col('--axis'), zeroline: false,
+  tickfont: {color: col('--muted'), size: 11},
+  title: {text: title, font: {color: col('--ink2'), size: 12}},
+});
+const layout = (title, ytitle, ylog, annotations) => ({
+  title: {text: title, font: {color: col('--ink'), size: 14}, x: 0.01, xanchor: 'left'},
+  paper_bgcolor: col('--surface'), plot_bgcolor: col('--surface'),
+  font: {family: FONT, color: col('--ink2'), size: 12},
+  xaxis: axis('求解時間 [s]'), yaxis: {...axis(ytitle), type: ylog ? 'log' : 'linear'},
+  margin: {l: 60, r: 16, t: 40, b: 44}, hovermode: 'x unified',
+  legend: {orientation: 'h', x: 1, xanchor: 'right', y: 1, yanchor: 'bottom',
+           font: {size: 11, color: col('--ink2')}, bgcolor: 'rgba(0,0,0,0)'},
+  annotations: annotations || [],
+});
+const CFG = {displayModeBar: false, responsive: true};
+
+let events = [], es = null, drawn = false, dirty = false;
+let compareMode = false, lastRuns = [];
+
+function fmtNum(v) {
+  return v != null ? Number(v).toLocaleString(undefined, {maximumFractionDigits: 1}) : '—';
+}
+
+// runセレクタの読みやすい表示: モデル名 + 開始時刻 + status + 最終gap
+function fmtRun(r) {
+  const dt = (r.created || '').replace('T', ' ').slice(0, 19) || '?';
+  let gapTxt = '—';
+  if (r.gap != null) gapTxt = (r.gap * 100).toFixed(2) + '%';
+  else if (r.status === 'running') gapTxt = '…';
+  return `${r.title || r.model} — ${dt} [${r.status}] gap=${gapTxt}`;
+}
+
+function tiles(summary, live) {
+  const last = events[events.length - 1] || {};
+  const gap = summary ? summary.gap : last.gap;
+  const nodes = summary ? summary.nodes : last.nodes;
+  const primal = summary ? summary.primal : last.primal;
+  const dual = summary ? summary.dual : last.dual;
+  const t = summary ? summary.time : last.time;
+  const items = [
+    ['ステータス', summary ? summary.status : (live ? 'solving…' : '—')],
+    ['Primal', fmtNum(primal)],
+    ['Dual', fmtNum(dual)],
+    ['最終gap', gap != null ? (gap * 100).toFixed(2) + '%' : '—'],
+    ['ノード数', nodes != null ? Number(nodes).toLocaleString() : '—'],
+    ['求解時間', t != null ? Number(t).toFixed(1) + 's' : '—'],
+    ['イベント数', events.length],
+  ];
+  document.getElementById('tiles').innerHTML = items.map(
+    ([l,v]) => `<div class="tile"><div class="tile-label">${l}</div><div class="tile-value">${v}</div></div>`
+  ).join('');
+}
+
+function redraw() {
+  if (compareMode) return;  // 比較モード中は単一run描画ループを止める
+  if (!dirty || !events.length) return;
+  dirty = false;
+  document.getElementById('empty').style.display = 'none';
+  const t = events.map(e => e.time);
+  const dual = events.map(e => e.dual);
+  const primal = events.map(e => e.primal);
+  const inc = events.filter(e => e.event === 'incumbent');
+  const boundsData = [
+    {x: t, y: dual, name: 'Dual bound', mode: 'lines',
+     line: {color: col('--s2'), width: 2, shape: 'hv'},
+     hovertemplate: 'dual %{y:,.1f}<extra></extra>'},
+    {x: t, y: primal, name: 'Primal bound', mode: 'lines',
+     line: {color: col('--s1'), width: 2, shape: 'hv'},
+     hovertemplate: 'primal %{y:,.1f}<extra></extra>'},
+    {x: inc.map(e=>e.time), y: inc.map(e=>e.primal), name: '暫定解の更新', mode: 'markers',
+     marker: {color: col('--s1'), size: 9, symbol: 'diamond',
+              line: {color: col('--surface'), width: 2}},
+     hovertemplate: '暫定解 %{y:,.1f}<extra></extra>'},
+  ];
+  const g = events.filter(e => e.gap != null && e.gap > 0);
+  const gapData = [{x: g.map(e=>e.time), y: g.map(e=>e.gap*100), mode: 'lines',
+     line: {color: col('--s1'), width: 2, shape: 'hv'},
+     hovertemplate: 'gap %{y:.2f}%<extra></extra>'}];
+  // 現在gap値の注釈(最新値ラベル)
+  let gapAnnotations = [];
+  const lastG = g[g.length - 1];
+  if (lastG) {
+    gapAnnotations = [{
+      x: lastG.time, y: lastG.gap * 100, xref: 'x', yref: 'y',
+      text: `現在 ${(lastG.gap * 100).toFixed(2)}%`, showarrow: true, arrowhead: 0,
+      ax: 32, ay: -26, font: {color: col('--ink'), size: 11},
+      bgcolor: col('--surface'), bordercolor: col('--border'),
+    }];
+  }
+  if (!drawn) {
+    Plotly.newPlot('bounds', boundsData, layout('Primal / Dual bound の推移','目的関数値',false), CFG);
+    Plotly.newPlot('gap', gapData, layout('Gap の推移(対数)','gap [%]',true, gapAnnotations), CFG);
+    drawn = true;
+  } else {
+    Plotly.react('bounds', boundsData, layout('Primal / Dual bound の推移','目的関数値',false), CFG);
+    Plotly.react('gap', gapData, layout('Gap の推移(対数)','gap [%]',true, gapAnnotations), CFG);
+  }
+  tiles(null, true);
+}
+setInterval(redraw, 200);
+
+function setStatus(cls, text) {
+  const el = document.getElementById('status');
+  el.className = 'status ' + cls;
+  el.innerHTML = (cls === 'running' ? '<span class="dot"></span>' : '') + text;
+}
+
+function connect(runId) {
+  if (compareMode) return;
+  if (es) es.close();
+  events = []; drawn = false; dirty = false;
+  document.getElementById('bounds').innerHTML = '';
+  document.getElementById('gap').innerHTML = '';
+  document.getElementById('empty').style.display = 'block';
+  setStatus('running', 'connecting…');
+  es = new EventSource(`/api/runs/${runId}/stream`);
+  es.onmessage = ev => {
+    const rec = JSON.parse(ev.data);
+    events.push(rec); dirty = true;
+    setStatus('running', 'solving');
+  };
+  es.addEventListener('done', ev => {
+    const summary = JSON.parse(ev.data);
+    dirty = true; redraw();
+    tiles(summary, false);
+    setStatus('done', summary.status);
+    es.close();
+  });
+  es.onerror = () => { /* サーバ側でstreamが閉じられた場合。doneが来ていれば無視 */ };
+}
+
+function fillSelect(id, runs, preferIndex) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  sel.innerHTML = runs.map(r => `<option value="${r.run_id}">${fmtRun(r)}</option>`).join('');
+  if (runs.some(r => r.run_id === cur)) {
+    sel.value = cur;
+  } else if (preferIndex != null && runs[preferIndex]) {
+    sel.value = runs[preferIndex].run_id;
+  }
+}
+
+async function refreshRuns() {
+  const runs = await (await fetch('/api/runs')).json();
+  lastRuns = runs;
+  fillSelect('runsel', runs);
+  fillSelect('runselA', runs, 0);
+  fillSelect('runselB', runs, 1);
+  if (!runs.length) { setStatus('running', 'no run yet'); return null; }
+  return document.getElementById('runsel').value;
+}
+
+// --- 比較モード: 完了済み(または進行中)runのイベントを一括取得して1チャートに重ねる ---
+
+async function fetchRunEvents(runId) {
+  const res = await fetch(`/api/runs/${runId}/events`);
+  return res.json();
+}
+
+function cmpTraces(label, data, color) {
+  const events = data.events || [];
+  const t = events.map(e => e.time);
+  const dual = events.map(e => e.dual);
+  const primal = events.map(e => e.primal);
+  const gEvents = events.filter(e => e.gap != null && e.gap > 0);
+  return {
+    bounds: [
+      {x: t, y: dual, name: `${label} dual`, mode: 'lines',
+       line: {color, width: 2, dash: 'solid', shape: 'hv'},
+       hovertemplate: `${label} dual %{y:,.1f}<extra></extra>`},
+      {x: t, y: primal, name: `${label} primal`, mode: 'lines',
+       line: {color, width: 2, dash: 'dot', shape: 'hv'},
+       hovertemplate: `${label} primal %{y:,.1f}<extra></extra>`},
+    ],
+    gap: {x: gEvents.map(e=>e.time), y: gEvents.map(e=>e.gap*100), name: label, mode: 'lines',
+          line: {color, width: 2, shape: 'hv'},
+          hovertemplate: `${label} gap %{y:.2f}%<extra></extra>`},
+  };
+}
+
+function cmpTiles(labelA, dataA, labelB, dataB) {
+  const row = (label, data, color) => {
+    const s = data.summary;
+    const evs = data.events || [];
+    const last = evs[evs.length - 1] || {};
+    const gap = s ? s.gap : last.gap;
+    const primal = s ? s.primal : last.primal;
+    const dual = s ? s.dual : last.dual;
+    const nodes = s ? s.nodes : last.nodes;
+    const title = data.meta ? (data.meta.title || data.meta.model) : label;
+    return `<div class="tile" style="border-left:3px solid ${color}; min-width:220px">
+      <div class="tile-label">${label}: ${title}</div>
+      <div class="tile-value" style="font-size:13px">
+        gap ${gap!=null?(gap*100).toFixed(2)+'%':'—'} ／
+        primal ${fmtNum(primal)} ／ dual ${fmtNum(dual)} ／
+        nodes ${nodes!=null?Number(nodes).toLocaleString():'—'}
+      </div>
+    </div>`;
+  };
+  document.getElementById('tiles').innerHTML =
+    row(labelA, dataA, col('--s1')) + row(labelB, dataB, col('--cmpB'));
+}
+
+async function loadCompare() {
+  const idA = document.getElementById('runselA').value;
+  const idB = document.getElementById('runselB').value;
+  if (!idA || !idB) return;
+  const [dataA, dataB] = await Promise.all([fetchRunEvents(idA), fetchRunEvents(idB)]);
+  const labelA = (dataA.meta && (dataA.meta.title || dataA.meta.model)) || 'Run A';
+  const labelB = (dataB.meta && (dataB.meta.title || dataB.meta.model)) || 'Run B';
+  const tsA = cmpTraces(`A:${labelA}`, dataA, col('--s1'));
+  const tsB = cmpTraces(`B:${labelB}`, dataB, col('--cmpB'));
+  document.getElementById('empty').style.display = 'none';
+  Plotly.react('bounds', [...tsA.bounds, ...tsB.bounds],
+    layout('Run比較: Primal / Dual bound の推移', '目的関数値', false), CFG);
+  Plotly.react('gap', [tsA.gap, tsB.gap],
+    layout('Run比較: Gap の推移(対数)', 'gap [%]', true), CFG);
+  cmpTiles('Run A', dataA, 'Run B', dataB);
+}
+
+function setCompareMode(on) {
+  compareMode = on;
+  document.getElementById('cmpbar').style.display = on ? 'flex' : 'none';
+  document.getElementById('runsel').style.display = on ? 'none' : 'inline-block';
+  document.getElementById('status').style.display = on ? 'none' : 'inline-block';
+  if (on) {
+    if (es) { es.close(); es = null; }
+    document.getElementById('bounds').innerHTML = '';
+    document.getElementById('gap').innerHTML = '';
+    drawn = false;
+    if (document.getElementById('runselA').value && document.getElementById('runselB').value) {
+      loadCompare();
+    } else {
+      document.getElementById('empty').textContent = 'Run A と Run B を選択してください';
+      document.getElementById('empty').style.display = 'block';
+    }
+  } else {
+    document.getElementById('empty').textContent =
+      'run を待機中… uv run python run_monitor.py --model plant を実行してください';
+    refreshRuns().then(id => { if (id) connect(id); });
+  }
+}
+
+document.getElementById('runsel').addEventListener('change', e => { if (!compareMode) connect(e.target.value); });
+document.getElementById('runselA').addEventListener('change', () => { if (compareMode) loadCompare(); });
+document.getElementById('runselB').addEventListener('change', () => { if (compareMode) loadCompare(); });
+document.getElementById('cmptoggle').addEventListener('change', e => setCompareMode(e.target.checked));
+
+(async function init() {
+  let selected = await refreshRuns();
+  if (selected && !compareMode) connect(selected);
+  // run が現れるまで/新しい run が来たら拾うために定期的にリスト更新
+  setInterval(async () => {
+    const before = document.getElementById('runsel').value;
+    const now = await refreshRuns();
+    if (now && !before && !compareMode) connect(now);  // 初めて run が現れた
+    if (compareMode) loadCompare();  // 進行中runの比較も定期的に更新
+  }, 2000);
+})();
+</script>
+</body></html>

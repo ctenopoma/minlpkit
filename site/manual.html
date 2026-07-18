@@ -1,0 +1,1286 @@
+
+<!doctype html>
+<html lang="ja" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MINLPの可視化・診断・改善検証を一体化したPySCIPOptツールキット">
+      
+      
+      
+      
+        <link rel="prev" href="index.html">
+      
+      
+        <link rel="next" href="api/pipeline.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>利用マニュアル - minlpkit</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#minlpkit" class="md-skip">
+          コンテンツにスキップ
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="ヘッダー">
+    <a href="index.html" title="minlpkit" class="md-header__button md-logo" aria-label="minlpkit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            minlpkit
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              利用マニュアル
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="ダークモードへ"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="ダークモードへ" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="ライトモードへ"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="ライトモードへ" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="検索" placeholder="検索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="検索">
+        
+        <button type="reset" class="md-search__icon md-icon" title="クリア" aria-label="クリア" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            検索を初期化
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="ナビゲーション" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="minlpkit" class="md-nav__button md-logo" aria-label="minlpkit" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    minlpkit
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ホーム
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    利用マニュアル
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="manual.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    利用マニュアル
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目次">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目次
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. インストール
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. インストール">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        リポジトリ内で使う
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        外部プロジェクトから使う
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. ワークフロー全体像
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. ワークフロー全体像">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        最小の一気通貫例(コピペ可)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. API リファレンス
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. ライブモニタの使い方
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 診断ルール一覧(6ルール)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 制約・既知の落とし穴(利用者目線)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 制約・既知の落とし穴(利用者目線)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SCIP が自動でやること(手動で推薦しない)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        かえって悪化する「改善」
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        測定方法論(交絡を避ける)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#price_and_branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        price_and_branch は上界のみ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pyscipopt-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PySCIPOpt の API 落とし穴
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    APIリファレンス
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    APIリファレンス
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/pipeline.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    パイプライン (analyze/Report)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/compare.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    比較 (compare_variants)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/transforms.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    変換 (transforms)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/frameworks.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    フレームワーク (frameworks)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/diagnose.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    診断ルール (diagnose)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/live.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ライブ可視化 (live)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/tune.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    チューニング (tune)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目次">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目次
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. インストール
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. インストール">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        リポジトリ内で使う
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        外部プロジェクトから使う
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. ワークフロー全体像
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. ワークフロー全体像">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        最小の一気通貫例(コピペ可)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. API リファレンス
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. ライブモニタの使い方
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 診断ルール一覧(6ルール)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 制約・既知の落とし穴(利用者目線)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 制約・既知の落とし穴(利用者目線)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SCIP が自動でやること(手動で推薦しない)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        かえって悪化する「改善」
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        測定方法論(交絡を避ける)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#price_and_branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        price_and_branch は上界のみ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pyscipopt-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PySCIPOpt の API 落とし穴
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="minlpkit">minlpkit 利用マニュアル<a class="headerlink" href="#minlpkit" title="Permanent link">&para;</a></h1>
+<p>MINLP の <strong>観測(analyze)→ 診断(findings/recipe)→ 改善(transforms/frameworks)→ 検証(compare_variants)</strong>
+を1本で通すためのマニュアル。コード例はすべてコピペで動く(本リポジトリの doctest / demo で検証済み)。</p>
+<hr />
+<h2 id="1">1. インストール<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="_1">リポジトリ内で使う<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">uv</span> <span class="n">sync</span>
+<span class="nv">$env:PYTHONIOENCODING</span> <span class="p">=</span> <span class="s1">&#39;utf-8&#39;</span>   <span class="c"># コンソールで日本語が化ける場合</span>
+<span class="n">uv</span> <span class="n">run</span> <span class="n">python</span> <span class="n">demo</span><span class="p">.</span><span class="n">py</span>
+</code></pre></div>
+<h3 id="_2">外部プロジェクトから使う<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<p><code>minlpkit</code> は単体で成立する配布パッケージ(コアの実行時依存は pyscipopt/pandas/numpy/scipy のみ)。
+ライブ可視化(<code>minlpkit.live</code>)とチューニング(<code>minlpkit.tune</code>)は追加依存を要する <strong>extras</strong>
+(<code>viz</code> = flask/plotly/kaleido、<code>tune</code> = optuna)。コアだけなら extras は不要。</p>
+<div class="highlight"><pre><span></span><code><span class="n">uv</span> <span class="n">add</span> <span class="p">-</span><span class="n">-editable</span> <span class="n">C</span><span class="p">:\</span><span class="n">work_space</span><span class="p">\</span><span class="n">mip</span>                       <span class="c"># コアのみ(依存4つ)</span>
+<span class="n">uv</span> <span class="n">add</span> <span class="s2">&quot;minlpkit[viz,tune] @ file:///C:/work_space/mip&quot;</span>   <span class="c"># + ライブ可視化 / チューニング</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">minlpkit</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mk</span>   <span class="c1"># これだけで analyze / compare_variants / transforms / frameworks が使える</span>
+<span class="c1"># extras を入れると:</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">minlpkit.live</span><span class="w"> </span><span class="kn">import</span> <span class="n">solve_with_monitor</span><span class="p">,</span> <span class="n">RunLogger</span>   <span class="c1"># 要 minlpkit[viz]</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">minlpkit.tune</span><span class="w"> </span><span class="kn">import</span> <span class="n">tune</span>                            <span class="c1"># 要 minlpkit[tune]</span>
+</code></pre></div>
+<p>extras 未導入で <code>minlpkit.live</code> / <code>minlpkit.tune</code> を import すると、導入方法を案内する
+ImportError(<code>uv add "minlpkit[viz]"</code> など)が出る。</p>
+<hr />
+<h2 id="2">2. ワークフロー全体像<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>観測  mk.analyze(build_fn)         → Report(metrics + findings)
+  ↓
+診断  report.findings / recipe     → 症状・原因・推薦・「具体的な直し方(使うmk関数+例)」
+  ↓
+改善  mk.linearize_product / pwl_sos2 / benders / column_generation を適用
+  ↓
+検証  mk.compare_variants({before, after})  → ルート双対境界・gap・ノードで before/after 比較
+</code></pre></div>
+<p>要点は <strong>観測と改善を同じライブラリで閉じる</strong>こと。診断の各 finding は <code>recipe</code>(使う mk 関数と
+worked example)を持つので、「症状 → どの関数で直すか」が直結する。改善は本質的にモデル構造依存
+なので全自動化はしない(SCIP ですら再定式化は自動化しない)。ライブラリが与えるのは
+<strong>再利用可能な部品 + 検証手順</strong>である。</p>
+<h3 id="_3">最小の一気通貫例(コピペ可)<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">minlpkit</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mk</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyscipopt</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
+
+<span class="c1"># n·s &gt;= 12 を、双線形のまま解く版と厳密線形化する版で比較</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">baseline</span><span class="p">():</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">();</span> <span class="n">m</span><span class="o">.</span><span class="n">hideOutput</span><span class="p">()</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">addVar</span><span class="p">(</span><span class="n">vtype</span><span class="o">=</span><span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="n">lb</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">addVar</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">addCons</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">s</span> <span class="o">&gt;=</span> <span class="mi">12</span><span class="p">)</span>                       <span class="c1"># 双線形(McCormick緩和)</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setObjective</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="n">s</span><span class="p">,</span> <span class="s2">&quot;minimize&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">m</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">improved</span><span class="p">():</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">();</span> <span class="n">m</span><span class="o">.</span><span class="n">hideOutput</span><span class="p">()</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">addVar</span><span class="p">(</span><span class="n">vtype</span><span class="o">=</span><span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="n">lb</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">addVar</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+    <span class="n">ns</span> <span class="o">=</span> <span class="n">mk</span><span class="o">.</span><span class="n">linearize_product</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">&quot;ns&quot;</span><span class="p">)</span>  <span class="c1"># 厳密線形化</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">addCons</span><span class="p">(</span><span class="n">ns</span> <span class="o">&gt;=</span> <span class="mi">12</span><span class="p">)</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">setObjective</span><span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="n">s</span><span class="p">,</span> <span class="s2">&quot;minimize&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">m</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">mk</span><span class="o">.</span><span class="n">compare_variants</span><span class="p">({</span><span class="s2">&quot;baseline&quot;</span><span class="p">:</span> <span class="n">baseline</span><span class="p">,</span> <span class="s2">&quot;improved&quot;</span><span class="p">:</span> <span class="n">improved</span><span class="p">},</span> <span class="n">time_limit</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;variant&quot;</span><span class="p">,</span> <span class="s2">&quot;root_dual&quot;</span><span class="p">,</span> <span class="s2">&quot;final_dual&quot;</span><span class="p">,</span> <span class="s2">&quot;final_gap&quot;</span><span class="p">,</span> <span class="s2">&quot;nodes&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre></div>
+<p><code>demo.py</code> は同じ流れを実モデル(scheduling_plant)でやり、<code>analyze</code> の診断表示まで含む
+フル版である。</p>
+<hr />
+<h2 id="3-api">3. API リファレンス<a class="headerlink" href="#3-api" title="Permanent link">&para;</a></h2>
+<p>各 API の引数・返り値・注意点は docstring から自動生成した <strong><a href="api/pipeline.html">API リファレンス</a></strong>
+(左ナビ)を参照。ここでは役割と対応する worked example を対応づける。</p>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>役割</th>
+<th>worked example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mk.analyze(build_fn, name, time_limit, interval_terms_fn)</code></td>
+<td>観測量収集 + 診断 → <code>Report</code></td>
+<td><code>demo.py</code>, <code>experiments/run_diagnose.py</code> → <code>results/diagnose_*.html</code></td>
+</tr>
+<tr>
+<td><code>mk.collect_metrics(build_fn, ...)</code></td>
+<td>観測量 dict だけを集める(診断の入力)</td>
+<td><code>experiments/run_diagnose.py</code></td>
+</tr>
+<tr>
+<td><code>mk.Report</code></td>
+<td><code>metrics</code> / <code>findings</code> を保持。<code>.summary()</code> / <code>.dashboard(path)</code></td>
+<td><code>results/report_plant.html</code></td>
+</tr>
+<tr>
+<td><code>mk.compare_variants({名前: build_fn}, time_limit)</code></td>
+<td>before/after をルート双対境界・gap・ノードで比較</td>
+<td><code>experiments/run_improve_linearize.py</code> → <code>results/improve_linearize.html</code></td>
+</tr>
+<tr>
+<td><code>mk.linearize_product(m, y, x, y_lb, y_ub, x_lb, x_ub, name)</code></td>
+<td>整数×連続の積を厳密線形化</td>
+<td><code>samples/scheduling_plant.py</code>, <code>results/improve_linearize.html</code></td>
+</tr>
+<tr>
+<td><code>mk.pwl_sos2(m, x, breakpoints, values, name)</code></td>
+<td>1変数関数を SOS2 で区分線形近似(Big-M不要)</td>
+<td><code>samples/pwl_sos.py</code>, <code>experiments/run_sos.py</code> → <code>results/sos.html</code></td>
+</tr>
+<tr>
+<td><code>mk.perspective_quadratic(m, u, p, fc, a, b, c, name)</code></td>
+<td>半連続二次費用の遠近化(<strong>常用非推奨</strong>、下記の落とし穴参照)</td>
+<td><code>experiments/run_perspective.py</code> → <code>results/perspective.html</code></td>
+</tr>
+<tr>
+<td><code>mk.column_generation(rhs, init_columns, pricing_fn, alpha)</code></td>
+<td>列生成(Gilmore-Gomory / Wentges安定化)</td>
+<td><code>experiments/run_colgen.py</code> / <code>run_stabilize.py</code> → <code>results/colgen.html</code> / <code>stabilize.html</code></td>
+</tr>
+<tr>
+<td><code>mk.price_and_branch(rhs, init_columns, pricing_fn)</code></td>
+<td>列生成 + 整数主問題(整数解は<strong>上界</strong>)</td>
+<td><code>experiments/run_bnp.py</code> → <code>results/bnp.html</code></td>
+</tr>
+<tr>
+<td><code>mk.benders(master_build, subproblem_solve)</code></td>
+<td>ベンダーズ分解(コールバック方式)</td>
+<td><code>experiments/run_benders.py</code> → <code>results/benders.html</code></td>
+</tr>
+<tr>
+<td><code>mk.RULES</code> / <code>mk.Rule</code> / <code>mk.evaluate(metrics)</code></td>
+<td>診断ルール(プラガブル)</td>
+<td>下記「診断ルール一覧」</td>
+</tr>
+</tbody>
+</table>
+<p>条件数など静的診断の補助関数は <code>viz.static_diag</code>(実体は <code>minlpkit.collectors.static_diag</code>)に
+<code>matrix_condition(model)</code>(SVD による κ(A)、solve前)と <code>scip_basis_condition(model)</code>
+(SCIP LP基底 κ、solve後)がある。worked example は <code>experiments/run_condition.py</code> → <code>results/condition.html</code>。</p>
+<hr />
+<h2 id="4">4. ライブモニタの使い方<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<p>TensorBoard 型(書き手/読み手分離)。2ターミナルで使う。</p>
+<div class="highlight"><pre><span></span><code><span class="c"># 読み手(開きっぱなし): ライブUI + 成果ギャラリー配信</span>
+<span class="n">uv</span> <span class="n">run</span> <span class="n">python</span> <span class="n">-m</span> <span class="n">minlpkit</span><span class="p">.</span><span class="n">live</span><span class="p">.</span><span class="n">server</span>  <span class="c"># http://127.0.0.1:5000(後方互換: python -m viz.server も可)</span>
+
+<span class="c"># 書き手(別ターミナル): 求解しながら results/runs/&lt;run_id&gt;/ にログを追記</span>
+<span class="n">uv</span> <span class="n">run</span> <span class="n">python</span> <span class="n">experiments</span><span class="p">/</span><span class="n">run_monitor</span><span class="p">.</span><span class="n">py</span> <span class="p">-</span><span class="n">-model</span> <span class="n">plant</span> <span class="p">-</span><span class="n">-time</span> <span class="n">120</span> <span class="p">-</span><span class="n">-gap</span> <span class="n">0</span><span class="p">.</span><span class="n">01</span>
+</code></pre></div>
+<ul>
+<li>ブラウザは最新 run を自動選択し、SSE で双対境界・primal gap・gap をライブ更新する。</li>
+<li><strong>run 比較モード</strong>: run セレクタで2つの run を選ぶと、run A(青)/ run B(オレンジ)で双対・primal・gap
+  を重ね描画する。凡例に run 名(モデル名 + 開始時刻 + status + 最終gap)が出る。</li>
+<li><strong>成果ギャラリー</strong>: <code>http://127.0.0.1:5000/results/index.html</code> が <code>results/</code> の全成果物HTML
+  (tree / attribution / violation / condition / benders / colgen / sos …)へのリンク集。</li>
+</ul>
+<hr />
+<h2 id="5-6">5. 診断ルール一覧(6ルール)<a class="headerlink" href="#5-6" title="Permanent link">&para;</a></h2>
+<p><code>minlpkit/collectors/diagnose.py</code> の <code>RULES</code> を転記。<code>mk.evaluate(metrics)</code> は発火したルールを
+重要度順(critical→serious→warning→good)で返す。</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>症状</th>
+<th>発火条件(閾値)</th>
+<th>推薦 / recipe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>weak_relaxation</code> (serious)</td>
+<td>特定の非線形制約に緩和違反が集中(かつ空間分枝が多い)</td>
+<td><code>bottleneck_rel_viol ≥ 0.5</code> かつ <code>spatial_share ≥ 0.3</code></td>
+<td>区分線形近似・凸包再定式化・変数境界タイト化。<strong>recipe</strong>: 整数×連続は <code>mk.linearize_product</code>、非線形1変数は <code>mk.pwl_sos2</code>(例: improve_linearize.html, sos.html)</td>
+</tr>
+<tr>
+<td><code>wide_term_range</code> (warning)</td>
+<td>非線形項の値域(区間演算)が広い</td>
+<td><code>widest_term_rel ≥ 1.5</code></td>
+<td>変数境界タイト化・区分線形化。<strong>recipe</strong>: <code>mk.linearize_product</code> か境界タイト化(例: interval.html, improve_linearize.html)</td>
+</tr>
+<tr>
+<td><code>dual_stall</code> (warning)</td>
+<td>双対境界の改善が停滞(gapが残る)</td>
+<td><code>n_stalls ≥ 1</code> かつ <code>gap ≥ 0.05</code></td>
+<td>有効不等式追加・境界タイト化・Big-M排除で緩和強化。<strong>recipe</strong>: 効果は <code>mk.compare_variants</code> で検証(例: attribution.html)</td>
+</tr>
+<tr>
+<td><code>numerical_scale</code> (warning)</td>
+<td>係数レンジが桁違い / Big-M候補(presolve後も残存)</td>
+<td><code>residual_coef_ratio ≥ 1e6</code> または <code>residual_bigm_count ≥ 1</code></td>
+<td>スケーリング・Big-MのIndicator/SOS化。<strong>recipe</strong>: Big-Mを実bound/Indicator/SOSに置換、<code>mk.pwl_sos2</code>。条件数は <code>matrix_condition</code>/<code>scip_basis_condition</code> で確認(例: sos.html, condition.html)</td>
+</tr>
+<tr>
+<td><code>symmetry_info</code> (<strong>good</strong>)</td>
+<td>入替可能な変数群(対称性)を検出</td>
+<td><code>sym_sound</code> かつ <code>largest_sym_group ≥ 3</code></td>
+<td><strong>通常は対応不要(SCIPが自動処理)</strong>。usesymmetry を無効化した運用でのみ辞書式除去が有効(例: symmetry.html)</td>
+</tr>
+<tr>
+<td><code>decomposable</code> (good)</td>
+<td>制約-変数がブロック構造 + 少数の結合制約</td>
+<td><code>max_linking_groups ≥ 4</code> かつ <code>n_heavy_linking ≤ 3</code></td>
+<td>ベンダーズ / Dantzig-Wolfe 分解。<strong>recipe</strong>: <code>mk.benders</code> か <code>mk.column_generation</code>/<code>mk.price_and_branch</code>(例: benders.html, bnp.html)</td>
+</tr>
+</tbody>
+</table>
+<p><code>symmetry_info</code> が <strong>good</strong>(推薦でなく情報)なのは意図的。SCIP 内蔵の対称性処理が既定で対応し、
+手動の辞書式除去は無効〜悪化するため(実測は落とし穴の節と <code>FINDINGS.md</code>)。</p>
+<p>診断ルールはプラガブル。<code>mk.RULES.append(mk.Rule(...))</code> で独自ルールを足せる。</p>
+<hr />
+<h2 id="6">6. 制約・既知の落とし穴(利用者目線)<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<p><code>FINDINGS.md</code> の要点。「教科書的改善の多くを現代の SCIP は自動でやる」ことに注意。</p>
+<h3 id="scip">SCIP が自動でやること(手動で推薦しない)<a class="headerlink" href="#scip" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>緩い Big-M</strong>: presolve が自動でタイト化(係数比 1e5→1.0、Big-M候補 8→0)。手動 Big-M 対応は典型例では不要。</li>
+<li><strong>対称性</strong>: <code>misc/usesymmetry</code>(既定ON)が自動対応。makespan / graph coloring は SCIP対称性 × 手動除去の
+  全4通りが1ノードで解ける。<strong>手動の辞書式除去はむしろ悪化</strong>(LP を非対称に切って重くする)。</li>
+<li><strong>変数境界 / 被約コスト固定</strong>: FBBT・<code>propagating/redcost</code>(既定ON)が自動実施。手動再実装は冗長。</li>
+<li>したがって診断は presolve <strong>後</strong>の残存(<code>residual_scale</code>)で判断し、比の閾値は真の悪条件 1e6
+  (自然なコスト差 ~1e3 は数値問題ではない)にしてある。</li>
+</ul>
+<h3 id="_4">かえって悪化する「改善」<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>有効不等式 <code>n·s ≥ demand</code> を素朴に足すと、<code>n·s</code> 自体が双線形なので<strong>新たな非凸制約の追加</strong>になり緩和が緩む。</li>
+<li><strong>perspective_quadratic</strong>: 理論上は凸包を締めるが、SCIP は右辺の双線形を McCormick 緩和するため
+  素の分枝限定ではむしろ −49% 悪化。既定 SCIP では素の凸二次下界の方が有利。<strong>部品として提供するが常用非推奨</strong>。</li>
+</ul>
+<h3 id="_5">測定方法論(交絡を避ける)<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>時間制限での比較は探索動学に交絡される</strong>(制約追加でノード/秒が変わる)。定式化の質は
+  <strong>ルート双対境界</strong>(<code>compare_variants</code> の <code>root_dual</code>)で測ると交絡がない。</li>
+<li>ある定式化の効果を分離するには、補償機構(presolve/separating/対称性/伝播)を明示的に OFF にして
+  素の分枝限定で比べる。現代 SCIP は小規模 MILP を大抵ルート1ノードで解くので、効果を見たいなら
+  効果が現れる規模/構造の題材を作る(本リポジトリの fixed_charge 8施設・graph_coloring 等)。</li>
+</ul>
+<h3 id="price_and_branch">price_and_branch は上界のみ<a class="headerlink" href="#price_and_branch" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>price_and_branch</code> は「生成列上の制限主問題を整数で解く」ため、返す整数解は真の整数最適の<strong>上界</strong>
+  (≥ 真の最適)であって最適保証ではない。厳密な整数最適には pricing を分枝ノードで呼ぶ完全な
+  branch-and-price が要る。<code>lp_lb == int_obj</code> が成り立てば最適性が証明される。</li>
+</ul>
+<h3 id="pyscipopt-api">PySCIPOpt の API 落とし穴<a class="headerlink" href="#pyscipopt-api" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>getValsLinear(cons)</code> のキーは<strong>変数名の文字列</strong>。<code>Variable</code> に <code>getName()</code> は無い(<code>.name</code> を使う)。</li>
+<li>分枝情報は <code>NODEBRANCHED</code> で取る(<code>NODEFOCUSED</code> では <code>getParentBranchings()</code> が空)。</li>
+<li><code>getSlack</code> は非線形制約に非対応 → 違反は <code>getNlRowSolFeasibility(nlrow, sol)</code>(負=違反量)。</li>
+<li><code>build_fn()</code> の一時 Model はローカル変数に保持する(反復中に GC されると PySCIPOpt が segfault)。</li>
+<li>Windows の SCIP クロックは1秒粒度 → モニタは Python の <code>perf_counter</code> で記録する。</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  ページトップへ戻る
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f", "clipboard.copy": "\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u3078\u30b3\u30d4\u30fc", "search.result.more.one": "\u3053\u306e\u30da\u30fc\u30b8\u5185\u306b\u3082\u30461\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.more.other": "\u3053\u306e\u30da\u30fc\u30b8\u5185\u306b\u3042\u3068#\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.none": "\u4f55\u3082\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3067\u3057\u305f", "search.result.one": "1\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.other": "#\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.placeholder": "\u691c\u7d22\u30ad\u30fc\u30ef\u30fc\u30c9\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044", "search.result.term.missing": "\u691c\u7d22\u306b\u542b\u307e\u308c\u306a\u3044", "select.version": "\u30d0\u30fc\u30b8\u30e7\u30f3\u5207\u308a\u66ff\u3048"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

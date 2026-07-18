@@ -1,0 +1,41 @@
+[project]
+name = "minlpkit"
+version = "0.1.0"
+description = "minlpkit — MINLPの可視化・診断・改善検証を一体化したPySCIPOptツールキット"
+readme = "README.md"
+requires-python = ">=3.12"
+# minlpkit(配布パッケージ)のコア機能が import する実行時依存のみを宣言する。
+# ライブ可視化(minlpkit.live)とチューニング(minlpkit.tune)は任意の
+# pyscipopt.Model で動く再利用機能だが追加依存を要するため、下の
+# [project.optional-dependencies](extras)に切り出す。コアは extras 無しで動く。
+dependencies = [
+    "pyscipopt>=6.2.1",
+    "pandas>=3.0.3",
+    "numpy>=2.0",
+    "scipy>=1.18.0",
+]
+
+[project.optional-dependencies]
+# `uv add "minlpkit[viz]"` / `[tune]` で導入。minlpkit.live / minlpkit.tune が使う。
+viz = ["flask>=3.1", "plotly>=6.9", "kaleido>=1.3"]
+tune = ["optuna>=4.9"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# 配布対象は minlpkit パッケージのみ(collectors / live サブパッケージを含む)。
+# live/live_page.html などパッケージ内データは hatchling が既定で同梱する。
+# viz/ ・ samples/ ・ experiments/ はリポジトリ運用専用で配布物には含めない。
+packages = ["minlpkit"]
+
+[dependency-groups]
+dev = [
+    # リポジトリ運用で extras 機能(live server / チューニング)も使うため、
+    # 自プロジェクトの extras を dev に取り込む(flask/optuna/plotly/kaleido の一元管理)。
+    "minlpkit[viz,tune]",
+    "pytest>=8.0",
+    "mkdocs-material>=9.7.7",
+    "mkdocstrings[python]>=1.0.6",
+]

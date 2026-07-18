@@ -1,0 +1,11 @@
+{
+  "model": "plant",
+  "title": "バッチ反応器スケジューリング(プラント物理入り)",
+  "params": {
+    "time_limit": 120.0,
+    "gap_limit": 0.01
+  },
+  "run_id": "plant_20260718_123824",
+  "created": "2026-07-18T12:38:24",
+  "status": "running"
+}

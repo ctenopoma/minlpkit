@@ -1,0 +1,11 @@
+{
+  "model": "sched",
+  "title": "バッチスケジューリング",
+  "params": {
+    "time_limit": 8.0,
+    "gap_limit": 0.01
+  },
+  "run_id": "sched_20260719_051028",
+  "created": "2026-07-19T05:10:28",
+  "status": "running"
+}
