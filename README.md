@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/icon.jpg" alt="minlpkit icon" width="120" />
+
 # minlpkit
 
 **PySCIPOpt(SCIP)で解くMINLPを、観測し・診断し・直し方を提案するツールキット。**
@@ -64,7 +66,7 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 
 `analyze` は観測量と発火した診断を要約し、`compare_variants` は 2 つの定式化のルート境界・最終 gap・ノード数を
 表で並べます。厳密線形化は最適値を変えずに緩和を締める変換で、規模のある問題ではルート双対境界と探索コストの差として
-現れます(上のヒーロー図がその一例)。
+現れます。
 
 ## Documentation
 

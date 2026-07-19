@@ -5,6 +5,8 @@ use_directory_urls: false
 
 theme:
   name: material
+  logo: assets/icon.jpg
+  favicon: assets/icon.jpg
   language: ja
   features:
     - navigation.sections
