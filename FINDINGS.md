@@ -131,7 +131,16 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
 - **FJ系の不発は「等式の多さ」ではなく「等式同士の変数共有」で決まる**: GAPも制約数比では
   等式95%だがcuOpt有効。差は eq_overlap(変数あたり所属等式数)= GAP 1.0 vs 集合分割 ~10。
   診断ルール `gpu_primal` はこの eq_overlap≤1.5 をゲートに使う(eq_shareゲートは誤判別)。
-- インストール: WSL2側 `uv venv --python 3.12` + `cuopt-cu13==25.10.*`
+- **WSLの9pファイルシステム(/mnt/<drive>)はcuOptのI/Oを支配的に遅くする**:
+  gap_large(MPS 15MB/.sol 0.8MB)で、9p上のMPS読み +約20s、9p上への.sol書き +約19s
+  (計: 予算15sのcuOptが実測37s)。MPS/.solともWSLネイティブ/tmpにステージングすると
+  実測17sに改善。`mk.cuopt_warmstart`/`mk.cuopt_concurrent` は自動でステージングする。
+- **常駐型(`mk.cuopt_concurrent`)のmid-solve注入は成立する**: SOLVINGステージ中の
+  イベントハンドラから `createSol`+`trySol` した解は受理され即incumbentになる(実証済み)。
+  ただし注入タイミングはSCIPのイベント発火間隔に律速される:
+  NODESOLVEDだけではルートの分離ループ中(数十秒)発火せず、LPSOLVED併用で
+  「cuOpt完了~20s→注入34s」まで短縮(残差はルートLP再解1回分の粒度で原理的)。
+  wall-clockでは直列hybrid 77s(GPU17s+SCIP60s)に対し並走60sで同一解に到達。
   (`--extra-index-url=https://pypi.nvidia.com`)。RTX 5070 Ti(Blackwell, sm_120)対応済み。
   Python 3.10(Ubuntu 22.04既定)は対象外なのでuvでのPython導入が必須。
 

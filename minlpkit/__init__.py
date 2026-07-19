@@ -16,14 +16,14 @@ from .collectors.diagnose import RULES, Rule, evaluate
 
 from .compare import compare_variants
 from .frameworks import benders, column_generation, price_and_branch
-from .gpu import cuopt_warmstart
+from .gpu import cuopt_concurrent, cuopt_warmstart
 from .pipeline import Report, analyze, collect_metrics
 from .transforms import linearize_product, perspective_quadratic, pwl_sos2
 
 __all__ = ["analyze", "collect_metrics", "Report", "compare_variants",
            "RULES", "Rule", "evaluate", "linearize_product", "perspective_quadratic",
            "pwl_sos2", "column_generation", "price_and_branch", "benders",
-           "cuopt_warmstart", "sweep", "rerun"]
+           "cuopt_warmstart", "cuopt_concurrent", "sweep", "rerun"]
 
 _LAZY_LIVE = {"sweep", "rerun"}
 

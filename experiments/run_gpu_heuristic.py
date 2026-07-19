@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pyscipopt import SCIP_EVENTTYPE, Eventhdlr, Model
 
-from minlpkit.gpu import cuopt_warmstart
+from minlpkit.gpu import cuopt_concurrent, cuopt_warmstart
 from minlpkit.live import RunLogger, new_run_id, solve_with_monitor
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -158,6 +158,43 @@ def run_hybrid(model_key: str, scale: str, gpu_budget: float, time_limit: float,
     )
 
 
+def run_concurrent(model_key: str, scale: str, gpu_budget: float, time_limit: float,
+                   logger: RunLogger | None = None) -> dict:
+    """常駐型: cuOptをSCIPと並走させ、終了し次第mid-solveで解を注入する(GPU待ちゼロ)。
+
+    注入解は trySol 経由で incumbent になるため BESTSOLFOUND が発火し、
+    IncumbentTracker / SolveMonitor の軌跡に自動で乗る(hybridのような手動追記は不要)。
+    """
+    m = build(model_key, scale)
+    m.hideOutput()
+    cmd = ["wsl", "-d", WSL_DISTRO, "--", CUOPT_CLI]
+    # 並走中のCPU競合を抑える(cuOptのCPU B&Bを8スレッドに制限。GPUヒューリスティクスは無関係)
+    h = cuopt_concurrent(m, time_limit=gpu_budget, cuopt_cmd=cmd, mps_dir=str(OUTDIR),
+                         num_cpu_threads=8)
+    if logger is not None:
+        mon, summary = solve_with_monitor(m, time_limit=time_limit, logger=logger)
+        result = _result_from_monitor(mon, summary)
+    else:
+        tracker = IncumbentTracker()
+        m.includeEventhdlr(tracker, "inc_track", "incumbent trajectory")
+        m.setParam("limits/time", time_limit)
+        m.optimize()
+        traj = tracker.trajectory
+        result = dict(
+            ttff=traj[0][0] if traj else None,
+            best=m.getPrimalbound() if m.getNSols() else None,
+            dual=m.getDualbound(),
+            gap=m.getGap() if m.getNSols() else None,
+            nsols=m.getNSols(),
+            time=m.getSolvingTime(),
+            trajectory=traj,
+        )
+    info = h.result()
+    result.update(injected=info["injected"], cuopt_obj=info["objective"],
+                  cuopt_time=info["wall_time"], inject_time=info["inject_time"])
+    return result
+
+
 # cuOptログのincumbent行:  D/B行(表形式)・H行・"New solution from primal heuristics"
 _ROW = re.compile(r"^[DBH*]?\s.*?([+-]\d\.\d+e[+-]\d+).*?(\d+\.\d+)\s*$")
 _HEUR = re.compile(r"New solution from primal heuristics\. Objective ([+-]\d\.\d+e[+-]\d+)\. Time (\d+\.\d+)")
@@ -210,7 +247,7 @@ def _make_live_logger(args, arm: str, title: str) -> RunLogger:
     """
     run_id = new_run_id(f"gpu_{args.model}_{args.scale}_{arm}")
     params = dict(time_limit=args.time)
-    if arm == "hybrid":
+    if arm in ("hybrid", "concurrent"):
         params["gpu_budget"] = args.gpu_budget
     return RunLogger(run_id, meta=dict(
         model=f"gpu_{args.model}", title=f"{title} ({args.scale}) [{arm}]",
@@ -247,7 +284,7 @@ def main() -> None:
     ap.add_argument("--scale", default="large")
     ap.add_argument("--time", type=float, default=60.0, help="各アームの求解時間")
     ap.add_argument("--gpu-budget", type=float, default=15.0, help="hybridでのcuOpt先行時間")
-    ap.add_argument("--arms", default="scip,cuopt,hybrid")
+    ap.add_argument("--arms", default="scip,cuopt,hybrid,concurrent")
     ap.add_argument("--live", action="store_true",
                      help="各アームをresults/runs/にrunとして記録し、ライブUIの比較モードで見られるようにする")
     args = ap.parse_args()
@@ -288,6 +325,14 @@ def main() -> None:
         if logger is not None:
             print(f"         run_id={logger.run_id}")
 
+    if "concurrent" in arms:
+        print(f"[concurrent] cuOpt {args.gpu_budget}s ∥ SCIP {args.time}s (minlpkit.gpu.cuopt_concurrent) ...")
+        logger = _make_live_logger(args, "concurrent", title) if args.live else None
+        results["concurrent"] = run_concurrent(args.model, args.scale, args.gpu_budget,
+                                               args.time, logger=logger)
+        if logger is not None:
+            print(f"         run_id={logger.run_id}")
+
     # 比較表
     print(f"\n=== {title} ({args.scale}) 各アーム {args.time}s ===")
     hdr = f"{'arm':8} {'TTFF(s)':>8} {'best':>12} {'dual':>12} {'gap%':>7} {'sols':>5}"
@@ -303,6 +348,11 @@ def main() -> None:
             obj_s = f"{r['cuopt_obj']:,.0f}" if r.get("cuopt_obj") is not None else "なし"
             print(f"         (cuOpt解 {obj_s} を注入: "
                   f"{'受理' if r.get('injected') else '不受理'}, GPU先行 {r['cuopt_time']:.1f}s)")
+        if arm == "concurrent":
+            obj_s = f"{r['cuopt_obj']:,.0f}" if r.get("cuopt_obj") is not None else "なし"
+            it = f"{r['inject_time']:.1f}s時点" if r.get("inject_time") is not None else "注入なし"
+            print(f"         (並走cuOpt解 {obj_s}: {it}, "
+                  f"{'受理' if r.get('injected') else '不受理'}, GPU実測 {r['cuopt_time']:.1f}s)")
         for t, obj in r["trajectory"]:
             rows.append(dict(arm=arm, time=t, objective=obj))
 

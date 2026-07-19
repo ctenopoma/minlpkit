@@ -1,6 +1,4 @@
 arm,time,objective
-scip,1.0,1e+20
-scip,1.0,97946.0
-scip,49.0,97018.0
-cuopt,37.45,79267.0
-hybrid,0.0,82475.0
+concurrent,1.0,1e+20
+concurrent,1.0,97946.0
+concurrent,34.0,97018.0
