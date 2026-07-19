@@ -3,6 +3,11 @@
 MINLP の **観測(analyze)→ 診断(findings/recipe)→ 改善(transforms/frameworks)→ 検証(compare_variants)**
 を1本で通すためのマニュアル。コード例はすべてコピペで動く(本リポジトリの doctest / demo で検証済み)。
 
+> 手を動かして学ぶなら、実サンプルで診断を読む
+> [ハンズオン(1)可視化・診断編](notebooks/hands_on_diagnosis.ipynb) と、recipe の効果を
+> before/after で測る [ハンズオン(2)改善編](notebooks/hands_on_improvement.ipynb) が近道。
+> 診断エンジンを約50本のサンプルに一括適用した棚卸しは [診断センサス](census.md) にある。
+
 ---
 
 ## 1. インストール

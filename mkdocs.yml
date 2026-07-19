@@ -55,7 +55,11 @@ markdown_extensions:
 nav:
   - ホーム: index.md
   - 利用マニュアル: manual.md
-  - 試してみる: notebooks/quickstart.ipynb
+  - 試してみる:
+      - クイックスタート: notebooks/quickstart.ipynb
+      - ハンズオン(1)可視化・診断編: notebooks/hands_on_diagnosis.ipynb
+      - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb
+  - 診断センサス: census.md
   - APIリファレンス:
       - パイプライン (analyze/Report): api/pipeline.md
       - 比較 (compare_variants): api/compare.md

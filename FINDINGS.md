@@ -167,3 +167,23 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
 - 3D Surface は角度依存で読みにくい。対称box + `aspectmode="cube"` + `eye≈(1.6,1.6,1.15)` が良い。
 - 停滞検出は「横ばい(改善イベント不在)」より「**改善レートが平均の半分未満**」の方が実態に合う
   (plantの双対境界は多数の小改善で連続上昇し、劇的な平坦域が稀)。
+
+## 8. 診断センサス(samplesを診断エンジンのベンチマークにする)
+
+`experiments/run_census.py` で4カテゴリ約50本に `mk.analyze(time_limit=10)` を一括適用した実測
+(2026-07。`results/census.csv` / `docs/census.md`)。
+
+- **現代SCIPは大半のサンプルを瞬時に最適化する**: 解析成功46本のうち残存gap>0.1%は6本のみ、
+  多くが0-1ノード。診断で最も出るのは `symmetry_info`(23本)・`decomposable`(9本)という
+  **good(対応不要)**の情報系で、これは「教科書的改善はSCIPが自動処理」というFINDINGS 1節と整合。
+- **重大症状 `weak_relaxation` が発火したのは非線形11本中1本だけ**
+  (`district_heating_detailed_physics`、双線形の質量流量×温度)。非凸緩和の弱さが本当に律速になる
+  ケースは希少で、それゆえ診断の題材として貴重。この1本は空間分枝が双対改善の**97.5%**を占め、
+  ボトルネックは `demand_heat`(相対違反26)。→ ハンズオン(1)の題材に採用。
+- **improvement題材は censusのカテゴリ外から採るのが妥当**: 4カテゴリの整数(非バイナリ)変数は
+  4ファイルに各1個のみで、`linearize_product` が刺さる整数×連続の積を持つ実サンプルが無い。
+  厳密線形化の効果実証は既存の `scheduling_plant`(ルート双対 52→133、+156%)を採用した(ハンズオン(2))。
+- **censusは実装バグ検出器にもなった(隠さず記録)**: skip 1(`cutting_stock`=colgen用でbuild_model無し)、
+  error 3(`rcpsp`/`train_scheduling`/`airline_overbooking`)。前2つはサンプル側のバグ、
+  `airline_overbooking` の `KeyError: 'n_groups'` は `collect_metrics` の linking集計が
+  空でないが列欠落のDataFrameで落ちる minlpkit 側の堅牢性ギャップ(要修正候補として記録)。
