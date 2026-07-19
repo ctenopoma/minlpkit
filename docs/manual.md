@@ -149,6 +149,36 @@ uv run python experiments/run_monitor.py --model plant --time 120 --gap 0.01
 単体でも `minlpkit.live.capture_run_conditions(model)` として呼べる。既存 run(capture キーなし)は
 そのまま server が読める(後方互換)。
 
+### スイープ実行 + rerun
+
+`minlpkit.live.sweep`(`mk.sweep` でも遅延importで利用可)は SCIP パラメータの候補群を総当たりする。
+**各セットは通常の run として `results/runs/` に記録される**ため、上記のライブUI(runs一覧・
+チェックボックス比較)がそのままスイープ結果比較UIになる(専用UIは無い)。
+
+```python
+import minlpkit as mk
+import scheduling  # samples/
+
+param_sets = [{}, {"separating/maxroundsroot": 0}]
+df = mk.sweep(scheduling.build_model, param_sets, name="sched", time_limit=10)
+# df: index / param_set / run_id / final_dual / final_gap / nodes / time / status
+```
+
+`mk.rerun(build_fn, run_id, time_limit=None)` は記録済み run の `meta.capture.scip_params_diff`
+を読み出し、同じ `build_fn` の新モデルへ適用して再求解する(記録条件からの再現実行)。
+新 run として記録され、`meta.rerun_of` に元の run_id が残る。capture の無い run(`capture=False`
+で求解した旧run)には `ValueError` で明確に失敗する。
+
+```python
+new_run_id = mk.rerun(scheduling.build_model, df["run_id"][0], time_limit=20)
+```
+
+CLI: `uv run python experiments/run_sweep.py --model sched --time 6` で組み込みデモ
+(separating/heuristics 強度を変える4セット)を実行し、`results/sweep.html` に
+parallel coordinates 図(パラメータ軸 + final_dual/final_gap 軸)を出力する。
+`--config sweep.yaml` で `param_sets:` を書いた任意の yaml を指定できる
+(PyYAML は CLI 内でのみ使用、minlpkit のコア依存には追加していない)。
+
 ---
 
 ## 5. 診断ルール一覧(6ルール)

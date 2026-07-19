@@ -110,6 +110,19 @@ uv run python experiments/run_monitor.py --model plant --time 120
 - 比較モードではバナーを表示しない(単一run特有の機能)。新しい判定ルールを足すときは
   `live_rules.js`に純関数を追加し、`tests/js/live_rules.test.js`に合成イベント列のテストを足す
 
+### スイープ実行・rerun(Phase 10 C3)
+
+`minlpkit/live/sweep.py`(`sweep`/`rerun`。`mk.sweep`/`mk.rerun`としても`minlpkit/__init__.py`の
+`__getattr__`で遅延import可、コアimportにflask/plotlyを強制しない)。設計の要:
+**スイープの各メンバーは通常のrunとして`results/runs/`に記録される**(`solve_with_monitor`の
+既定`capture=True`のまま)ので、C2のruns一覧UI(チェックボックス比較)がそのままスイープ比較UIになる
+(専用UI不要)。各runの`meta.json`に`sweep: {name, index, param_set}`を追記。`rerun`は
+`meta.capture.scip_params_diff`を読み出して同じ`build_fn`の新モデルへ適用・再求解し、
+`meta.rerun_of`に元run_idを残す(captureが無い旧runはValueErrorで明確に失敗)。
+CLI `experiments/run_sweep.py --model sched --time 6`(`--config <yaml>`でカスタムparam_sets、
+PyYAMLはCLI内のみ使用しコア依存には追加しない)がsweep結果とparallel coordinates図
+(`results/sweep.html`)を出力する。`new_run_id`の秒精度衝突は`_unique_run_id`で回避。
+
 ## デザイン規約(dataviz スキル準拠)
 
 - **チャートを書く前に必ず `dataviz` スキルをロードする**

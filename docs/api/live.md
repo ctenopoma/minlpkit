@@ -44,3 +44,11 @@
     options:
       members:
         - main
+
+## スイープ / rerun
+
+::: minlpkit.live.sweep
+    options:
+      members:
+        - sweep
+        - rerun
