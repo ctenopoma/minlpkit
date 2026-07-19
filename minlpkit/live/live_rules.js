@@ -178,12 +178,79 @@
     return total;
   }
 
+  // --- 比較モード: 設定差分テーブル (Phase 10.1 ①) ---
+
+  const _FP_ROW_KEYS = ['n_vars', 'n_conss', 'n_nonlinear'];
+  const _PARAM_ROW_KEYS = ['time_limit', 'gap_limit'];
+
+  /**
+   * 比較選択中run群から「設定差分テーブル」の行列データを組み立てる純関数。
+   *
+   * 行 = パラメータ名(3セクション: params / fingerprint / scip_params_diff)、
+   * 列 = 選択run。`meta.capture` が無いrunは capture由来の行(fingerprint /
+   * scip_params_diff)は値`undefined`(「記録なし」として描画する)になるが、
+   * `meta.params`(time_limit/gap_limit)はcaptureと独立のため通常どおり表示する。
+   * scip_params_diffの行はキーの和集合(アルファベット順)。各行に、値が定義された
+   * 列同士で値が異なるかを示す `varies` を付与する(「記録なし」列は比較対象外)。
+   *
+   * @param {Array<{label:string, color:string, meta:object}>} runs - 選択run。
+   *   `meta` は `/api/runs/<id>/events` が返す `meta`(capture/paramsを含む)。
+   * @returns {{columns: Array<{label:string,color:string,hasCapture:boolean}>,
+   *            rows: Array<{key:string, section:string, values:Array, varies:boolean}>}}
+   */
+  function buildSettingsDiff(runs) {
+    const list = runs || [];
+    const hasCapture = list.map(r => !!(r && r.meta && r.meta.capture));
+
+    function paramsValue(r, key) {
+      const p = r && r.meta && r.meta.params;
+      return p ? p[key] : undefined;
+    }
+    function fingerprintValue(r, key, i) {
+      if (!hasCapture[i]) return undefined;
+      const fp = r.meta.capture.fingerprint;
+      return fp ? fp[key] : undefined;
+    }
+    function paramDiffValue(r, key, i) {
+      if (!hasCapture[i]) return undefined;
+      const diff = r.meta.capture.scip_params_diff || {};
+      return Object.prototype.hasOwnProperty.call(diff, key) ? diff[key] : null; // null = 既定値のまま
+    }
+
+    function toRow(key, section, valueFn) {
+      const values = list.map((r, i) => valueFn(r, key, i));
+      const present = [];
+      values.forEach((v, i) => { if (hasCapture[i] || section === 'params') { if (v !== undefined) present.push(v); } });
+      const varies = present.length > 1 && present.some(v => JSON.stringify(v) !== JSON.stringify(present[0]));
+      return {key, section, values, varies};
+    }
+
+    const rows = [
+      ..._PARAM_ROW_KEYS.map(k => toRow(k, 'params', (r, key) => paramsValue(r, key))),
+      ..._FP_ROW_KEYS.map(k => toRow(k, 'fingerprint', (r, key, i) => fingerprintValue(r, key, i))),
+    ];
+
+    const diffKeySet = new Set();
+    list.forEach((r, i) => {
+      if (!hasCapture[i]) return;
+      const diff = r.meta.capture.scip_params_diff || {};
+      Object.keys(diff).forEach(k => diffKeySet.add(k));
+    });
+    Array.from(diffKeySet).sort().forEach(k => {
+      rows.push(toRow(k, 'scip_params_diff', (r, key, i) => paramDiffValue(r, key, i)));
+    });
+
+    const columns = list.map(r => ({label: r.label, color: r.color, hasCapture: !!(r && r.meta && r.meta.capture)}));
+    return {columns, rows};
+  }
+
   const api = {
     detectLiveStall,
     detectNoIncumbent,
     detectHighGapDone,
     computeTTFF,
     primalIntegral,
+    buildSettingsDiff,
   };
 
   if (typeof module !== 'undefined' && module.exports) {

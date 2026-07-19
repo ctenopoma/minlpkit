@@ -28,6 +28,48 @@
   .appbar a:hover { color:var(--s1); text-decoration:underline; }
   .appbar .spacer { flex:1; }
   .appbar .hint { color:var(--muted); font-size:11px; }
+  .appbar .docs-link { display:inline-flex; align-items:center; justify-content:center;
+    width:18px; height:18px; border-radius:50%; border:1px solid var(--border);
+    color:var(--ink2); font-size:11px; font-weight:700; text-decoration:none; }
+  .appbar .docs-link:hover { color:var(--s1); border-color:var(--s1); text-decoration:none; }
+
+  /* --- ヘッダ: レポート一覧ドロップダウン --- */
+  .reports-menu { position:relative; }
+  .reports-btn { font:inherit; font-size:12px; color:var(--ink2); background:none;
+    border:1px solid transparent; border-radius:6px; padding:3px 8px; cursor:pointer; }
+  .reports-btn:hover { color:var(--s1); background:var(--hover); }
+  .reports-btn .caret { font-size:9px; }
+  .reports-panel { position:absolute; top:calc(100% + 4px); left:0; min-width:260px; max-width:360px;
+    max-height:320px; overflow-y:auto; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; box-shadow:0 6px 20px rgba(11,11,11,0.12); z-index:20; padding:4px 0; }
+  .reports-empty { padding:14px 14px; color:var(--muted); font-size:12px; }
+  .reports-list { list-style:none; margin:0; padding:0; }
+  .reports-list li a { display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+    padding:7px 14px; color:var(--ink); font-size:12.5px; text-decoration:none; }
+  .reports-list li a:hover { background:var(--hover); }
+  .reports-list li .r-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .reports-list li .r-mtime { flex:0 0 auto; color:var(--muted); font-size:11px;
+    font-variant-numeric:tabular-nums; }
+
+  /* --- 比較モード: 設定差分テーブル --- */
+  .diffpanel { background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    margin-bottom:12px; padding:10px 13px 13px; }
+  .diffpanel-head { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .diffpanel-head h3 { font-size:12.5px; margin:0; color:var(--ink2); }
+  .diffpanel-head label { font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:5px;
+    cursor:pointer; user-select:none; }
+  .diff-scroll { overflow-x:auto; }
+  table.diff { width:100%; border-collapse:collapse; font-size:11.5px; white-space:nowrap; }
+  table.diff th, table.diff td { padding:4px 8px; border-bottom:1px solid var(--border); text-align:left; }
+  table.diff thead th { color:var(--ink2); font-weight:600; position:sticky; top:0; background:var(--surface); }
+  table.diff td.k { color:var(--muted); }
+  table.diff td.v { font-variant-numeric:tabular-nums; }
+  table.diff tr.varies td.v { background:rgba(250,178,25,0.10); }
+  table.diff td.nocap { color:var(--muted); font-style:italic; }
+  table.diff .col-head-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; }
+  .diff-empty { color:var(--muted); font-size:12px; padding:8px 2px; }
+  .diff-section-row td { padding-top:10px; color:var(--muted); font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.03em; border-bottom:none; }
 
   /* --- レイアウト: 左サイドバー + 右メイン --- */
   .layout { flex:1 1 auto; display:flex; min-height:0; }
@@ -127,9 +169,19 @@
   <div class="appbar">
     <h1>minlpkit live monitor</h1>
     <span class="sep">/</span>
-    <a href="/results/index.html">成果物ギャラリー(index.html)</a>
+    <div class="reports-menu">
+      <button type="button" id="reportsBtn" class="reports-btn">レポート <span class="caret">▾</span></button>
+      <div class="reports-panel" id="reportsPanel" style="display:none">
+        <div class="reports-empty" id="reportsEmpty" style="display:none">
+          まだレポートがありません(report.dashboard() や sweep で生成)
+        </div>
+        <ul class="reports-list" id="reportsList"></ul>
+      </div>
+    </div>
     <span class="spacer"></span>
     <span class="hint">runs一覧は5秒ごとに更新</span>
+    <a class="docs-link" href="https://ctenopoma.github.io/minlpkit/" target="_blank" rel="noopener"
+       title="公開ドキュメント(minlpkit)">?</a>
   </div>
 
   <div class="layout">
@@ -162,6 +214,13 @@
       </div>
       <div class="banners" id="banners"></div>
       <div class="tiles" id="tiles"></div>
+      <div class="diffpanel" id="diffpanel" style="display:none">
+        <div class="diffpanel-head">
+          <h3>設定の差分</h3>
+          <label><input type="checkbox" id="diffOnlyToggle" checked> 差分がある行のみ表示</label>
+        </div>
+        <div class="diff-scroll" id="diffTableWrap"></div>
+      </div>
       <div class="chart" id="bounds"></div>
       <div class="chart" id="gap"></div>
       <div class="empty" id="empty">run を待機中…</div>
@@ -220,6 +279,50 @@ function lastPrimal(events) {
   }
   return null;
 }
+
+// ============================================================
+// ヘッダ: レポート一覧ドロップダウン(/api/reports)
+// ============================================================
+
+function fmtReportMtime(iso) {
+  return (iso || '').replace('T', ' ').slice(0, 16) || '?';
+}
+
+async function toggleReportsPanel() {
+  const panel = document.getElementById('reportsPanel');
+  const willOpen = panel.style.display === 'none';
+  if (!willOpen) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  try {
+    const reports = await (await fetch('/api/reports')).json();
+    const list = document.getElementById('reportsList');
+    const empty = document.getElementById('reportsEmpty');
+    if (!reports.length) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = reports.map(r => `
+      <li><a href="/results/${encodeURIComponent(r.name)}" target="_blank" rel="noopener">
+        <span class="r-name" title="${r.name}">${r.name}</span>
+        <span class="r-mtime">${fmtReportMtime(r.mtime)}</span>
+      </a></li>`).join('');
+  } catch (e) {
+    document.getElementById('reportsList').innerHTML = '';
+    document.getElementById('reportsEmpty').style.display = 'block';
+  }
+}
+document.getElementById('reportsBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  toggleReportsPanel();
+});
+document.addEventListener('click', e => {
+  const panel = document.getElementById('reportsPanel');
+  if (panel.style.display !== 'none' && !panel.contains(e.target) && e.target.id !== 'reportsBtn') {
+    panel.style.display = 'none';
+  }
+});
 
 // ============================================================
 // サイドバー: runs一覧テーブル(ソート・フィルタ・比較チェック)
@@ -564,6 +667,8 @@ function enterSingleMode(runId) {
   document.getElementById('mh-mode').textContent = '単一run';
   document.getElementById('status').style.display = 'inline-block';
   document.getElementById('tiles').className = 'tiles';
+  document.getElementById('diffpanel').style.display = 'none';
+  lastDiffData = null;
   const r = lastRuns.find(x => x.run_id === runId);
   document.getElementById('mh-title').textContent = r ? modelLabel(r) : runId;
   connect(runId);
@@ -621,6 +726,47 @@ function cmpTiles(labelled) {
   document.getElementById('tiles').innerHTML = labelled.map(row).join('');
 }
 
+// --- 設定差分テーブル(比較モード) ---
+// 行データの組み立ては純関数 buildSettingsDiff(live_rules.js、Nodeテスト共有)に委ね、
+// ここは描画のみ担当する。
+
+const SECTION_LABEL = {params: 'パラメータ(time/gap limit)', fingerprint: 'モデル指紋',
+                       scip_params_diff: 'SCIPパラメータ差分'};
+
+function fmtDiffValue(v) {
+  if (v === undefined) return '<span class="nocap">記録なし</span>';
+  if (v === null) return '<span class="k">(既定値)</span>';
+  if (typeof v === 'number') return fmtNum(v);
+  return String(v);
+}
+
+let lastDiffData = null;  // {columns, rows} — トグル再描画用にキャッシュ
+
+function renderDiffTable() {
+  const wrap = document.getElementById('diffTableWrap');
+  if (!lastDiffData) { wrap.innerHTML = ''; return; }
+  const {columns, rows} = lastDiffData;
+  const onlyDiff = document.getElementById('diffOnlyToggle').checked;
+  const shown = onlyDiff ? rows.filter(r => r.varies) : rows;
+  if (!shown.length) {
+    wrap.innerHTML = `<div class="diff-empty">${onlyDiff ? '差分がある設定はありません' : '表示する行がありません'}</div>`;
+    return;
+  }
+  const head = `<tr><th>パラメータ</th>${columns.map(c =>
+    `<th><span class="col-head-dot" style="background:${c.color}"></span>${c.label}</th>`).join('')}</tr>`;
+  let lastSection = null;
+  const body = shown.map(r => {
+    const sectionRow = r.section !== lastSection
+      ? `<tr class="diff-section-row"><td colspan="${columns.length + 1}">${SECTION_LABEL[r.section] || r.section}</td></tr>`
+      : '';
+    lastSection = r.section;
+    const cells = r.values.map(v => `<td class="v">${fmtDiffValue(v)}</td>`).join('');
+    return `${sectionRow}<tr class="${r.varies ? 'varies' : ''}"><td class="k">${r.key}</td>${cells}</tr>`;
+  }).join('');
+  wrap.innerHTML = `<table class="diff"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+document.getElementById('diffOnlyToggle').addEventListener('change', renderDiffTable);
+
 async function loadCompare() {
   if (mode !== 'compare') return;
   const ids = compareIds.slice(0, MAX_COMPARE);
@@ -637,6 +783,9 @@ async function loadCompare() {
   Plotly.react('gap', traces.map(t => t.gap),
     layout(`Run比較(${ids.length}run): Gap の推移(対数)`, 'gap [%]', true), CFG);
   cmpTiles(labelled);
+  document.getElementById('diffpanel').style.display = 'block';
+  lastDiffData = buildSettingsDiff(labelled.map(l => ({label: l.label, color: l.color, meta: l.data.meta})));
+  renderDiffTable();
 }
 
 function enterCompareMode() {
@@ -652,6 +801,8 @@ function enterCompareMode() {
   document.getElementById('empty').style.display = 'none';
   document.getElementById('tiles').innerHTML = '';
   document.getElementById('banners').innerHTML = '';
+  document.getElementById('diffpanel').style.display = 'none';
+  lastDiffData = null;
   renderTable();
   loadCompare();
 }

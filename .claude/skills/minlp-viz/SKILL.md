@@ -95,6 +95,15 @@ uv run python experiments/run_monitor.py --model plant --time 120
   `capture_summary`(n_params_diff・fingerprintの変数/制約内訳・git_sha短縮)に差し替える。
   フルcaptureは `/api/runs/<id>/events` のmetaにある
 
+### ヘッダ: レポート一覧・ドキュメントリンク(Phase 10.1)
+
+- ヘッダの「成果物ギャラリー」リンクは撤去した(自プロジェクトでは`results/index.html`が無くリンク切れになる上、
+  試行ループには不要な素材のため)。ギャラリー役割は `docs/`(公開サイト https://ctenopoma.github.io/minlpkit/ )に一本化
+- 代わりに「レポート」ドロップダウンを追加。`GET /api/reports` が `results/` 直下(`runs/`除外)の
+  `*.html` を `{name, mtime(ISO), size}` でmtime降順に返し、クリックで `/results/<name>` を新規タブで開く
+  (`report.dashboard()`やsweepが出力した静的HTMLがここに並ぶ)。空/不在でも200+空リストでエラーにしない
+- ヘッダ右端の「?」が公開ドキュメント(https://ctenopoma.github.io/minlpkit/ )へのリンク(ユーザー環境でも有効)
+
 ### ライブ診断・ライブ指標(Phase 10 B)
 
 - 単一run表示時、症状バナー+ライブ指標タイルが出る。判定関数の実体は `minlpkit/live/live_rules.js`
@@ -109,6 +118,20 @@ uv run python experiments/run_monitor.py --model plant --time 120
   ref=現在のincumbent primal、区分定数積分。ライブ中は「暫定」表示、done後はref=最終primalで確定再計算)
 - 比較モードではバナーを表示しない(単一run特有の機能)。新しい判定ルールを足すときは
   `live_rules.js`に純関数を追加し、`tests/js/live_rules.test.js`に合成イベント列のテストを足す
+
+### 比較モード: 設定の差分テーブル(Phase 10.1)
+
+- 2〜8run比較時、チャートの上に「設定の差分」テーブルを表示。行=パラメータ名
+  (params: time_limit/gap_limit、fingerprint: n_vars/n_conss/n_nonlinear、
+  scip_params_diffキーの和集合)、列=選択run(系列色ドット付きヘッダ)
+- 行データの組み立ては純関数 `buildSettingsDiff(runs)`(`minlpkit/live/live_rules.js`。
+  detectLiveStall等と同じ「ブラウザ/Node共有の唯一の実体」方針)が担当し、`live_page.html`は描画のみ。
+  テストは `tests/js/settings_diff.test.js`(Node、live_rules.test.jsと同じ素assert流儀)
+- 値が全run同一の行は通常表示、異なる行は淡黄背景(`#fab219`の約10%)で強調。既定ONの
+  「差分がある行のみ表示」トグルでON/OFF可。capture無し旧runの列はcapture由来の行(fingerprint/
+  scip_params_diff)が「記録なし」になる(params行はcaptureと独立のため通常表示)
+- データ取得は比較モードが既に並列fetchしている `/api/runs/<id>/events` の `meta` を再利用する
+  (設定diff専用の追加fetchはしない)
 
 ### スイープ実行・rerun(Phase 10 C3)
 

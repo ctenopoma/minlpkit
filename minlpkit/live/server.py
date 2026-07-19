@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import time
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -126,6 +127,28 @@ def run_events(run_id: str) -> Response:
                 continue
     summary = _read_json(run_dir / "summary.json")
     return jsonify({"meta": meta, "events": events, "summary": summary})
+
+
+@app.route("/api/reports")
+def list_reports() -> Response:
+    """``results/`` 直下(``runs/`` は除外)の静的HTMLレポート一覧を新しい順で返す。
+
+    `Report.dashboard()` や `run_sweep.py` 等が出力する静的HTML(report_plant.html,
+    sweep.html 等)を「レポート」ドロップダウンに表示するための一覧。存在しない/
+    空なら空リストを返す(エラーにしない)。
+    """
+    reports = []
+    if RESULTS_ROOT.exists():
+        for p in RESULTS_ROOT.iterdir():
+            if p.is_file() and p.suffix == ".html":
+                st = p.stat()
+                reports.append({
+                    "name": p.name,
+                    "mtime": datetime.fromtimestamp(st.st_mtime).isoformat(timespec="seconds"),
+                    "size": st.st_size,
+                })
+    reports.sort(key=lambda r: r["mtime"], reverse=True)
+    return jsonify(reports)
 
 
 @app.route("/results/<path:filename>")
