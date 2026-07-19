@@ -12,6 +12,7 @@ import time as _time
 import pandas as pd
 from pyscipopt import Eventhdlr, Model, SCIP_EVENTTYPE
 
+from .capture import capture_run_conditions
 from .run_logger import RunLogger
 
 _INF = 1e19  # SCIPの無限大(1e20)の判定しきい値
@@ -80,6 +81,7 @@ class SolveMonitor(Eventhdlr):
 def solve_with_monitor(
     model: Model, time_limit: float | None = None, gap_limit: float | None = None,
     min_interval: float = 0.05, logger: RunLogger | None = None,
+    capture: bool = True,
 ) -> tuple[SolveMonitor, dict]:
     """モデルにモニタを取り付けて求解し、``(モニタ, サマリ)`` を返す。
 
@@ -93,6 +95,9 @@ def solve_with_monitor(
         gap_limit: 停止する相対 gap(例 ``0.01`` で 1%)。``None`` なら最適まで。
         min_interval: node/LP イベントの最小記録間隔 [秒]。
         logger: 追記先の `RunLogger`。``None`` ならメモリのみ。
+        capture: ``True`` かつ ``logger`` があるとき、求解直前に
+            `capture_run_conditions` で run 条件(SCIP パラメータ差分・モデル指紋・
+            環境・git SHA)を集めて ``meta.json`` の ``capture`` キーへ保存する。
 
     Returns:
         ``(SolveMonitor, summary)`` のタプル。``summary`` は status / objective /
@@ -106,6 +111,13 @@ def solve_with_monitor(
         model.setParam("limits/time", time_limit)
     if gap_limit is not None:
         model.setParam("limits/gap", gap_limit)
+    # run 条件の自動キャプチャ(パラメータ設定後・optimize前の状態を残す)。
+    # 失敗しても求解は止めない。
+    if capture and logger is not None:
+        try:
+            logger.update_meta({"capture": capture_run_conditions(model)})
+        except Exception:  # noqa: BLE001 - キャプチャ失敗で求解を止めない
+            pass
     model.optimize()
     summary = dict(
         status=model.getStatus(),

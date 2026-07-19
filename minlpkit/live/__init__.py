@@ -13,6 +13,7 @@ TensorBoard 型(書き手/読み手分離)の求解モニタ。書き手 `solve_
 コア(`import minlpkit`)は extras 無しで動く。
 """
 
+from .capture import capture_run_conditions
 from .monitor import SolveMonitor, primal_gap_series, solve_with_monitor
 from .plots import build_dashboard
 from .run_logger import RUNS_ROOT, RunLogger, new_run_id
@@ -22,6 +23,7 @@ __all__ = [
     "SolveMonitor",
     "solve_with_monitor",
     "primal_gap_series",
+    "capture_run_conditions",
     "RunLogger",
     "new_run_id",
     "RUNS_ROOT",

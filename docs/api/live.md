@@ -16,6 +16,13 @@
         - SolveMonitor
         - primal_gap_series
 
+## Run 条件キャプチャ
+
+::: minlpkit.live.capture
+    options:
+      members:
+        - capture_run_conditions
+
 ## Run ロガー
 
 ::: minlpkit.live.run_logger

@@ -61,12 +61,25 @@ class RunLogger:
         self.dir.mkdir(parents=True, exist_ok=True)
         meta = {**meta, "run_id": run_id, "created": datetime.now().isoformat(timespec="seconds"),
                 "status": "running"}
+        self.meta = meta
         self._write_json("meta.json", meta)
         # 行バッファ + 明示flushで、読み手が即座に tail できるようにする
         self._f = open(self.dir / "events.jsonl", "w", encoding="utf-8", buffering=1)
 
     def _write_json(self, name: str, obj: dict) -> None:
         (self.dir / name).write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def update_meta(self, extra: dict) -> None:
+        """``meta.json`` に追加のキーをマージして書き直す。
+
+        既存キー(run_id / model / title / params / created / status)は保ちつつ、
+        run 条件のキャプチャ(``capture``)などを後から足すのに使う。
+
+        Args:
+            extra: `meta.json` に上書きマージするキー(例: ``{"capture": {...}}``)。
+        """
+        self.meta = {**self.meta, **extra}
+        self._write_json("meta.json", self.meta)
 
     def append(self, record: dict) -> None:
         """探索イベント1件を ``events.jsonl`` に1行追記して flush する。

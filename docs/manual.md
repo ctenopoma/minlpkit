@@ -131,6 +131,24 @@ uv run python experiments/run_monitor.py --model plant --time 120 --gap 0.01
 - **成果ギャラリー**: `http://127.0.0.1:5000/results/index.html` が `results/` の全成果物HTML
   (tree / attribution / violation / condition / benders / colgen / sos …)へのリンク集。
 
+### run の記録と再現性
+
+`solve_with_monitor(..., logger=...)` は求解直前に run 条件を自動キャプチャし、
+`results/runs/<run_id>/meta.json` の `capture` キーへ残す(`capture=False` でオプトアウト)。
+これにより「どの条件で解いた run か」が後から辿れる(最適化 MLOps の土台):
+
+- **`scip_params_diff`**: 素の `Model()` のデフォルトと異なる SCIP パラメータの `{name: value}`。
+  時間制限やヒューリスティクス設定など、その run 固有の設定だけが残る(既定 clocktype=2 のため
+  通常は `limits/*` のみ、`setHeuristics(OFF)` 等で数十個)。
+- **`fingerprint`**: presolve 前の変数内訳(`n_bin`/`n_int`/`n_cont`)・制約内訳(`n_linear`/
+  `n_nonlinear`/`conss_by_handler`)・目的の向き・モデル名。
+- **`env`**: minlpkit / Python / PySCIPOpt / SCIP のバージョンと OS。
+- **`git_sha`**: 作業ディレクトリの git HEAD(リポジトリ内で git があるときのみ)。
+
+各項目は独立に例外処理され、取得に失敗しても求解は止まらない(欠けた項目はキーごと省略)。
+単体でも `minlpkit.live.capture_run_conditions(model)` として呼べる。既存 run(capture キーなし)は
+そのまま server が読める(後方互換)。
+
 ---
 
 ## 5. 診断ルール一覧(6ルール)
