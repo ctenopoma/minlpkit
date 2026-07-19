@@ -3,6 +3,7 @@ name = "minlpkit"
 version = "0.1.0"
 description = "minlpkit — MINLPの可視化・診断・改善検証を一体化したPySCIPOptツールキット"
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.12"
 # minlpkit(配布パッケージ)のコア機能が import する実行時依存のみを宣言する。
 # ライブ可視化(minlpkit.live)とチューニング(minlpkit.tune)は任意の
