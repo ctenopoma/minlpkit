@@ -21,3 +21,14 @@ def test_analyze_facility_smoke():
     # 各 finding は診断ルールの必須フィールドを持つ
     for f in report.findings:
         assert {"id", "severity", "symptom", "recommendation"} <= set(f)
+
+
+def test_analyze_airline_overbooking_no_constraints():
+    """制約を1本も持たないモデル(airline_overbooking: 変数境界のみ)でも
+    analyze が例外なく Report を返す(linking_constraints の空DataFrame KeyError回帰)。"""
+    import samples.scheduling.airline_overbooking as ao
+
+    report = mk.analyze(ao.build_model, name="airline_overbooking", time_limit=5)
+    assert isinstance(report, Report)
+    assert isinstance(report.findings, list)
+    assert isinstance(report.summary(), str)

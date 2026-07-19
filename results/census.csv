@@ -18,7 +18,7 @@ knapsack,packing_and_cutting,optimal,0.0,0.0,2.0,False,0.0,2,symmetry_info;decom
 mkp,packing_and_cutting,optimal,0.0,1.0,4.0,False,0.0,1,decomposable,,0.1
 molded_parts_cutting,packing_and_cutting,optimal,0.0,0.0,2.0,False,0.0,1,symmetry_info,,0.1
 warehouse_slotting,packing_and_cutting,optimal,0.0,0.0,1.0,False,0.0,1,symmetry_info,,0.1
-airline_overbooking,scheduling,error,,,,,,0,,KeyError: 'n_groups',0.0
+airline_overbooking,scheduling,optimal,0.0,0.0,3.0,False,0.0,0,,,0.1
 airport_gate_assignment,scheduling,optimal,0.0,0.0,1.0,False,0.0,1,symmetry_info,,0.1
 assembly_line,scheduling,optimal,0.0,0.0,1.0,False,0.0,1,symmetry_info,,0.1
 assembly_line_balancing_2,scheduling,optimal,0.0,1.0,3.0,False,0.0,0,,,0.1

@@ -4,7 +4,7 @@ minlpkit の診断エンジン(`mk.analyze`)を samples の多数のモデルに
 
 - 対象カテゴリ: energy_and_microgrid, packing_and_cutting, physics_and_control_minlp, scheduling
 - 各モデル `mk.analyze(build_model, time_limit=10)` を1回実行
-- 全 50 本中 解析成功 46 本 / skip 1 本 / error 3 本
+- 全 50 本中 解析成功 47 本 / skip 1 本 / error 2 本
 
 再現: `uv run python experiments/run_census.py --time 10`
 
@@ -76,7 +76,7 @@ minlpkit の診断エンジン(`mk.analyze`)を samples の多数のモデルに
 | railway_substation_coordination_minlp | physics_and_control_minlp | gap 0.6% | 0.6% | 1.0 | 1.0 | ✓ | numerical_scale |  |
 | refinery_blending | physics_and_control_minlp | optimal | 0.0% | 1.0 | 2.0 | ✓ | decomposable |  |
 | thermal_battery_hybrid | physics_and_control_minlp | optimal | 0.0% | 1.0 | 1.0 |  | symmetry_info |  |
-| airline_overbooking | scheduling | error | — | — | — | — | — | KeyError: 'n_groups' |
+| airline_overbooking | scheduling | optimal | 0.0% | 0.0 | 3.0 |  | — |  |
 | airport_gate_assignment | scheduling | optimal | 0.0% | 0.0 | 1.0 |  | symmetry_info |  |
 | assembly_line | scheduling | optimal | 0.0% | 0.0 | 1.0 |  | symmetry_info |  |
 | assembly_line_balancing_2 | scheduling | optimal | 0.0% | 1.0 | 3.0 |  | — |  |

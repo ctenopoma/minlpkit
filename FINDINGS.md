@@ -194,3 +194,9 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   error 3(`rcpsp`/`train_scheduling`/`airline_overbooking`)。前2つはサンプル側のバグ、
   `airline_overbooking` の `KeyError: 'n_groups'` は `collect_metrics` の linking集計が
   空でないが列欠落のDataFrameで落ちる minlpkit 側の堅牢性ギャップ(要修正候補として記録)。
+  **修正済み**(原因: `airline_overbooking` は変数境界のみで制約を1本も持たないモデルのため、
+  `minlpkit/collectors/static_diag.py::linking_constraints` の `rows` が空リストになり、
+  `pd.DataFrame([])` は列を持たず `sort_values("n_groups")` が KeyError になっていた。
+  `rows` が空のときは列を明示した空DataFrameを返すようガード。回帰テスト
+  `tests/test_pipeline.py::test_analyze_airline_overbooking_no_constraints` を追加。
+  census再実行で `airline_overbooking` は `optimal`/`error 2本`に更新済み)。

@@ -196,4 +196,8 @@ def linking_constraints(model: Model, group_of=None) -> pd.DataFrame:
         groups = {group_of(v.name) for v in cvars}
         rows.append(dict(constraint=c.name, n_groups=len(groups), n_vars=len(cvars),
                          groups=",".join(sorted(groups))))
+    # 制約が1本もないモデル(例: 変数境界のみで目的関数を定義するairline_overbooking)では
+    # rows=[] となり、pd.DataFrame([]) は列を持たないため sort_values("n_groups") がKeyErrorになる。
+    if not rows:
+        return pd.DataFrame(columns=["constraint", "n_groups", "n_vars", "groups"])
     return pd.DataFrame(rows).sort_values("n_groups", ascending=False)
