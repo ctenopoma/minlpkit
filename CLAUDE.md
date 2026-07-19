@@ -79,7 +79,8 @@ Phase 1-4を一体化したmodel非依存のパイプライン。`import minlpki
   (`from minlpkit.X import *` + `__getattr__`)。`python -m viz.server` も引き続き起動可。
   実体を持つのは mccormick/plant_terms/interval/bottleneck/colgen/benders/attribution等の残置分のみ
 - `experiments/run_*.py` — 各機能の調査用CLI(monitor/tree/attribution/violation/bottleneck/static_diag/
-  interval/symmetry/diagnose/improve_*/colgen/stabilize/benders/bnp/sos/condition/perspective/tune)。
+  interval/symmetry/diagnose/improve_*/colgen/stabilize/benders/bnp/sos/condition/perspective/tune/
+  gpu_heuristic=cuOpt(WSL2/GPU)×SCIPハイブリッド)。
   実行は `uv run python experiments/run_<name>.py ...`(出力は `results/` へ)
 - `demo.py` — minlpkit一気通貫デモ(ルート残置のクイックスタート)
 - `docs/` — 利用マニュアル(`manual.md`)+ MkDocs(`mkdocs.yml`)。`uv run mkdocs serve` でAPIリファレンス閲覧

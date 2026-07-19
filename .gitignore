@@ -23,3 +23,5 @@ results/runs/
 
 # mkdocs-jupyter notebook execution cache
 .cache/
+results/gpu/*.mps
+results/gpu/*.sol

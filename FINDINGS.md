@@ -110,6 +110,28 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
 - WindowsのSCIPクロックは**1秒粒度** → モニタは Python の `perf_counter` で記録。
 - 瞬時に解けるモデルは分枝が起きず attribution 収集が空 → 空DataFrameを安全化しておく。
 
+## 7. GPU primal heuristics(cuOpt 25.10 × SCIP、RTX 5070 Ti / WSL2)
+
+2026-07-19 実測(`experiments/run_gpu_heuristic.py`、各アーム60s)。
+
+| 問題 | 純SCIP | cuOpt(GPU) | hybrid(cuOpt注入→SCIP) | 含意 |
+| --- | --- | --- | --- | --- |
+| GAP large(75,000バイナリ、タイト容量) | gap **22.9%**(解3個) | gap **0.64%**(diving/heuristicsが即incumbent連発) | gap 4.72%(注入解受理) | 「初期可行解が見つかりにくい大規模MILP」ではGPUヒューリスティクスが圧勝。ノート[[cuOpt_MILP_beta]]の「効く局面」を実測確認 |
+| 集合分割 large(40,000列、全等式) | 解2個(21,584) | **可行解ゼロ**(60s/180sとも) | 注入なし=SCIPと同等 | cuOptはルートLP(双対シンプレックス=CPU側)が退化で停滞しGPUヒューリスティクス未到達。`--mip-heuristics-only`(LP不要のFJ直行)でも可行解なし=**等式制約主体はFJ系が苦手**(文献どおり) |
+
+- **cuOptの正体はノートの記述どおり「GPU primal heuristic engine + CPU B&B」**。B&B・LPは
+  CPU(23スレッド使用)で、GPUが効くのはFJ/FP/local search のバッチ評価。よって
+  LPが重い/等式退化の問題ではGPUの出番が来ないまま時間切れになる。
+- 小規模(GAP small、2,000変数)では純SCIPが上(60s: SCIP gap 0.43% vs cuOpt 1.37%)。
+  ノートの「効きにくい局面=小規模問題」も実測どおり。
+- 運用面: cuOptはLinux専用だが**WSL2実行が公式サポート**。Windows母艦のPySCIPOptから
+  `wsl -d Ubuntu cuopt_cli` を叩き、`/mnt/d/...` 共有パスでMPS/solを受け渡す2プロセス構成が
+  そのまま成立。cuOptの `.sol` はSCIP互換形式(`変数名 値`+`#`コメント)なので
+  `readSolFile`+`addSol` で無変換注入できる(GAPで受理を確認)。
+- インストール: WSL2側 `uv venv --python 3.12` + `cuopt-cu13==25.10.*`
+  (`--extra-index-url=https://pypi.nvidia.com`)。RTX 5070 Ti(Blackwell, sm_120)対応済み。
+  Python 3.10(Ubuntu 22.04既定)は対象外なのでuvでのPython導入が必須。
+
 ## 6. 可視化・配信
 
 - plotly.js はオフライン配信可: `from plotly.offline import get_plotlyjs`(CDN不要、CSP不問)。

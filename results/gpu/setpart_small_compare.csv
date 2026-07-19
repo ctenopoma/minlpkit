@@ -1,0 +1,5 @@
+arm,time,objective
+scip,1.0,1e+20
+scip,1.0,3266.0
+hybrid,0.0,1e+20
+hybrid,0.0,3266.0
