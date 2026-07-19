@@ -128,6 +128,9 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   `wsl -d Ubuntu cuopt_cli` を叩き、`/mnt/d/...` 共有パスでMPS/solを受け渡す2プロセス構成が
   そのまま成立。cuOptの `.sol` はSCIP互換形式(`変数名 値`+`#`コメント)なので
   `readSolFile`+`addSol` で無変換注入できる(GAPで受理を確認)。
+- **FJ系の不発は「等式の多さ」ではなく「等式同士の変数共有」で決まる**: GAPも制約数比では
+  等式95%だがcuOpt有効。差は eq_overlap(変数あたり所属等式数)= GAP 1.0 vs 集合分割 ~10。
+  診断ルール `gpu_primal` はこの eq_overlap≤1.5 をゲートに使う(eq_shareゲートは誤判別)。
 - インストール: WSL2側 `uv venv --python 3.12` + `cuopt-cu13==25.10.*`
   (`--extra-index-url=https://pypi.nvidia.com`)。RTX 5070 Ti(Blackwell, sm_120)対応済み。
   Python 3.10(Ubuntu 22.04既定)は対象外なのでuvでのPython導入が必須。

@@ -29,16 +29,23 @@ class AttributionCollector(Eventhdlr):
         super().__init__()
         self.rows: list[dict] = []
         self._t0: float | None = None
+        self.first_sol_time: float | None = None  # TTFF(最初の可行解までの秒)
 
     def eventinit(self):
         self._t0 = _time.perf_counter()
         self.model.catchEvent(SCIP_EVENTTYPE.NODEBRANCHED, self)
+        self.model.catchEvent(SCIP_EVENTTYPE.BESTSOLFOUND, self)
 
     def eventexit(self):
         self.model.dropEvent(SCIP_EVENTTYPE.NODEBRANCHED, self)
+        self.model.dropEvent(SCIP_EVENTTYPE.BESTSOLFOUND, self)
 
     def eventexec(self, event):
         m = self.model
+        if event.getType() == SCIP_EVENTTYPE.BESTSOLFOUND:
+            if self.first_sol_time is None:
+                self.first_sol_time = m.getSolvingTime()
+            return
         n = m.getCurrentNode()
         if n is None:
             return
@@ -142,5 +149,7 @@ def solve_and_attribute(model: Model, time_limit: float | None = None,
         gap=model.getGap() if model.getGap() < _INF else None,
         nodes=model.getNNodes(),
         time=model.getSolvingTime(),
+        nsols=model.getNSols(),
+        ttff=col.first_sol_time,
     )
     return d, summary

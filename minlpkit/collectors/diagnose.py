@@ -104,6 +104,33 @@ RULES: list[Rule] = [
         recipe="Big-Mを実bound/Indicator/SOSに置換。半連続on-offは Indicator、区分線形は mk.pwl_sos2。"
                "条件数は viz.static_diag.matrix_condition/scip_basis_condition で確認。例: sos.html, condition.html",
     ),
+    Rule(
+        id="gpu_primal",
+        symptom="大規模な線形バイナリ問題で可行解の発見が遅い/少ない(gapが残る)",
+        cause="CPU木探索のprimal heuristicsが追いつかず、良いincumbent不足で剪定が進まない",
+        recommendation="GPU primal heuristics(cuOpt)のwarm start注入(GPU=可行解探索、CPU=証明の分業)",
+        # MILP限定(cuOptは非線形不可)+ 大規模 + 等式が変数を共有しない
+        # (集合分割型 eq_overlap≫1 はFJ系不発: largeで可行解ゼロを実測。
+        #  GAPは等式95%でも eq_overlap=1 でcuOpt有効 → 等式比率でなく重なりで判定。FINDINGS 7)
+        # + 可行解が少ないかTTFFが遅い + gap残存
+        condition=lambda m: not _get(m, "has_nonlinear", True)
+                            and _get(m, "n_bin_vars", 0) >= 10000
+                            and _get(m, "eq_overlap", 99.0) <= 1.5
+                            and (_get(m, "nsols", 0) <= 3
+                                 or (_get(m, "ttff") is not None
+                                     and _get(m, "solve_time", 0) > 0
+                                     and _get(m, "ttff", 0) / _get(m, "solve_time", 1) >= 0.3))
+                            and _get(m, "gap", 0) >= 0.05,
+        evidence=lambda m: f"バイナリ{m.get('n_bin_vars', 0):,}個の線形問題で"
+                           f"可行解{m.get('nsols', 0)}個"
+                           f"(TTFF={m.get('ttff') if m.get('ttff') is not None else '∞'}s)、"
+                           f"gap{_get(m, 'gap', 0) * 100:.1f}%、等式重なり{_get(m, 'eq_overlap', 0):.1f}",
+        links=["gap_large_compare.html"],
+        severity="warning",
+        recipe="mk.cuopt_warmstart(m, time_limit=15) でcuOpt(WSL2/GPU)の解を注入してからoptimize。"
+               "実測: GAP large 60sで純SCIP gap 22.9%→hybrid 4.72%(cuOpt単体0.64%)。"
+               "変数を共有する等式群(集合分割型)はFJ系が不発なので列生成(mk.column_generation)を検討。FINDINGS 7節",
+    ),
     # 対称性はSCIPが内蔵の対称性処理(usesymmetry既定ON)で自動対応するため、
     # 手動の辞書式除去は通常不要 → 推薦としては出さず、情報として severity=good で軽く示す。
     # 実測でもmakespan/グラフ彩色は既定SCIPが1ノードで解け、手動除去は無効〜悪化だった。

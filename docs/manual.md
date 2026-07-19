@@ -105,6 +105,7 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 | `mk.column_generation(rhs, init_columns, pricing_fn, alpha)` | 列生成(Gilmore-Gomory / Wentges安定化) | `experiments/run_colgen.py` / `run_stabilize.py` → `results/colgen.html` / `stabilize.html` |
 | `mk.price_and_branch(rhs, init_columns, pricing_fn)` | 列生成 + 整数主問題(整数解は**上界**) | `experiments/run_bnp.py` → `results/bnp.html` |
 | `mk.benders(master_build, subproblem_solve)` | ベンダーズ分解(コールバック方式) | `experiments/run_benders.py` → `results/benders.html` |
+| `mk.cuopt_warmstart(model, time_limit, cuopt_cmd, mps_dir, heuristics_only)` | cuOpt(GPU)の解をSCIPへwarm start注入(要 WSL2 + cuOpt) | `experiments/run_gpu_heuristic.py` → 下記「GPU warm start」 |
 | `mk.RULES` / `mk.Rule` / `mk.evaluate(metrics)` | 診断ルール(プラガブル) | 下記「診断ルール一覧」 |
 
 条件数など静的診断の補助関数は `viz.static_diag`(実体は `minlpkit.collectors.static_diag`)に
@@ -242,3 +243,48 @@ parallel coordinates 図(パラメータ軸 + final_dual/final_gap 軸)を出力
 - `getSlack` は非線形制約に非対応 → 違反は `getNlRowSolFeasibility(nlrow, sol)`(負=違反量)。
 - `build_fn()` の一時 Model はローカル変数に保持する(反復中に GC されると PySCIPOpt が segfault)。
 - Windows の SCIP クロックは1秒粒度 → モニタは Python の `perf_counter` で記録する。
+
+---
+
+## 7. GPU warm start(cuOpt)
+
+`mk.cuopt_warmstart` は「GPUは可行解探索、CPUは証明」という分業を1関数に閉じ込めたもの。
+NVIDIA cuOpt(GPU上のMIPヒューリスティクス)を短時間走らせて可行解を掘り、SCIPへ
+`addSol` で注入してから通常の `optimize()` に続ける。cuOpt自身は最適性証明をしないため、
+下界の改善・最適性の証明はSCIP側に委ねる。
+
+### 導入(WSL2)
+
+Windows上のSCIP/PySCIPOptはそのまま、cuOpt本体だけWSL2 Ubuntu上に別環境として置く
+(cuOptはLinux + NVIDIA GPU前提のため)。
+
+```bash
+# WSL2 Ubuntu 内
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv --python 3.12 ~/cuopt-env
+source ~/cuopt-env/bin/activate
+uv pip install --extra-index-url=https://pypi.nvidia.com "cuopt-cu13==25.10.*"
+```
+
+導入後、`~/cuopt-env/bin/cuopt_cli` がCLI実行ファイルになる(`mk.cuopt_warmstart` の既定パス)。
+
+### 使用例
+
+```python
+import minlpkit as mk
+
+m = build_model()          # PySCIPOpt Model(最適化前)
+res = mk.cuopt_warmstart(m, time_limit=15)
+print(res["objective"], res["accepted"])  # cuOptが見つけた目的値 / SCIPへの注入可否
+
+m.setParam("limits/time", 60)
+m.optimize()                # 注入した解を起点にSCIPが証明を続ける
+```
+
+- `cuopt_cmd` で起動コマンドを差し替え可能。既定は WSL2 経由
+  (`["wsl", "-d", "Ubuntu", "--", "/home/ubuntu_dnn/cuopt-env/bin/cuopt_cli"]`)。
+  prefix が `"wsl"` で始まらなければネイティブ実行とみなし、Windows→WSLのパス変換をスキップする。
+- cuOptが可行解を得られなかった場合(`.sol` が目的値ゼロ埋めのダミー)は注入をスキップし、
+  `res["accepted"]` が `False` になる。
+- 3アーム比較(純SCIP / cuOpt単体 / hybrid)の worked example:
+  `experiments/run_gpu_heuristic.py` → `results/gpu/<model>_<scale>_compare.csv`。

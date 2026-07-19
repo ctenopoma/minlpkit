@@ -39,7 +39,8 @@ def collect_metrics(build_fn: BuildFn, time_limit: float = 20.0,
 
     Returns:
         dict: 観測量。``gap`` / ``spatial_share`` / ``n_stalls`` / ``nodes`` /
-        ``bottleneck_type`` / ``bottleneck_rel_viol`` / ``coef_ratio`` /
+        ``nsols`` / ``ttff`` / ``solve_time`` / ``has_nonlinear`` / ``n_bin_vars`` /
+        ``eq_share`` / ``eq_overlap`` / ``bottleneck_type`` / ``bottleneck_rel_viol`` / ``coef_ratio`` /
         ``residual_coef_ratio`` / ``residual_bigm_count`` / ``max_linking_groups`` /
         ``n_sym_groups`` / ``largest_sym_group`` / ``sym_sound`` など(モデルにより一部欠落)。
 
@@ -57,12 +58,31 @@ def collect_metrics(build_fn: BuildFn, time_limit: float = 20.0,
     m["spatial_share"] = (gk.get("spatial", 0.0) / total_gain) if total_gain > 0 else 0.0
     m["n_stalls"] = len(detect_stalls(d)) if not d.empty else 0
     m["nodes"] = summ["nodes"]
+    m["nsols"] = summ.get("nsols", 0)
+    m["ttff"] = summ.get("ttff")          # 最初の可行解までの秒(可行解ゼロならNone)
+    m["solve_time"] = summ["time"]
 
     # 非線形制約の違反(非線形制約があるモデルのみ)
     # 注: build_fn()の結果は必ずローカル変数に保持する(反復中にGCされるとPySCIPOptが
     #     アクセス違反=segfaultするため)。
     probe = build_fn()
     has_nonlinear = any(c.isNonlinear() for c in probe.getConss())
+    m["has_nonlinear"] = has_nonlinear
+    m["n_bin_vars"] = probe.getNBinVars()
+    # 等式構造(GPU primal heuristics 適性判定に使う)。FJ系が不発になるのは
+    # 等式の「多さ」ではなく「等式同士が変数を共有する」集合分割型
+    # (GAP: 各変数は等式1本のみ=eq_overlap≈1 でcuOpt有効、
+    #  集合分割: 各列が~10本の等式に跨る=eq_overlap≫1 で可行解ゼロ。FINDINGS 7)
+    conss = probe.getConss()
+    n_eq = 0
+    var_eq_count: dict[str, int] = {}
+    for c in conss:
+        if c.isLinear() and probe.getLhs(c) == probe.getRhs(c):
+            n_eq += 1
+            for vname in probe.getValsLinear(c):
+                var_eq_count[vname] = var_eq_count.get(vname, 0) + 1
+    m["eq_share"] = n_eq / len(conss) if conss else 0.0
+    m["eq_overlap"] = (sum(var_eq_count.values()) / len(var_eq_count)) if var_eq_count else 0.0
     del probe
     if has_nonlinear:
         try:

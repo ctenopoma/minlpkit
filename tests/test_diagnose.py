@@ -45,6 +45,28 @@ def test_numerical_scale_threshold():
     assert "numerical_scale" in _ids(mk.evaluate(bigm))
 
 
+def test_gpu_primal_fires_on_large_linear_few_sols():
+    """大規模線形バイナリ+可行解僅少+gap残存で gpu_primal が発火。"""
+    m = dict(has_nonlinear=False, n_bin_vars=75000, eq_overlap=1.0,
+             nsols=3, ttff=0.0, solve_time=60.0, gap=0.23)
+    assert "gpu_primal" in _ids(mk.evaluate(m))
+
+
+def test_gpu_primal_gated_by_nonlinear_and_eq_overlap():
+    """非線形あり(cuOpt対象外)や集合分割型(等式が変数を共有=FJ系不発)では発火しない。"""
+    base = dict(n_bin_vars=75000, nsols=2, ttff=0.0, solve_time=60.0, gap=0.23)
+    assert "gpu_primal" not in _ids(mk.evaluate(dict(base, has_nonlinear=True, eq_overlap=1.0)))
+    # 集合分割型: 各列が~10本の等式に跨る → 推薦しない(実測で可行解ゼロだったケース)
+    assert "gpu_primal" not in _ids(mk.evaluate(dict(base, has_nonlinear=False, eq_overlap=10.0)))
+
+
+def test_gpu_primal_not_fires_when_solutions_plenty():
+    """可行解が多くTTFFも速ければ(SCIPで足りている)発火しない。"""
+    m = dict(has_nonlinear=False, n_bin_vars=75000, eq_overlap=1.0,
+             nsols=26, ttff=0.5, solve_time=60.0, gap=0.23)
+    assert "gpu_primal" not in _ids(mk.evaluate(m))
+
+
 def test_evaluate_sorted_by_severity():
     """発火結果は severity 昇順(critical→good)で返る。"""
     m = dict(bottleneck_rel_viol=0.8, spatial_share=0.5,   # weak_relaxation: serious

@@ -27,6 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pyscipopt import SCIP_EVENTTYPE, Eventhdlr, Model
 
+from minlpkit.gpu import cuopt_warmstart
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTDIR = ROOT / "results" / "gpu"
 CUOPT_CLI = "/home/ubuntu_dnn/cuopt-env/bin/cuopt_cli"
@@ -66,17 +68,12 @@ def build(model_key: str, scale: str) -> Model:
     return module.build_model(scale)
 
 
-def run_scip(model_key: str, scale: str, time_limit: float,
-             warmstart_sol: Path | None = None) -> dict:
+def run_scip(model_key: str, scale: str, time_limit: float) -> dict:
     m = build(model_key, scale)
     tracker = IncumbentTracker()
     m.includeEventhdlr(tracker, "inc_track", "incumbent trajectory")
     m.setParam("limits/time", time_limit)
     m.hideOutput()
-    injected = False
-    if warmstart_sol is not None:
-        sol = m.readSolFile(str(warmstart_sol))
-        injected = m.addSol(sol)
     m.optimize()
     traj = tracker.trajectory
     return dict(
@@ -86,8 +83,36 @@ def run_scip(model_key: str, scale: str, time_limit: float,
         gap=m.getGap() if m.getNSols() else None,
         nsols=m.getNSols(),
         time=m.getSolvingTime(),
-        injected=injected,
         trajectory=traj,
+    )
+
+
+def run_hybrid(model_key: str, scale: str, gpu_budget: float, time_limit: float) -> dict:
+    """cuOptを短時間走らせてwarm start注入した後、SCIPで続行する(minlpkit.gpu経由)。"""
+    m = build(model_key, scale)
+    cmd = ["wsl", "-d", WSL_DISTRO, "--", CUOPT_CLI]
+    pre = cuopt_warmstart(m, time_limit=gpu_budget, cuopt_cmd=cmd, mps_dir=str(OUTDIR))
+    tracker = IncumbentTracker()
+    m.includeEventhdlr(tracker, "inc_track", "incumbent trajectory")
+    m.setParam("limits/time", time_limit)
+    m.hideOutput()
+    m.optimize()
+    # 注入解はBESTSOLFOUNDイベントに乗らないため、軌跡の先頭に明示的に置く
+    # (時刻はSCIP求解開始時点=0。GPU先行時間は cuopt_time として別掲)
+    traj = tracker.trajectory
+    if pre["accepted"]:
+        traj = [(0.0, pre["objective"])] + traj
+    return dict(
+        ttff=traj[0][0] if traj else None,
+        best=m.getPrimalbound() if m.getNSols() else None,
+        dual=m.getDualbound(),
+        gap=m.getGap() if m.getNSols() else None,
+        nsols=m.getNSols(),
+        time=m.getSolvingTime(),
+        trajectory=traj,
+        injected=pre["accepted"],
+        cuopt_obj=pre["objective"],
+        cuopt_time=pre["wall_time"],
     )
 
 
@@ -149,9 +174,9 @@ def main() -> None:
     arms = args.arms.split(",")
     results: dict[str, dict] = {}
 
-    # MPS出力(cuopt/hybrid共用)
+    # MPS出力(cuoptアーム用。hybridはminlpkit.gpu.cuopt_warmstart内部で自前に書き出す)
     mps = OUTDIR / f"{tag}.mps"
-    if any(a in arms for a in ("cuopt", "hybrid")):
+    if "cuopt" in arms:
         m = build(args.model, args.scale)
         m.hideOutput()
         m.writeProblem(str(mps))
@@ -166,15 +191,8 @@ def main() -> None:
         results["cuopt"] = run_cuopt(mps, OUTDIR / f"{tag}_cuopt.sol", args.time)
 
     if "hybrid" in arms:
-        print(f"[hybrid] cuOpt {args.gpu_budget}s → SCIP {args.time}s ...")
-        sol_path = OUTDIR / f"{tag}_warm.sol"
-        pre = run_cuopt(mps, sol_path, args.gpu_budget)
-        # cuOptが可行解を出せなかった場合はゼロ埋め.solなので注入しない
-        warm = sol_path if pre["best"] is not None else None
-        res = run_scip(args.model, args.scale, args.time, warmstart_sol=warm)
-        res["cuopt_obj"] = pre["best"]
-        res["cuopt_time"] = pre["time"]
-        results["hybrid"] = res
+        print(f"[hybrid] cuOpt {args.gpu_budget}s → SCIP {args.time}s (minlpkit.gpu.cuopt_warmstart) ...")
+        results["hybrid"] = run_hybrid(args.model, args.scale, args.gpu_budget, args.time)
 
     # 比較表
     print(f"\n=== {title} ({args.scale}) 各アーム {args.time}s ===")
