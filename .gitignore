@@ -8,3 +8,18 @@ wheels/
 
 # Virtual environments
 .venv
+
+# MkDocs build output
+site/
+
+# Test cache
+.pytest_cache/
+
+# Live-monitor run logs (generated per-run, not distributed)
+results/runs/
+
+# Notebook execution checkpoints
+.ipynb_checkpoints/
+
+# mkdocs-jupyter notebook execution cache
+.cache/

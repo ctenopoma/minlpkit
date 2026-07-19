@@ -1,0 +1,39 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<title>診断サマリ parallel</title>
+<style>
+ body { margin:0; background:#f9f9f7; color:#0b0b0b; font-family:system-ui, -apple-system, "Segoe UI", sans-serif; }
+ .wrap { max-width:940px; margin:0 auto; padding:22px 16px; }
+ h1 { font-size:18px; margin:0 0 4px; }
+ .sub { color:#52514e; font-size:12px; margin-bottom:14px; }
+ h2 { font-size:14px; margin:18px 0 8px; color:#52514e; }
+ .tiles { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+ .tile { background:#fcfcfb; border:1px solid rgba(11,11,11,0.10);
+          border-radius:8px; padding:9px 13px; min-width:120px; }
+ .tile-label { font-size:11px; color:#898781; }
+ .tile-value { font-size:18px; font-variant-numeric:tabular-nums; }
+ .finding { background:#fcfcfb; border:1px solid rgba(11,11,11,0.10);
+             border-radius:8px; padding:12px 14px; margin-bottom:10px; }
+ .fhead { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+ .badge { color:#fff; font-size:11px; font-weight:700; padding:2px 9px; border-radius:999px; }
+ .symptom { font-size:14px; font-weight:600; }
+ .frow { font-size:12.5px; color:#52514e; line-height:1.7; }
+ .frow .k { display:inline-block; width:44px; color:#898781; }
+ a { text-decoration:none; }
+</style></head><body><div class="wrap">
+<h1>診断サマリと改善提案(Phase 3)</h1>
+<div class="sub">parallel_machines — Phase 1-2の観測量を診断ルールに通した結果。推薦はPhase 4で実施・検証する</div>
+<h2>観測量</h2>
+<div class="tiles"><div class="tile"><div class="tile-label">最終gap</div><div class="tile-value">0.0%</div></div><div class="tile"><div class="tile-label">空間分枝の双対寄与</div><div class="tile-value">0%</div></div><div class="tile"><div class="tile-label">停滞区間</div><div class="tile-value">0</div></div><div class="tile"><div class="tile-label">支配ボトルネック</div><div class="tile-value">—</div></div><div class="tile"><div class="tile-label">係数max/min比</div><div class="tile-value">7</div></div><div class="tile"><div class="tile-label">Big-M候補</div><div class="tile-value">0</div></div><div class="tile"><div class="tile-label">最大対称群</div><div class="tile-value">12</div></div><div class="tile"><div class="tile-label">最大結合グループ</div><div class="tile-value">4</div></div></div>
+<h2>検出した症状 → 推薦する改善(1件)</h2>
+
+    <div class="finding" style="border-left:4px solid #0ca30c;">
+      <div class="fhead">
+        <span class="badge" style="background:#0ca30c;">好機</span>
+        <span class="symptom">入替可能な変数群(対称性)を検出(参考情報)</span>
+      </div>
+      <div class="frow"><span class="k">原因</span> 対称解は探索木を膨張させ得るが、SCIP内蔵の対称性処理が既定で対応する</div>
+      <div class="frow"><span class="k">推薦</span> <b>通常は対応不要(SCIPが自動処理)。usesymmetryを無効化した運用でのみ辞書式除去が有効</b></div>
+      <div class="frow"><span class="k">根拠</span> 対称群6個・最大12(全線形で健全判定)。SCIP既定で自動処理されるため手動除去は通常不要</div>
+      <div class="frow"><span class="k">参照</span> <a href="symmetry.html" style="color:#2a78d6;">symmetry.html</a></div>
+    </div>
+</div></body></html>

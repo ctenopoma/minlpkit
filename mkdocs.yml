@@ -26,6 +26,10 @@ theme:
 
 plugins:
   - search
+  - mkdocs-jupyter:
+      include_source: true
+      execute: false
+      ignore_h1_titles: true
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -51,6 +55,7 @@ markdown_extensions:
 nav:
   - ホーム: index.md
   - 利用マニュアル: manual.md
+  - 試してみる: notebooks/quickstart.ipynb
   - APIリファレンス:
       - パイプライン (analyze/Report): api/pipeline.md
       - 比較 (compare_variants): api/compare.md
@@ -59,3 +64,4 @@ nav:
       - 診断ルール (diagnose): api/diagnose.md
       - ライブ可視化 (live): api/live.md
       - チューニング (tune): api/tune.md
+  - ギャラリー: gallery.md
