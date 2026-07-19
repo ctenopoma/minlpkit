@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pyscipopt import SCIP_EVENTTYPE, Eventhdlr, Model
 
 from minlpkit.gpu import cuopt_warmstart
+from minlpkit.live import RunLogger, new_run_id, solve_with_monitor
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTDIR = ROOT / "results" / "gpu"
@@ -68,12 +69,39 @@ def build(model_key: str, scale: str) -> Model:
     return module.build_model(scale)
 
 
-def run_scip(model_key: str, scale: str, time_limit: float) -> dict:
+def _result_from_monitor(mon, summary: dict) -> dict:
+    """`solve_with_monitor` の (SolveMonitor, summary) からIncumbentTracker互換の
+    結果dict(ttff/best/dual/gap/nsols/time/trajectory)を組み立てる。
+
+    `--live` 時は SolveMonitor 自体が logger へイベントを逐次書き込み済みなので、
+    ここでは軌跡(incumbentイベントのみ抽出した (time, primal) のリスト)を
+    再構成するだけでよい(IncumbentTrackerとの二重計装を避ける)。
+    """
+    df = mon.to_frame()
+    inc = df[df["event"] == "incumbent"] if not df.empty else df
+    traj = list(zip(inc["time"], inc["primal"])) if not inc.empty else []
+    return dict(
+        ttff=traj[0][0] if traj else None,
+        best=summary["primal"],
+        dual=summary["dual"],
+        gap=summary["gap"],
+        nsols=summary["nsols"],
+        time=summary["time"],
+        trajectory=traj,
+    )
+
+
+def run_scip(model_key: str, scale: str, time_limit: float, logger: RunLogger | None = None) -> dict:
     m = build(model_key, scale)
+    m.hideOutput()
+    if logger is not None:
+        # solve_with_monitor自体がSolveMonitorイベントハンドラでlogger.appendするため、
+        # IncumbentTrackerによる二重計装はしない
+        mon, summary = solve_with_monitor(m, time_limit=time_limit, logger=logger)
+        return _result_from_monitor(mon, summary)
     tracker = IncumbentTracker()
     m.includeEventhdlr(tracker, "inc_track", "incumbent trajectory")
     m.setParam("limits/time", time_limit)
-    m.hideOutput()
     m.optimize()
     traj = tracker.trajectory
     return dict(
@@ -87,15 +115,29 @@ def run_scip(model_key: str, scale: str, time_limit: float) -> dict:
     )
 
 
-def run_hybrid(model_key: str, scale: str, gpu_budget: float, time_limit: float) -> dict:
+def run_hybrid(model_key: str, scale: str, gpu_budget: float, time_limit: float,
+               logger: RunLogger | None = None) -> dict:
     """cuOptを短時間走らせてwarm start注入した後、SCIPで続行する(minlpkit.gpu経由)。"""
     m = build(model_key, scale)
     cmd = ["wsl", "-d", WSL_DISTRO, "--", CUOPT_CLI]
     pre = cuopt_warmstart(m, time_limit=gpu_budget, cuopt_cmd=cmd, mps_dir=str(OUTDIR))
+    m.hideOutput()
+    if logger is not None:
+        # 注入解(t=0)はSCIP側のイベントハンドラより前に addSol 済みなのでBESTSOLFOUNDに
+        # 乗らない。solve_with_monitor呼び出し前に明示的に1件書いておく
+        if pre["accepted"]:
+            logger.append(dict(time=0.0, nodes=0, primal=pre["objective"], dual=None,
+                                gap=None, event="incumbent", nsols=1))
+        mon, summary = solve_with_monitor(m, time_limit=time_limit, logger=logger)
+        result = _result_from_monitor(mon, summary)
+        if pre["accepted"]:
+            result["trajectory"] = [(0.0, pre["objective"])] + result["trajectory"]
+            result["ttff"] = 0.0
+        result.update(injected=pre["accepted"], cuopt_obj=pre["objective"], cuopt_time=pre["wall_time"])
+        return result
     tracker = IncumbentTracker()
     m.includeEventhdlr(tracker, "inc_track", "incumbent trajectory")
     m.setParam("limits/time", time_limit)
-    m.hideOutput()
     m.optimize()
     # 注入解はBESTSOLFOUNDイベントに乗らないため、軌跡の先頭に明示的に置く
     # (時刻はSCIP求解開始時点=0。GPU先行時間は cuopt_time として別掲)
@@ -159,6 +201,46 @@ def run_cuopt(mps: Path, sol_out: Path, time_limit: float,
     )
 
 
+def _make_live_logger(args, arm: str, title: str) -> RunLogger:
+    """アーム1本を1runとして`results/runs/`に記録する`RunLogger`を作る。
+
+    meta の model/scale/arm/params は比較モードの「設定の差分」テーブルで
+    アーム間の違いが見えるように、既存run(sweep等)と同じ形(model/title/params)に
+    合わせつつ arm/scale をトップレベルにも残す。
+    """
+    run_id = new_run_id(f"gpu_{args.model}_{args.scale}_{arm}")
+    params = dict(time_limit=args.time)
+    if arm == "hybrid":
+        params["gpu_budget"] = args.gpu_budget
+    return RunLogger(run_id, meta=dict(
+        model=f"gpu_{args.model}", title=f"{title} ({args.scale}) [{arm}]",
+        arm=arm, scale=args.scale, params=params))
+
+
+def _log_cuopt_run(logger: RunLogger, result: dict) -> None:
+    """cuOptアームの軌跡(実行後にまとめて得たもの)を1runとしてRunLoggerへ書く。
+
+    cuOptは時刻ごとのdual boundを個別に出さない(ログの最終サマリ行にのみ
+    最終dual boundが出る)ため、各イベントのdualはNoneとし、最後のイベントにだけ
+    最終dual/gapを併記する(仕様上は「無ければ省略」だが、ここでは値があるので載せる)。
+    """
+    traj = result["trajectory"]
+    n = len(traj)
+    for i, (t, obj) in enumerate(traj):
+        is_last = i == n - 1
+        logger.append(dict(
+            time=t, nodes=None, primal=obj,
+            dual=result["dual"] if is_last else None,
+            gap=result["gap"] if is_last else None,
+            event="incumbent", nsols=i + 1,
+        ))
+    logger.finish(dict(
+        status="completed", objective=result["best"], primal=result["best"],
+        dual=result["dual"], gap=result["gap"], nodes=None,
+        time=result["time"], nsols=result["nsols"],
+    ))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", choices=MODELS, default="gap")
@@ -166,6 +248,8 @@ def main() -> None:
     ap.add_argument("--time", type=float, default=60.0, help="各アームの求解時間")
     ap.add_argument("--gpu-budget", type=float, default=15.0, help="hybridでのcuOpt先行時間")
     ap.add_argument("--arms", default="scip,cuopt,hybrid")
+    ap.add_argument("--live", action="store_true",
+                     help="各アームをresults/runs/にrunとして記録し、ライブUIの比較モードで見られるようにする")
     args = ap.parse_args()
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
@@ -184,15 +268,25 @@ def main() -> None:
 
     if "scip" in arms:
         print(f"[scip] 純SCIP {args.time}s ...")
-        results["scip"] = run_scip(args.model, args.scale, args.time)
+        logger = _make_live_logger(args, "scip", title) if args.live else None
+        results["scip"] = run_scip(args.model, args.scale, args.time, logger=logger)
+        if logger is not None:
+            print(f"         run_id={logger.run_id}")
 
     if "cuopt" in arms:
         print(f"[cuopt] cuOpt(GPU) {args.time}s ...")
         results["cuopt"] = run_cuopt(mps, OUTDIR / f"{tag}_cuopt.sol", args.time)
+        if args.live:
+            logger = _make_live_logger(args, "cuopt", title)
+            _log_cuopt_run(logger, results["cuopt"])
+            print(f"         run_id={logger.run_id}")
 
     if "hybrid" in arms:
         print(f"[hybrid] cuOpt {args.gpu_budget}s → SCIP {args.time}s (minlpkit.gpu.cuopt_warmstart) ...")
-        results["hybrid"] = run_hybrid(args.model, args.scale, args.gpu_budget, args.time)
+        logger = _make_live_logger(args, "hybrid", title) if args.live else None
+        results["hybrid"] = run_hybrid(args.model, args.scale, args.gpu_budget, args.time, logger=logger)
+        if logger is not None:
+            print(f"         run_id={logger.run_id}")
 
     # 比較表
     print(f"\n=== {title} ({args.scale}) 各アーム {args.time}s ===")

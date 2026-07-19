@@ -182,7 +182,7 @@ parallel coordinates 図(パラメータ軸 + final_dual/final_gap 軸)を出力
 
 ---
 
-## 5. 診断ルール一覧(6ルール)
+## 5. 診断ルール一覧(7ルール)
 
 `minlpkit/collectors/diagnose.py` の `RULES` を転記。`mk.evaluate(metrics)` は発火したルールを
 重要度順(critical→serious→warning→good)で返す。
@@ -193,6 +193,7 @@ parallel coordinates 図(パラメータ軸 + final_dual/final_gap 軸)を出力
 | `wide_term_range` (warning) | 非線形項の値域(区間演算)が広い | `widest_term_rel ≥ 1.5` | 変数境界タイト化・区分線形化。**recipe**: `mk.linearize_product` か境界タイト化(例: interval.html, improve_linearize.html) |
 | `dual_stall` (warning) | 双対境界の改善が停滞(gapが残る) | `n_stalls ≥ 1` かつ `gap ≥ 0.05` | 有効不等式追加・境界タイト化・Big-M排除で緩和強化。**recipe**: 効果は `mk.compare_variants` で検証(例: attribution.html) |
 | `numerical_scale` (warning) | 係数レンジが桁違い / Big-M候補(presolve後も残存) | `residual_coef_ratio ≥ 1e6` または `residual_bigm_count ≥ 1` | スケーリング・Big-MのIndicator/SOS化。**recipe**: Big-Mを実bound/Indicator/SOSに置換、`mk.pwl_sos2`。条件数は `matrix_condition`/`scip_basis_condition` で確認(例: sos.html, condition.html) |
+| `gpu_primal` (warning) | 大規模な線形バイナリ問題で可行解の発見が遅い/少ない(gapが残る) | `has_nonlinear=False` かつ `n_bin_vars ≥ 10000` かつ `eq_overlap ≤ 1.5` かつ(`nsols ≤ 3` または TTFFが求解時間の3割超)かつ `gap ≥ 0.05` | GPU primal heuristics のwarm start注入。**recipe**: `mk.cuopt_warmstart(m, time_limit=15)`(要 WSL2+cuOpt)。等式が変数を共有する集合分割型(`eq_overlap≫1`)はFJ系不発→列生成を検討(例: gap_large_compare.html) |
 | `symmetry_info` (**good**) | 入替可能な変数群(対称性)を検出 | `sym_sound` かつ `largest_sym_group ≥ 3` | **通常は対応不要(SCIPが自動処理)**。usesymmetry を無効化した運用でのみ辞書式除去が有効(例: symmetry.html) |
 | `decomposable` (good) | 制約-変数がブロック構造 + 少数の結合制約 | `max_linking_groups ≥ 4` かつ `n_heavy_linking ≤ 3` | ベンダーズ / Dantzig-Wolfe 分解。**recipe**: `mk.benders` か `mk.column_generation`/`mk.price_and_branch`(例: benders.html, bnp.html) |
 
