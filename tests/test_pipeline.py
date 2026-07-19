@@ -7,7 +7,7 @@ from minlpkit.pipeline import Report
 
 def test_analyze_facility_smoke():
     """facility(線形MILP)で analyze が Report を返し、findings が list になる。"""
-    import facility as fac  # conftest が samples/ を sys.path に追加済み
+    import samples.location_and_network_design.facility as fac
 
     report = mk.analyze(lambda: fac.build_model(), name="facility", time_limit=5)
     assert isinstance(report, Report)

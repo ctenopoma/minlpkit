@@ -32,7 +32,7 @@ TensorBoard型アーキテクチャ。ライブ表示もバッチ出力も同じ
   (`results/attribution.html`)。Phase1(双対推移)×Phase2(分枝変数)の結合。停滞はレートベース検出
 - `viz/violation.py` + `experiments/run_violation.py` — Phase 2.b。非線形制約の違反量ヒートマップ
   (`results/violation.html`)。ルートLP緩和解の相対違反で支配的ボトルネック制約を特定
-- `viz/bottleneck.py` + `experiments/run_bottleneck.py` + `samples/facility.py` — Phase 2.b。線形制約の
+- `viz/bottleneck.py` + `experiments/run_bottleneck.py` + `samples/location_and_network_design/facility.py` — Phase 2.b。線形制約の
   スラック/影の価格ボトルネックとIIS(削除フィルタ法)。`results/bottleneck.html`
   - 純粋線形の検証用モデルが必要な診断は `facility.py`(容量制約付き施設配置MILP)を使う
   - `getDualsolLinear(cons)`=LP影の価格。IISは build_fn(active集合)でモデル再構築する削除フィルタ
@@ -43,7 +43,7 @@ TensorBoard型アーキテクチャ。ライブ表示もバッチ出力も同じ
   - 変数名は`v.name`(`getName()`は無い)。診断は現れるモデルで検証(Big-M=uc、構造=plant)
 - `viz/interval.py` + `viz/plant_terms.py` + `experiments/run_interval.py` — Phase 2.c。区間演算で非線形項の値域を
   静的に見積もる(`results/interval.html`)。実Intervalクラス(+,-,*,/,exp,pow)。緩和の緩さを事前予測
-- `viz/symmetry.py` + `experiments/run_symmetry.py` + `samples/parallel_machines.py` — Phase 2.c。対称性検出。
+- `viz/symmetry.py` + `experiments/run_symmetry.py` + `samples/others/parallel_machines.py` — Phase 2.c。対称性検出。
   1-hop color refinement(制約形状+自身係数のシグネチャ)。`results/symmetry.html`。対称性の検証には
   恒等並列機械モデルを使う(facilityは対称性なしの対照)。境界の無限は±infにしてシグネチャをソート可能に
 
