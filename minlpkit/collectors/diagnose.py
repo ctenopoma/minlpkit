@@ -149,10 +149,13 @@ def evaluate(metrics: dict) -> list[dict]:
         ``evidence`` / ``links`` / ``severity`` / ``recipe`` を持つ。
 
     Example:
+        ```python
         >>> import minlpkit as mk
         >>> fired = mk.evaluate({"n_stalls": 2, "gap": 0.3})
         >>> any(f["id"] == "dual_stall" for f in fired)
         True
+
+        ```
     """
     order = {"critical": 0, "serious": 1, "warning": 2, "good": 3}
     fired = []

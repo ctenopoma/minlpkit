@@ -58,6 +58,7 @@ def column_generation(rhs: list[float], init_columns: list[list[int]],
         対応する worked example: ``experiments/run_colgen.py`` → ``results/colgen.html``。
 
     Example:
+        ```python
         >>> import minlpkit as mk
         >>> # カッティングストック: 幅[3,4,5], 需要[3,3,3], 素材幅10
         >>> widths, rhs, W = [3, 4, 5], [3.0, 3.0, 3.0], 10
@@ -73,6 +74,8 @@ def column_generation(rhs: list[float], init_columns: list[list[int]],
         >>> res = mk.column_generation(rhs, init, pricing)
         >>> res["lp_bound"] <= 4.0 + 1e-6   # LP境界は真の整数最適4以下(妥当な下界)
         True
+
+        ```
     """
     N = len(rhs)
     columns = [list(c) for c in init_columns]

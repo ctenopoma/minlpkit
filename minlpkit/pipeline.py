@@ -112,6 +112,7 @@ class Report:
             ``severity`` / ``links`` を持つ dict。
 
     Example:
+        ```python
         >>> import minlpkit as mk
         >>> from pyscipopt import Model
         >>> def build():
@@ -122,6 +123,8 @@ class Report:
         >>> report = mk.analyze(build, name="toy", time_limit=5)
         >>> isinstance(report.summary(), str)
         True
+
+        ```
     """
     name: str
     metrics: dict
@@ -161,6 +164,7 @@ def analyze(build_fn: BuildFn, name: str = "model", time_limit: float = 20.0,
         Report: 観測量 ``metrics`` と診断 ``findings`` を持つレポート。
 
     Example:
+        ```python
         >>> import minlpkit as mk
         >>> from pyscipopt import Model
         >>> def build():
@@ -171,6 +175,8 @@ def analyze(build_fn: BuildFn, name: str = "model", time_limit: float = 20.0,
         >>> report = mk.analyze(build, name="toy", time_limit=5)
         >>> report.name
         'toy'
+
+        ```
     """
     metrics = collect_metrics(build_fn, time_limit=time_limit,
                               interval_terms_fn=interval_terms_fn)

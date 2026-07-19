@@ -66,6 +66,7 @@ def compare_variants(variants: dict[str, Callable[[], "object"]],
         ``final_gap`` / ``nodes`` / ``time`` / ``status``。
 
     Example:
+        ```python
         >>> import minlpkit as mk
         >>> from pyscipopt import Model
         >>> def loose():
@@ -79,6 +80,8 @@ def compare_variants(variants: dict[str, Callable[[], "object"]],
         >>> df = mk.compare_variants({"loose": loose, "tight": tight}, time_limit=5)
         >>> list(df["variant"])
         ['loose', 'tight']
+
+        ```
     """
     rows = []
     for name, build_fn in variants.items():

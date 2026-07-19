@@ -48,9 +48,11 @@ class RunLogger:
         root: run ディレクトリの親。既定は `RUNS_ROOT`(``<cwd>/results/runs``)。
 
     Example:
+        ```python
         >>> from minlpkit.live import RunLogger, new_run_id
         >>> rid = new_run_id("demo")
         >>> logger = RunLogger(rid, meta={"model": "demo", "title": "t"})  # doctest: +SKIP
+        ```
     """
 
     def __init__(self, run_id: str, meta: dict, root: Path = RUNS_ROOT):

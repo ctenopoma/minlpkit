@@ -36,6 +36,7 @@ def linearize_product(model: Model, y_int: Variable, x_cont: Variable,
         小さい積(例: バッチ数×バッチサイズ)に向く。
 
     Example:
+        ```python
         >>> from pyscipopt import Model
         >>> import minlpkit as mk
         >>> m = Model()
@@ -47,6 +48,8 @@ def linearize_product(model: Model, y_int: Variable, x_cont: Variable,
         >>> m.hideOutput(); m.optimize()
         >>> round(m.getVal(ns), 2)
         12.0
+
+        ```
     """
     vals = range(int(y_lb), int(y_ub) + 1)
     delta = {v: model.addVar(vtype="B", name=f"{name}_d{v}") for v in vals}
@@ -95,6 +98,7 @@ def perspective_quadratic(model: Model, u_bin: Variable, p_cont: Variable,
         対しては素の凸二次下界の方が有利。横展開部品として提供するが常用は推奨しない。
 
     Example:
+        ```python
         >>> from pyscipopt import Model
         >>> import minlpkit as mk
         >>> m = Model()
@@ -102,6 +106,8 @@ def perspective_quadratic(model: Model, u_bin: Variable, p_cont: Variable,
         >>> p = m.addVar(lb=0.0, ub=5.0, name="p")
         >>> fc = m.addVar(lb=0.0, name="fc")
         >>> _ = mk.perspective_quadratic(m, u, p, fc, a=1.0, b=2.0, c=0.5, name="persp")
+
+        ```
     """
     return model.addCons(
         c * p_cont * p_cont <= (fc_var - a * u_bin - b * p_cont) * u_bin,
@@ -131,6 +137,7 @@ def pwl_sos2(model: Model, x: Variable, breakpoints: list[float],
         breakpoints は昇順で与える。区分数を増やすほど近似精度は上がるが λ 変数も増える。
 
     Example:
+        ```python
         >>> from pyscipopt import Model
         >>> import minlpkit as mk
         >>> m = Model()
@@ -141,6 +148,8 @@ def pwl_sos2(model: Model, x: Variable, breakpoints: list[float],
         >>> m.setObjective(y, "minimize"); m.hideOutput(); m.optimize()
         >>> round(m.getVal(y), 2)
         1.0
+
+        ```
     """
     K = len(breakpoints)
     lam = [model.addVar(lb=0, ub=1, name=f"{name}_l{k}") for k in range(K)]
