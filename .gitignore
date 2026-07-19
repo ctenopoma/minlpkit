@@ -25,3 +25,4 @@ results/runs/
 .cache/
 results/gpu/*.mps
 results/gpu/*.sol
+results/gpu/*.log
