@@ -1,12 +1,8 @@
-<div align="center">
-
-<img src="assets/icon.jpg" alt="minlpkit icon" width="120" />
-
-<br>
+<p align="center">
+  <img src="assets/icon.jpg" alt="minlpkit icon" width="120" />
+</p>
 
 # minlpkit
-
-</div>
 
 MINLP(混合整数非線形計画)の **可視化 → 診断 → 改善 → 検証** を PySCIPOpt(SCIP)上で
 一体化したツールキット。
