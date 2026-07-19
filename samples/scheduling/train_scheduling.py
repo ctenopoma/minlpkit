@@ -55,6 +55,7 @@ def build_model() -> Model:
     # a[i, s]: 列車 i が駅 s に到着する時刻 (連続)
     a = {}
     # d[i, s]: 列車 i が駅 s を出発する時刻 (連続)
+    d = {}
     for i in TRAINS:
         for s in STATIONS:
             a[i, s] = model.addVar(vtype="C", lb=0.0, name=f"a_{i}_{s}")

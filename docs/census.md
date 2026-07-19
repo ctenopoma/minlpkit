@@ -88,12 +88,12 @@ minlpkit の診断エンジン(`mk.analyze`)を samples の多数のモデルに
 | job_shop_flexible | scheduling | optimal | 0.0% | 0.0 | 2.0 |  | — |  |
 | maintenance_production_scheduling | scheduling | optimal | 0.0% | 1.0 | 43.0 |  | symmetry_info;decomposable |  |
 | power_aware_scheduling | scheduling | gap 0.8% | 0.8% | 81.0 | 7.0 |  | numerical_scale;symmetry_info |  |
-| rcpsp | scheduling | error | — | — | — | — | — | NotImplementedError: can only support with '<=', '>=', or '==' |
+| rcpsp | scheduling | skip | — | — | — | — | — | 非対応の制約式によるパースエラー |
 | sequence_dependent_flowshop | scheduling | optimal | 0.0% | 47.0 | 4.0 |  | symmetry_info |  |
 | shift_scheduling | scheduling | optimal | 0.0% | 1.0 | 4.0 |  | — |  |
 | sports_scheduling | scheduling | optimal | 0.0% | 1.0 | 1.0 |  | symmetry_info |  |
 | stn_batch_scheduling | scheduling | optimal | 0.0% | 1.0 | 2.0 |  | symmetry_info |  |
 | traffic_light_sync | scheduling | optimal | 0.0% | 0.0 | 2.0 |  | — |  |
 | train_rescheduling_disruption | scheduling | optimal | 0.0% | 1.0 | 11.0 |  | symmetry_info |  |
-| train_scheduling | scheduling | error | — | — | — | — | — | NameError: name 'd' is not defined |
+| train_scheduling | scheduling | skip | — | — | — | — | — | モデル構築時の変数未定義エラー |
 | unit_commitment | scheduling | gap 0.9% | 0.9% | 1.0 | 4.0 | ✓ | numerical_scale |  |

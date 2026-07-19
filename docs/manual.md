@@ -27,8 +27,9 @@ uv run python demo.py
 (`viz` = flask/plotly/kaleido、`tune` = optuna)。コアだけなら extras は不要。
 
 ```powershell
-uv add --editable C:\work_space\mip                       # コアのみ(依存4つ)
-uv add "minlpkit[viz,tune] @ file:///C:/work_space/mip"   # + ライブ可視化 / チューニング
+# GitHub経由でインストール (最新版)
+uv add git+https://github.com/ctenopoma/minlpkit.git                          # コアのみ(依存4つ)
+uv add "minlpkit[viz,tune] @ git+https://github.com/ctenopoma/minlpkit.git"   # + ライブ可視化 / チューニング
 ```
 
 ```python
@@ -95,8 +96,8 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 
 ## 3. API リファレンス
 
-各 API の引数・返り値・注意点は docstring から自動生成した **[API リファレンス](api/pipeline.md)**
-(左ナビ)を参照。ここでは役割と対応する worked example を対応づける。
+各 API の引数・返り値・注意点は **[API リファレンス](api/pipeline.md)** を参照してください。
+ここでは各APIの役割と対応する worked example (実装例)を対応づけます。
 
 | API | 役割 | worked example |
 | --- | --- | --- |
@@ -114,9 +115,9 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 | `mk.cuopt_concurrent(model, time_limit, num_cpu_threads, ...)` | 常駐型: cuOptをSCIPと並走させ終了次第mid-solve注入(GPU待ちゼロ) | 下記「常駐型(並走)」 |
 | `mk.RULES` / `mk.Rule` / `mk.evaluate(metrics)` | 診断ルール(プラガブル) | 下記「診断ルール一覧」 |
 
-条件数など静的診断の補助関数は `viz.static_diag`(実体は `minlpkit.collectors.static_diag`)に
+条件数など静的診断の補助関数として、
 `matrix_condition(model)`(SVD による κ(A)、solve前)と `scip_basis_condition(model)`
-(SCIP LP基底 κ、solve後)がある。worked example は `experiments/run_condition.py` → `results/condition.html`。
+(SCIP LP基底 κ、solve後)があります。worked example は `experiments/run_condition.py` → `results/condition.html`。
 
 ---
 
@@ -273,7 +274,7 @@ source ~/cuopt-env/bin/activate
 uv pip install --extra-index-url=https://pypi.nvidia.com "cuopt-cu13==25.10.*"
 ```
 
-導入後、`~/cuopt-env/bin/cuopt_cli` がCLI実行ファイルになる(`mk.cuopt_warmstart` の既定パス)。
+導入後、`~/cuopt-env/bin/cuopt_cli` がCLI実行ファイルになります。
 
 ### GPUが無い環境での挙動(設計)
 
@@ -299,9 +300,9 @@ m.setParam("limits/time", 60)
 m.optimize()                # 注入した解を起点にSCIPが証明を続ける
 ```
 
-- `cuopt_cmd` で起動コマンドを差し替え可能。既定は WSL2 経由
-  (`["wsl", "-d", "Ubuntu", "--", "/home/ubuntu_dnn/cuopt-env/bin/cuopt_cli"]`)。
-  prefix が `"wsl"` で始まらなければネイティブ実行とみなし、Windows→WSLのパス変換をスキップする。
+- `cuopt_cmd` で起動コマンドを差し替え可能です。既定値はWSL2上の環境を想定しています。
+  (例: `["wsl", "-d", "Ubuntu", "--", "/home/username/cuopt-env/bin/cuopt_cli"]`)
+  コマンドのリスト先頭が `"wsl"` で始まらなければネイティブ実行とみなし、Windows→WSLのパス変換をスキップします。
 - cuOptが可行解を得られなかった場合(`.sol` が目的値ゼロ埋めのダミー)は注入をスキップし、
   `res["accepted"]` が `False` になる。
 - 4アーム比較(純SCIP / cuOpt単体 / hybrid / concurrent)の worked example:

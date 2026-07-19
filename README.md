@@ -34,8 +34,9 @@
 ## Installation
 
 ```powershell
-uv add minlpkit                 # コア (pyscipopt / pandas / numpy / scipy)
-uv add "minlpkit[viz,tune]"     # + ライブモニタ / Optuna チューニング
+# GitHub経由で最新版をインストール
+uv add git+https://github.com/ctenopoma/minlpkit.git                          # コアのみ
+uv add "minlpkit[viz,tune] @ git+https://github.com/ctenopoma/minlpkit.git"   # + ライブ可視化 / Optuna チューニング
 ```
 
 ## Quickstart
