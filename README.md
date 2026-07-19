@@ -73,14 +73,13 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 
 ## Documentation
 
-- 📖 **ドキュメント**: <!-- 公開後に https://<OWNER>.github.io/<REPO>/ へ置換 -->
-  `https://<OWNER>.github.io/<REPO>/`(GitHub Pagesで公開予定)
+- 📖 **ドキュメント**: <https://ctenopoma.github.io/minlpkit/>
 - 💻 **ローカル閲覧**: `uv run mkdocs serve` → http://127.0.0.1:8000
 - 🧪 **試してみる(チュートリアルnotebook)**: [`notebooks/quickstart.ipynb`](notebooks/quickstart.ipynb) —
   小さなMINLPをその場で定義し、`analyze` → `linearize_product` → `compare_variants` を
   実行結果込みで確認できる
-  <!-- 公開後に有効: Colabバッジ -->
-  <!-- [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/<OWNER>/<REPO>/blob/main/notebooks/quickstart.ipynb) -->
+
+  [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ctenopoma/minlpkit/blob/main/notebooks/quickstart.ipynb)
 - 🖼️ **成果ギャラリー**: [`docs/gallery.md`](docs/gallery.md)(ダッシュボード・診断・比較結果のHTML集)
 
 > 技術ノート: Colabでの試行はpyscipopt wheelにSCIPがネイティブ同梱されているため可能。
