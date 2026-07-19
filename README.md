@@ -23,12 +23,11 @@
 
 ## Features
 
-- **観測 + 診断 (`analyze`)** — 双対境界の停滞・空間分枝の偏り・非線形制約の違反・係数スケール・対称性などを収集し、発火した症状を重要度順に返す
-- **再定式化ヘルパー** — 整数×連続の積を厳密線形化する `linearize_product`、Big-M 不要の区分線形近似 `pwl_sos2` など、非凸緩和を締める部品
+- **観測と診断** — `analyze` が双対境界の停滞・空間分枝の偏り・制約違反・係数スケール・対称性を収集し、症状を重要度順に返す
+- **再定式化ヘルパー** — `linearize_product`(整数×連続の積を厳密線形化)や `pwl_sos2`(Big-M 不要の区分線形近似)で非凸緩和を締める
 - **アルゴリズムフレームワーク** — ベンダーズ分解・列生成・branch-and-price をモデル非依存のドライバとして提供
-- **before/after 検証 (`compare_variants`)** — ルート双対境界・最終 gap・ノード数を並べ、改善の効果を定量比較
-- **ライブモニタ (`minlpkit[viz]`)** — 求解中の双対境界・primal・gap をブラウザへライブ配信(TensorBoard 型、run 比較対応)
-- **自動チューニング (`minlpkit[tune]`)** — Optuna で SCIP パラメータを探索
+- **before/after 検証** — `compare_variants` がルート双対境界・最終 gap・ノード数を並べ、改善の効果を定量化する
+- **ライブモニタと自動チューニング** — 求解中の境界をブラウザへライブ配信し、Optuna で SCIP パラメータを探索(extras `viz` / `tune`)
 
 ## Installation
 
@@ -69,12 +68,12 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 
 ## Documentation
 
-| | |
-| --- | --- |
-| [利用マニュアル](https://ctenopoma.github.io/minlpkit/manual.html) | インストール・ワークフロー・診断ルール表・落とし穴 |
-| [API リファレンス](https://ctenopoma.github.io/minlpkit/api/pipeline.html) | docstring から自動生成 |
-| [チュートリアル (Colab)](https://colab.research.google.com/github/ctenopoma/minlpkit/blob/main/notebooks/quickstart.ipynb) | 小さな MINLP を定義し `analyze` → `linearize_product` → `compare_variants` を実行 |
-| [ギャラリー](https://ctenopoma.github.io/minlpkit/gallery.html) | ダッシュボード・診断・比較結果の HTML 集 |
+ドキュメントは <https://ctenopoma.github.io/minlpkit/> にあります。
+[利用マニュアル](https://ctenopoma.github.io/minlpkit/manual.html)と
+[API リファレンス](https://ctenopoma.github.io/minlpkit/api/pipeline.html)を参照してください。
+[チュートリアル](https://ctenopoma.github.io/minlpkit/notebooks/quickstart.html)は
+[Colab で直接実行](https://colab.research.google.com/github/ctenopoma/minlpkit/blob/main/notebooks/quickstart.ipynb)できます。
+実際の求解結果は[ギャラリー](https://ctenopoma.github.io/minlpkit/gallery.html)にまとめています。
 
 ## Development
 
