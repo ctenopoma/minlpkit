@@ -55,7 +55,13 @@ def plotlyjs() -> Response:
 
 @app.route("/api/runs")
 def list_runs() -> Response:
-    """run 一覧を新しい順で返す。run セレクタ表示用に summary の gap/primal/dual/nodes も混ぜ込む。"""
+    """run 一覧を新しい順で返す。
+
+    runs一覧テーブル表示用に summary の gap/primal/dual/nodes を混ぜ込み、
+    ``capture`` はフルではなく要約(``capture_summary``: パラメータ差分の件数・
+    fingerprintの変数/制約内訳・git_sha短縮)に差し替えて軽量化する。
+    フルの capture は `/api/runs/<id>/events` の meta にある。
+    """
     runs = []
     if RUNS_ROOT.exists():
         for d in RUNS_ROOT.iterdir():
@@ -66,6 +72,19 @@ def list_runs() -> Response:
             meta["status"] = summary["status"] if summary else meta.get("status", "running")
             for key in ("gap", "primal", "dual", "nodes"):
                 meta[key] = summary.get(key) if summary else None
+            cap = meta.pop("capture", None)
+            if cap:
+                fp = cap.get("fingerprint") or {}
+                git_sha = cap.get("git_sha") or ""
+                meta["capture_summary"] = {
+                    "n_params_diff": len(cap.get("scip_params_diff") or {}),
+                    "n_vars": fp.get("n_vars"),
+                    "n_bin": fp.get("n_bin"),
+                    "n_int": fp.get("n_int"),
+                    "n_cont": fp.get("n_cont"),
+                    "n_conss": fp.get("n_conss"),
+                    "git_sha": git_sha[:7] or None,
+                }
             runs.append(meta)
     runs.sort(key=lambda m: m.get("created", ""), reverse=True)
     return jsonify(runs)

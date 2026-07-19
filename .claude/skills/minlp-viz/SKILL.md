@@ -73,15 +73,27 @@ TensorBoard型アーキテクチャ。ライブ表示もバッチ出力も同じ
 
 ```
 # 読み手(1回起動して開きっぱなし): http://127.0.0.1:5000
-uv run python -m viz.server
+uv run python -m minlpkit.live.server   # 後方互換: uv run python -m viz.server も同じ
 # 書き手(何度でも。新しいrunは自動でUIに現れる)
 uv run python experiments/run_monitor.py --model plant --time 120
 ```
 
-ブラウザは最新runを自動選択しSSEで購読、`summary.json` 出現で `done` を受けて確定表示。
-複数runはドロップダウンで切替(Phase 4のbefore/after比較の土台)。
-「比較モード」チェックボックスで2runを選ぶと、`/api/runs/<id>/events`(全イベント一括取得)から
-双対/primal境界とgapを1チャートに重ね描画できる(run A=青、run B=オレンジ、凡例にrun名。before/after検証用)。
+### UI構成(Phase 10 C2+A: TensorBoard型2ペイン)
+
+- **左サイドバー(runs一覧テーブル)**: モデル名/開始時刻/status/gap/nodes列。
+  列ヘッダクリックでソート、上部のテキスト入力でモデル名/status部分一致フィルタ。
+  `/api/runs` を5秒間隔でポーリングして再描画(進行中runのgap/nodesもライブ更新)
+- **行クリック=単一run表示**: 従来通りSSE購読(`/api/runs/<id>/stream`)でライブ更新、
+  `summary.json` 出現で `done` を受けて確定表示。最新runを自動選択
+- **チェックボックス=比較選択(2〜8run)**: チェックした順に固定パレット
+  `["#2a78d6","#008300","#e87ba4","#eda100","#1baf7a","#eb6834","#4a3aa7","#e34948"]`
+  を割り当てて重ね描き(dual=実線/primal=点線、gapも重ね描き)。9run目以降は選択不可(チェックボックスdisabled)
+  データ取得は選択run分だけ `/api/runs/<id>/events`(全イベント一括)を並列fetch
+- **run詳細(折りたたみ)**: 単一run表示時のみ、`meta.capture`(C1でキャプチャ)を表示。
+  scip_params_diff(表)・fingerprint(変数/制約内訳)・env・git_sha。captureが無い旧runは「記録なし」
+- サーバの `/api/runs` は容量削減のため `capture` をフルで返さず要約
+  `capture_summary`(n_params_diff・fingerprintの変数/制約内訳・git_sha短縮)に差し替える。
+  フルcaptureは `/api/runs/<id>/events` のmetaにある
 
 ## デザイン規約(dataviz スキル準拠)
 

@@ -1,76 +1,173 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8">
-<title>MINLP Live Monitor</title>
+<title>minlpkit live monitor</title>
 <script src="/plotly.js"></script>
 <style>
   :root {
     --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
     --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
     --s1:#2a78d6; --s2:#008300; --good:#0ca30c; --serious:#ec835a;
-    --cmpB:#eb6834; /* run比較モード: run B の系列色(run A は --s1 を流用) */
-    --border:rgba(11,11,11,0.10);
+    --border:rgba(11,11,11,0.10); --hover:rgba(11,11,11,0.035);
+    --selected:rgba(42,120,214,0.08);
+    --appbar-h:46px;
   }
   * { box-sizing:border-box; }
+  html, body { height:100%; }
   body { margin:0; background:var(--page); color:var(--ink);
-         font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
-  .wrap { max-width:1080px; margin:0 auto; padding:20px 16px; }
-  .topbar { margin-bottom:6px; }
-  .topbar a { color:var(--ink2); font-size:12px; text-decoration:none; }
-  .topbar a:hover { color:var(--s1); text-decoration:underline; }
-  .head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
-  h1 { font-size:18px; margin:0; }
-  .sub { color:var(--ink2); font-size:12px; }
-  .bar { display:flex; align-items:center; gap:10px; margin:12px 0; flex-wrap:wrap; }
-  select { font:inherit; padding:5px 8px; border:1px solid var(--border);
-           border-radius:6px; background:var(--surface); color:var(--ink); max-width:360px; }
-  .status { font-size:12px; padding:3px 10px; border-radius:999px; font-weight:600; }
-  .status.running { background:rgba(236,131,90,0.15); color:var(--serious); }
-  .status.done { background:rgba(12,163,12,0.15); color:var(--good); }
-  .dot { display:inline-block; width:7px; height:7px; border-radius:50%;
-         background:currentColor; margin-right:5px; vertical-align:middle; }
-  .running .dot { animation:pulse 1s infinite; }
+         font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+         display:flex; flex-direction:column; }
+
+  /* --- ヘッダバー --- */
+  .appbar { height:var(--appbar-h); flex:0 0 auto; display:flex; align-items:center;
+            gap:14px; padding:0 16px; border-bottom:1px solid var(--border);
+            background:var(--surface); }
+  .appbar h1 { font-size:14px; font-weight:700; margin:0; letter-spacing:0.01em; }
+  .appbar .sep { color:var(--border); }
+  .appbar a { color:var(--ink2); font-size:12px; text-decoration:none; }
+  .appbar a:hover { color:var(--s1); text-decoration:underline; }
+  .appbar .spacer { flex:1; }
+  .appbar .hint { color:var(--muted); font-size:11px; }
+
+  /* --- レイアウト: 左サイドバー + 右メイン --- */
+  .layout { flex:1 1 auto; display:flex; min-height:0; }
+  .sidebar { width:320px; flex:0 0 320px; border-right:1px solid var(--border);
+             background:var(--surface); display:flex; flex-direction:column; min-height:0; }
+  .main { flex:1 1 auto; min-width:0; overflow-y:auto; padding:18px 22px 40px; }
+
+  /* --- サイドバー: フィルタ --- */
+  .sb-filter { padding:10px 10px 8px; flex:0 0 auto; }
+  .sb-filter input { width:100%; font:inherit; font-size:12px; padding:6px 8px;
+                     border:1px solid var(--border); border-radius:6px;
+                     background:var(--page); color:var(--ink); }
+  .sb-filter input:focus { outline:none; border-color:var(--s1); }
+  .sb-hint { padding:0 10px 8px; font-size:11px; color:var(--muted); }
+
+  /* --- サイドバー: runsテーブル --- */
+  .sb-table-wrap { flex:1 1 auto; overflow-y:auto; border-top:1px solid var(--border); }
+  table.runs { width:100%; border-collapse:collapse; font-size:11.5px; }
+  table.runs thead th { position:sticky; top:0; background:var(--surface); z-index:1;
+    text-align:left; font-weight:600; color:var(--ink2); padding:6px 6px;
+    border-bottom:1px solid var(--border); cursor:pointer; user-select:none; white-space:nowrap; }
+  table.runs thead th.sortable:hover { color:var(--s1); }
+  table.runs thead th .arrow { font-size:9px; color:var(--muted); margin-left:2px; }
+  table.runs thead th.chk-col { cursor:default; width:22px; }
+  table.runs tbody td { padding:5px 6px; border-bottom:1px solid var(--border);
+    color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px; }
+  table.runs tbody tr { cursor:pointer; }
+  table.runs tbody tr:hover { background:var(--hover); }
+  table.runs tbody tr.selected { background:var(--selected); }
+  table.runs tbody tr.selected td.col-model { color:var(--ink); font-weight:600; }
+  table.runs td.col-model { color:var(--ink); font-weight:500; }
+  table.runs td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  table.runs td.chk-col { width:22px; }
+  table.runs .swatch { display:inline-block; width:8px; height:8px; border-radius:50%;
+    margin-right:5px; vertical-align:middle; }
+  .badge { font-size:10px; padding:1px 6px; border-radius:999px; font-weight:600; }
+  .badge.running { background:rgba(236,131,90,0.15); color:var(--serious); }
+  .badge.done { background:rgba(12,163,12,0.15); color:var(--good); }
+  .badge .dot { display:inline-block; width:5px; height:5px; border-radius:50%;
+    background:currentColor; margin-right:4px; }
+  .badge.running .dot { animation:pulse 1s infinite; }
   @keyframes pulse { 50% { opacity:.3; } }
-  .cmptoggle { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink2);
-               cursor:pointer; user-select:none; }
-  .cmpbar { display:none; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
-  .cmpbar .runA-label { color:var(--s1); font-weight:600; font-size:12px; }
-  .cmpbar .runB-label { color:var(--cmpB); font-weight:600; font-size:12px; }
-  .tiles { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 14px; }
+  .sb-empty { padding:18px 10px; color:var(--muted); font-size:12px; text-align:center; }
+
+  /* --- メインパネル共通 --- */
+  .mainhead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .mainhead h2 { font-size:15px; margin:0; }
+  .mainhead .sub { color:var(--ink2); font-size:12px; }
+  .mode-pill { font-size:11px; color:var(--muted); border:1px solid var(--border);
+    border-radius:999px; padding:2px 9px; }
+
+  .tiles { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
   .tile { background:var(--surface); border:1px solid var(--border);
           border-radius:8px; padding:9px 13px; min-width:104px; }
   .tile-label { font-size:11px; color:var(--muted); }
   .tile-value { font-size:19px; font-variant-numeric:tabular-nums; }
+  .tile.cmp { min-width:230px; }
+  .tile.cmp .tile-label { font-size:11.5px; color:var(--ink2); }
+  .tile.cmp .tile-value { font-size:13px; }
+
   .chart { background:var(--surface); border:1px solid var(--border);
-           border-radius:8px; margin-bottom:12px; height:360px; }
-  .empty { color:var(--muted); font-size:13px; padding:40px 0; text-align:center; }
+           border-radius:8px; margin-bottom:12px; height:340px; }
+  .empty { color:var(--muted); font-size:13px; padding:60px 0; text-align:center; }
+
+  /* --- run詳細(折りたたみ) --- */
+  details.rundetail { background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; margin-top:4px; }
+  details.rundetail > summary { cursor:pointer; padding:9px 13px; font-size:12.5px;
+    font-weight:600; color:var(--ink2); list-style:none; display:flex; align-items:center; gap:6px; }
+  details.rundetail > summary::-webkit-details-marker { display:none; }
+  details.rundetail > summary::before { content:'▸'; font-size:10px; color:var(--muted); }
+  details.rundetail[open] > summary::before { content:'▾'; }
+  .detail-body { padding:2px 15px 14px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .detail-body h4 { font-size:11px; text-transform:uppercase; letter-spacing:.03em;
+    color:var(--muted); margin:10px 0 5px; }
+  .detail-body table { width:100%; border-collapse:collapse; font-size:11.5px; }
+  .detail-body table td { padding:2px 4px; border-bottom:1px solid var(--border); color:var(--ink2); }
+  .detail-body table td.k { color:var(--muted); white-space:nowrap; padding-right:10px; }
+  .detail-body .none { color:var(--muted); font-size:12px; font-style:italic; }
+  .detail-body .kv-line { font-size:11.5px; color:var(--ink2); }
+
+  code { background:var(--page); border:1px solid var(--border); border-radius:4px;
+    padding:1px 4px; font-size:11px; }
 </style></head>
-<body><div class="wrap">
-  <div class="topbar"><a href="/results/index.html">&larr; 成果物ギャラリー(index.html)へ</a></div>
-  <div class="head">
-    <h1>MINLP Live Monitor</h1>
-    <span class="sub">SCIP探索のライブモニタ — 書き手(run_monitor)/読み手(server)分離</span>
+<body>
+  <div class="appbar">
+    <h1>minlpkit live monitor</h1>
+    <span class="sep">/</span>
+    <a href="/results/index.html">成果物ギャラリー(index.html)</a>
+    <span class="spacer"></span>
+    <span class="hint">runs一覧は5秒ごとに更新</span>
   </div>
-  <div class="bar">
-    <label class="sub">Run:</label>
-    <select id="runsel"></select>
-    <span id="status" class="status"></span>
-    <label class="cmptoggle"><input type="checkbox" id="cmptoggle"> 比較モード(2 run重ね描画)</label>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sb-filter"><input id="filter" type="text" placeholder="モデル名・statusで絞り込み…"></div>
+      <div class="sb-hint">行クリック=単一表示 / チェック=比較(2〜8run)</div>
+      <div class="sb-table-wrap">
+        <table class="runs">
+          <thead><tr>
+            <th class="chk-col"></th>
+            <th class="sortable" data-key="title">モデル<span class="arrow" data-arrow="title"></span></th>
+            <th class="sortable" data-key="created">開始<span class="arrow" data-arrow="created"></span></th>
+            <th class="sortable" data-key="status">status<span class="arrow" data-arrow="status"></span></th>
+            <th class="sortable num" data-key="gap">gap<span class="arrow" data-arrow="gap"></span></th>
+            <th class="sortable num" data-key="nodes">nodes<span class="arrow" data-arrow="nodes"></span></th>
+          </tr></thead>
+          <tbody id="runsbody"></tbody>
+        </table>
+        <div class="sb-empty" id="sbEmpty" style="display:none">
+          run を待機中…<br><code>uv run python experiments/run_monitor.py --model plant</code>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="mainhead">
+        <h2 id="mh-title">—</h2>
+        <span class="mode-pill" id="mh-mode">単一run</span>
+        <span class="badge" id="status"></span>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <div class="chart" id="bounds"></div>
+      <div class="chart" id="gap"></div>
+      <div class="empty" id="empty">run を待機中…</div>
+
+      <details class="rundetail" id="rundetail" style="display:none">
+        <summary>run詳細</summary>
+        <div class="detail-body" id="detailBody"></div>
+      </details>
+    </main>
   </div>
-  <div class="bar cmpbar" id="cmpbar">
-    <span class="runA-label">Run A</span>
-    <select id="runselA"></select>
-    <span class="runB-label">Run B</span>
-    <select id="runselB"></select>
-  </div>
-  <div class="tiles" id="tiles"></div>
-  <div class="chart" id="bounds"></div>
-  <div class="chart" id="gap"></div>
-  <div class="empty" id="empty">run を待機中… <code>uv run python run_monitor.py --model plant</code> を実行してください</div>
-</div>
+
 <script>
 const C = getComputedStyle(document.documentElement);
 const col = n => C.getPropertyValue(n).trim();
 const FONT = 'system-ui,-apple-system,"Segoe UI",sans-serif';
+
+// 複数run重ね描き時の系列色。固定順、循環しない(9run目以降は選択不可)。
+const CMP_COLORS = ["#2a78d6","#008300","#e87ba4","#eda100","#1baf7a","#eb6834","#4a3aa7","#e34948"];
+const MAX_COMPARE = CMP_COLORS.length;
 
 const axis = title => ({
   gridcolor: col('--grid'), linecolor: col('--axis'), zeroline: false,
@@ -89,20 +186,162 @@ const layout = (title, ytitle, ylog, annotations) => ({
 });
 const CFG = {displayModeBar: false, responsive: true};
 
-let events = [], es = null, drawn = false, dirty = false;
-let compareMode = false, lastRuns = [];
-
 function fmtNum(v) {
   return v != null ? Number(v).toLocaleString(undefined, {maximumFractionDigits: 1}) : '—';
 }
+function fmtGap(g) {
+  return g != null ? (g * 100).toFixed(2) + '%' : '—';
+}
+function fmtDt(created) {
+  return (created || '').replace('T', ' ').slice(0, 19) || '?';
+}
+function fmtDtShort(created) {
+  return (created || '').replace('T', ' ').slice(5, 19) || '?';
+}
+function modelLabel(r) {
+  return (r && (r.title || r.model)) || '?';
+}
 
-// runセレクタの読みやすい表示: モデル名 + 開始時刻 + status + 最終gap
-function fmtRun(r) {
-  const dt = (r.created || '').replace('T', ' ').slice(0, 19) || '?';
-  let gapTxt = '—';
-  if (r.gap != null) gapTxt = (r.gap * 100).toFixed(2) + '%';
-  else if (r.status === 'running') gapTxt = '…';
-  return `${r.title || r.model} — ${dt} [${r.status}] gap=${gapTxt}`;
+// ============================================================
+// サイドバー: runs一覧テーブル(ソート・フィルタ・比較チェック)
+// ============================================================
+
+let lastRuns = [];
+let sortKey = 'created', sortDir = 'desc';
+let filterText = '';
+let singleRunId = null;      // 単一表示中の run_id
+let compareIds = [];         // 比較選択中(チェック順を保持)
+
+function applySortFilter(runs) {
+  let out = runs;
+  if (filterText) {
+    const f = filterText.toLowerCase();
+    out = out.filter(r =>
+      modelLabel(r).toLowerCase().includes(f) || (r.status || '').toLowerCase().includes(f));
+  }
+  const key = sortKey, dir = sortDir === 'asc' ? 1 : -1;
+  out = [...out].sort((a, b) => {
+    let av = key === 'title' ? modelLabel(a) : a[key];
+    let bv = key === 'title' ? modelLabel(b) : b[key];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;   // null は末尾
+    if (bv == null) return -1;
+    if (typeof av === 'string') return av.localeCompare(bv) * dir;
+    return (av - bv) * dir;
+  });
+  return out;
+}
+
+function renderArrows() {
+  document.querySelectorAll('[data-arrow]').forEach(el => {
+    el.textContent = el.dataset.arrow === sortKey ? (sortDir === 'asc' ? '▲' : '▼') : '';
+  });
+}
+
+function renderTable() {
+  const rows = applySortFilter(lastRuns);
+  const tbody = document.getElementById('runsbody');
+  const empty = document.getElementById('sbEmpty');
+  if (!lastRuns.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(r => {
+    const isSingle = !compareIds.length && r.run_id === singleRunId;
+    const cmpIdx = compareIds.indexOf(r.run_id);
+    const checked = cmpIdx >= 0 ? 'checked' : '';
+    const disableChk = (!checked && compareIds.length >= MAX_COMPARE) ? 'disabled' : '';
+    const swatch = cmpIdx >= 0 ? `<span class="swatch" style="background:${CMP_COLORS[cmpIdx]}"></span>` : '';
+    return `<tr class="${isSingle ? 'selected' : ''}" data-run="${r.run_id}">
+      <td class="chk-col"><input type="checkbox" data-run="${r.run_id}" ${checked} ${disableChk}></td>
+      <td class="col-model" title="${modelLabel(r)}">${swatch}${modelLabel(r)}</td>
+      <td title="${fmtDt(r.created)}">${fmtDtShort(r.created)}</td>
+      <td><span class="badge ${r.status === 'running' ? 'running' : (r.status === 'done' || r.status ? 'done' : '')}">${r.status === 'running' ? '<span class="dot"></span>' : ''}${r.status || '—'}</span></td>
+      <td class="num">${fmtGap(r.gap)}</td>
+      <td class="num">${r.nodes != null ? Number(r.nodes).toLocaleString() : '—'}</td>
+    </tr>`;
+  }).join('');
+  renderArrows();
+
+  tbody.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('click', e => e.stopPropagation());
+    cb.addEventListener('change', e => {
+      const id = e.target.dataset.run;
+      if (e.target.checked) {
+        if (compareIds.length < MAX_COMPARE) compareIds.push(id);
+      } else {
+        compareIds = compareIds.filter(x => x !== id);
+      }
+      onSelectionChange();
+    });
+  });
+  tbody.querySelectorAll('tr').forEach(tr => {
+    tr.addEventListener('click', () => selectSingle(tr.dataset.run));
+  });
+}
+
+document.querySelectorAll('table.runs thead th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (sortKey === key) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+    else { sortKey = key; sortDir = key === 'created' ? 'desc' : 'asc'; }
+    renderTable();
+  });
+});
+document.getElementById('filter').addEventListener('input', e => {
+  filterText = e.target.value;
+  renderTable();
+});
+
+async function refreshRuns(preserveSelection) {
+  const runs = await (await fetch('/api/runs')).json();
+  lastRuns = runs;
+  // 消えたrun(結果クリア等)は選択から外す
+  const ids = new Set(runs.map(r => r.run_id));
+  compareIds = compareIds.filter(id => ids.has(id));
+  if (singleRunId && !ids.has(singleRunId)) singleRunId = null;
+  if (!preserveSelection && !singleRunId && !compareIds.length && runs.length) {
+    singleRunId = runs.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''))[0].run_id;
+  }
+  renderTable();
+  return runs;
+}
+
+// ============================================================
+// 選択変更のディスパッチ(単一 ⇔ 比較)
+// ============================================================
+
+function onSelectionChange() {
+  if (compareIds.length >= 2) {
+    enterCompareMode();
+  } else if (compareIds.length === 0 && singleRunId) {
+    enterSingleMode(singleRunId);
+  } else {
+    // 1件だけチェック: 比較にはまだ入らず、単一表示のままにしておく
+    renderTable();
+  }
+}
+
+function selectSingle(runId) {
+  compareIds = [];
+  singleRunId = runId;
+  enterSingleMode(runId);
+}
+
+// ============================================================
+// 単一run表示(SSEライブ) — 既存動作を維持
+// ============================================================
+
+let events = [], es = null, drawn = false, dirty = false, mode = 'single';
+let detailLoadedFor = null;
+
+function setStatus(cls, text) {
+  const el = document.getElementById('status');
+  el.className = 'badge ' + cls;
+  el.innerHTML = (cls === 'running' ? '<span class="dot"></span>' : '') + text;
+  el.style.display = text ? 'inline-block' : 'none';
 }
 
 function tiles(summary, live) {
@@ -116,7 +355,7 @@ function tiles(summary, live) {
     ['ステータス', summary ? summary.status : (live ? 'solving…' : '—')],
     ['Primal', fmtNum(primal)],
     ['Dual', fmtNum(dual)],
-    ['最終gap', gap != null ? (gap * 100).toFixed(2) + '%' : '—'],
+    ['最終gap', fmtGap(gap)],
     ['ノード数', nodes != null ? Number(nodes).toLocaleString() : '—'],
     ['求解時間', t != null ? Number(t).toFixed(1) + 's' : '—'],
     ['イベント数', events.length],
@@ -127,7 +366,7 @@ function tiles(summary, live) {
 }
 
 function redraw() {
-  if (compareMode) return;  // 比較モード中は単一run描画ループを止める
+  if (mode !== 'single') return;
   if (!dirty || !events.length) return;
   dirty = false;
   document.getElementById('empty').style.display = 'none';
@@ -151,7 +390,6 @@ function redraw() {
   const gapData = [{x: g.map(e=>e.time), y: g.map(e=>e.gap*100), mode: 'lines',
      line: {color: col('--s1'), width: 2, shape: 'hv'},
      hovertemplate: 'gap %{y:.2f}%<extra></extra>'}];
-  // 現在gap値の注釈(最新値ラベル)
   let gapAnnotations = [];
   const lastG = g[g.length - 1];
   if (lastG) {
@@ -174,19 +412,13 @@ function redraw() {
 }
 setInterval(redraw, 200);
 
-function setStatus(cls, text) {
-  const el = document.getElementById('status');
-  el.className = 'status ' + cls;
-  el.innerHTML = (cls === 'running' ? '<span class="dot"></span>' : '') + text;
-}
-
 function connect(runId) {
-  if (compareMode) return;
   if (es) es.close();
   events = []; drawn = false; dirty = false;
   document.getElementById('bounds').innerHTML = '';
   document.getElementById('gap').innerHTML = '';
   document.getElementById('empty').style.display = 'block';
+  document.getElementById('empty').textContent = 'run を待機中…';
   setStatus('running', 'connecting…');
   es = new EventSource(`/api/runs/${runId}/stream`);
   es.onmessage = ev => {
@@ -204,46 +436,103 @@ function connect(runId) {
   es.onerror = () => { /* サーバ側でstreamが閉じられた場合。doneが来ていれば無視 */ };
 }
 
-function fillSelect(id, runs, preferIndex) {
-  const sel = document.getElementById(id);
-  const cur = sel.value;
-  sel.innerHTML = runs.map(r => `<option value="${r.run_id}">${fmtRun(r)}</option>`).join('');
-  if (runs.some(r => r.run_id === cur)) {
-    sel.value = cur;
-  } else if (preferIndex != null && runs[preferIndex]) {
-    sel.value = runs[preferIndex].run_id;
+// --- run詳細パネル(capture) ---
+
+function renderParamsDiff(diff) {
+  const entries = Object.entries(diff || {});
+  if (!entries.length) return '<div class="none">デフォルトからの差分なし</div>';
+  return `<table>${entries.map(([k, v]) =>
+    `<tr><td class="k">${k}</td><td>${v}</td></tr>`).join('')}</table>`;
+}
+
+function renderFingerprint(fp) {
+  if (!fp) return '<div class="none">記録なし</div>';
+  const rows = [
+    ['名前', fp.name], ['目的の向き', fp.objective_sense],
+    ['変数(binary/integer/continuous)', `${fp.n_vars ?? '—'} (${fp.n_bin ?? 0}/${fp.n_int ?? 0}/${fp.n_cont ?? 0})`],
+    ['制約(linear/nonlinear)', `${fp.n_conss ?? '—'} (${fp.n_linear ?? 0}/${fp.n_nonlinear ?? 0})`],
+  ];
+  const handlerRow = fp.conss_by_handler
+    ? `<div class="kv-line">handler内訳: ${Object.entries(fp.conss_by_handler).map(([k,v]) => `${k}:${v}`).join(', ')}</div>`
+    : '';
+  return `<table>${rows.map(([k,v]) => `<tr><td class="k">${k}</td><td>${v}</td></tr>`).join('')}</table>${handlerRow}`;
+}
+
+function renderEnv(env, gitSha) {
+  if (!env && !gitSha) return '<div class="none">記録なし</div>';
+  const rows = Object.entries(env || {}).map(([k,v]) => [k, v]);
+  if (gitSha) rows.push(['git_sha', gitSha]);
+  return `<table>${rows.map(([k,v]) => `<tr><td class="k">${k}</td><td>${v}</td></tr>`).join('')}</table>`;
+}
+
+function renderDetail(meta) {
+  const panel = document.getElementById('rundetail');
+  const body = document.getElementById('detailBody');
+  const cap = meta && meta.capture;
+  if (!cap) {
+    panel.style.display = 'block';
+    body.innerHTML = '<div class="none">capture記録なし(旧run、または記録失敗)</div>';
+    body.style.gridTemplateColumns = '1fr';
+    return;
   }
+  panel.style.display = 'block';
+  body.style.gridTemplateColumns = '1fr 1fr';
+  body.innerHTML = `
+    <div><h4>SCIPパラメータ差分(デフォルト比)</h4>${renderParamsDiff(cap.scip_params_diff)}</div>
+    <div><h4>モデル指紋(fingerprint)</h4>${renderFingerprint(cap.fingerprint)}</div>
+    <div><h4>実行環境</h4>${renderEnv(cap.env, null)}</div>
+    <div><h4>git</h4>${cap.git_sha ? `<div class="kv-line"><code>${cap.git_sha}</code></div>` : '<div class="none">記録なし</div>'}</div>
+  `;
 }
-
-async function refreshRuns() {
-  const runs = await (await fetch('/api/runs')).json();
-  lastRuns = runs;
-  fillSelect('runsel', runs);
-  fillSelect('runselA', runs, 0);
-  fillSelect('runselB', runs, 1);
-  if (!runs.length) { setStatus('running', 'no run yet'); return null; }
-  return document.getElementById('runsel').value;
-}
-
-// --- 比較モード: 完了済み(または進行中)runのイベントを一括取得して1チャートに重ねる ---
 
 async function fetchRunEvents(runId) {
   const res = await fetch(`/api/runs/${runId}/events`);
   return res.json();
 }
 
+async function loadDetail(runId) {
+  if (detailLoadedFor === runId) return;
+  detailLoadedFor = runId;
+  try {
+    const data = await fetchRunEvents(runId);
+    if (detailLoadedFor === runId) renderDetail(data.meta);
+  } catch (e) { /* ネットワークエラー等は静かに無視 */ }
+}
+
+function enterSingleMode(runId) {
+  mode = 'single';
+  document.getElementById('mh-mode').textContent = '単一run';
+  document.getElementById('status').style.display = 'inline-block';
+  document.getElementById('tiles').className = 'tiles';
+  const r = lastRuns.find(x => x.run_id === runId);
+  document.getElementById('mh-title').textContent = r ? modelLabel(r) : runId;
+  connect(runId);
+  loadDetail(runId);
+  renderTable();
+}
+
+// ============================================================
+// 比較モード(2〜8 run重ね描き)
+// ============================================================
+
+function cmpLabel(runId, data) {
+  const meta = data.meta || {};
+  const dt = fmtDtShort(meta.created);
+  return `${modelLabel(meta)} (${dt})`;
+}
+
 function cmpTraces(label, data, color) {
-  const events = data.events || [];
-  const t = events.map(e => e.time);
-  const dual = events.map(e => e.dual);
-  const primal = events.map(e => e.primal);
-  const gEvents = events.filter(e => e.gap != null && e.gap > 0);
+  const evs = data.events || [];
+  const t = evs.map(e => e.time);
+  const dual = evs.map(e => e.dual);
+  const primal = evs.map(e => e.primal);
+  const gEvents = evs.filter(e => e.gap != null && e.gap > 0);
   return {
     bounds: [
-      {x: t, y: dual, name: `${label} dual`, mode: 'lines',
+      {x: t, y: dual, name: `${label} dual`, mode: 'lines', legendgroup: label,
        line: {color, width: 2, dash: 'solid', shape: 'hv'},
        hovertemplate: `${label} dual %{y:,.1f}<extra></extra>`},
-      {x: t, y: primal, name: `${label} primal`, mode: 'lines',
+      {x: t, y: primal, name: `${label} primal`, mode: 'lines', legendgroup: label,
        line: {color, width: 2, dash: 'dot', shape: 'hv'},
        hovertemplate: `${label} primal %{y:,.1f}<extra></extra>`},
     ],
@@ -253,8 +542,8 @@ function cmpTraces(label, data, color) {
   };
 }
 
-function cmpTiles(labelA, dataA, labelB, dataB) {
-  const row = (label, data, color) => {
+function cmpTiles(labelled) {
+  const row = ({label, data, color}) => {
     const s = data.summary;
     const evs = data.events || [];
     const last = evs[evs.length - 1] || {};
@@ -262,75 +551,65 @@ function cmpTiles(labelA, dataA, labelB, dataB) {
     const primal = s ? s.primal : last.primal;
     const dual = s ? s.dual : last.dual;
     const nodes = s ? s.nodes : last.nodes;
-    const title = data.meta ? (data.meta.title || data.meta.model) : label;
-    return `<div class="tile" style="border-left:3px solid ${color}; min-width:220px">
-      <div class="tile-label">${label}: ${title}</div>
-      <div class="tile-value" style="font-size:13px">
-        gap ${gap!=null?(gap*100).toFixed(2)+'%':'—'} ／
-        primal ${fmtNum(primal)} ／ dual ${fmtNum(dual)} ／
-        nodes ${nodes!=null?Number(nodes).toLocaleString():'—'}
+    return `<div class="tile cmp" style="border-left:3px solid ${color}">
+      <div class="tile-label">${label}</div>
+      <div class="tile-value">
+        gap ${fmtGap(gap)} ／ primal ${fmtNum(primal)} ／ dual ${fmtNum(dual)} ／ nodes ${nodes!=null?Number(nodes).toLocaleString():'—'}
       </div>
     </div>`;
   };
-  document.getElementById('tiles').innerHTML =
-    row(labelA, dataA, col('--s1')) + row(labelB, dataB, col('--cmpB'));
+  document.getElementById('tiles').innerHTML = labelled.map(row).join('');
 }
 
 async function loadCompare() {
-  const idA = document.getElementById('runselA').value;
-  const idB = document.getElementById('runselB').value;
-  if (!idA || !idB) return;
-  const [dataA, dataB] = await Promise.all([fetchRunEvents(idA), fetchRunEvents(idB)]);
-  const labelA = (dataA.meta && (dataA.meta.title || dataA.meta.model)) || 'Run A';
-  const labelB = (dataB.meta && (dataB.meta.title || dataB.meta.model)) || 'Run B';
-  const tsA = cmpTraces(`A:${labelA}`, dataA, col('--s1'));
-  const tsB = cmpTraces(`B:${labelB}`, dataB, col('--cmpB'));
+  if (mode !== 'compare') return;
+  const ids = compareIds.slice(0, MAX_COMPARE);
+  if (ids.length < 2) return;
+  const datas = await Promise.all(ids.map(fetchRunEvents));
+  if (mode !== 'compare') return;  // 取得中にモードが変わっていたら破棄
   document.getElementById('empty').style.display = 'none';
-  Plotly.react('bounds', [...tsA.bounds, ...tsB.bounds],
-    layout('Run比較: Primal / Dual bound の推移', '目的関数値', false), CFG);
-  Plotly.react('gap', [tsA.gap, tsB.gap],
-    layout('Run比較: Gap の推移(対数)', 'gap [%]', true), CFG);
-  cmpTiles('Run A', dataA, 'Run B', dataB);
+  const labelled = ids.map((id, i) => ({
+    id, data: datas[i], color: CMP_COLORS[i], label: cmpLabel(id, datas[i]),
+  }));
+  const traces = labelled.map(l => cmpTraces(l.label, l.data, l.color));
+  Plotly.react('bounds', traces.flatMap(t => t.bounds),
+    layout(`Run比較(${ids.length}run): Primal / Dual bound の推移`, '目的関数値', false), CFG);
+  Plotly.react('gap', traces.map(t => t.gap),
+    layout(`Run比較(${ids.length}run): Gap の推移(対数)`, 'gap [%]', true), CFG);
+  cmpTiles(labelled);
 }
 
-function setCompareMode(on) {
-  compareMode = on;
-  document.getElementById('cmpbar').style.display = on ? 'flex' : 'none';
-  document.getElementById('runsel').style.display = on ? 'none' : 'inline-block';
-  document.getElementById('status').style.display = on ? 'none' : 'inline-block';
-  if (on) {
-    if (es) { es.close(); es = null; }
-    document.getElementById('bounds').innerHTML = '';
-    document.getElementById('gap').innerHTML = '';
-    drawn = false;
-    if (document.getElementById('runselA').value && document.getElementById('runselB').value) {
-      loadCompare();
-    } else {
-      document.getElementById('empty').textContent = 'Run A と Run B を選択してください';
-      document.getElementById('empty').style.display = 'block';
-    }
-  } else {
-    document.getElementById('empty').textContent =
-      'run を待機中… uv run python run_monitor.py --model plant を実行してください';
-    refreshRuns().then(id => { if (id) connect(id); });
-  }
+function enterCompareMode() {
+  if (es) { es.close(); es = null; }
+  mode = 'compare';
+  drawn = false;
+  document.getElementById('mh-mode').textContent = `比較モード(${compareIds.length}run)`;
+  document.getElementById('mh-title').textContent = '複数run重ね描き';
+  document.getElementById('status').style.display = 'none';
+  document.getElementById('rundetail').style.display = 'none';
+  document.getElementById('bounds').innerHTML = '';
+  document.getElementById('gap').innerHTML = '';
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('tiles').innerHTML = '';
+  renderTable();
+  loadCompare();
 }
 
-document.getElementById('runsel').addEventListener('change', e => { if (!compareMode) connect(e.target.value); });
-document.getElementById('runselA').addEventListener('change', () => { if (compareMode) loadCompare(); });
-document.getElementById('runselB').addEventListener('change', () => { if (compareMode) loadCompare(); });
-document.getElementById('cmptoggle').addEventListener('change', e => setCompareMode(e.target.checked));
+// ============================================================
+// init / ポーリング
+// ============================================================
 
 (async function init() {
-  let selected = await refreshRuns();
-  if (selected && !compareMode) connect(selected);
-  // run が現れるまで/新しい run が来たら拾うために定期的にリスト更新
+  await refreshRuns(false);
+  if (mode === 'single' && singleRunId) enterSingleMode(singleRunId);
+
   setInterval(async () => {
-    const before = document.getElementById('runsel').value;
-    const now = await refreshRuns();
-    if (now && !before && !compareMode) connect(now);  // 初めて run が現れた
-    if (compareMode) loadCompare();  // 進行中runの比較も定期的に更新
-  }, 2000);
+    const hadSingle = singleRunId;
+    await refreshRuns(true);
+    if (mode === 'single' && !hadSingle && singleRunId) enterSingleMode(singleRunId);
+    if (mode === 'compare') loadCompare();
+  }, 5000);
 })();
 </script>
 </body></html>
+</content>
