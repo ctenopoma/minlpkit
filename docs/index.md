@@ -2,6 +2,8 @@
 
 <img src="assets/icon.jpg" alt="minlpkit icon" width="120" />
 
+<br>
+
 # minlpkit
 
 </div>
