@@ -6,25 +6,26 @@ gap_large の small スケールに cuOpt を短時間走らせ、得た解を S
 """
 from __future__ import annotations
 
-import subprocess
-
 import pytest
 from gap_large import build_model
 
-from minlpkit.gpu import cuopt_concurrent, cuopt_warmstart
+from minlpkit.gpu import cuopt_available, cuopt_concurrent, cuopt_warmstart
 
 _CUOPT_CMD = ["wsl", "-d", "Ubuntu", "--", "/home/ubuntu_dnn/cuopt-env/bin/cuopt_cli"]
 
 
 def _cuopt_available() -> bool:
-    try:
-        proc = subprocess.run(
-            ["wsl", "-d", "Ubuntu", "--", "test", "-x",
-             "/home/ubuntu_dnn/cuopt-env/bin/cuopt_cli"],
-            capture_output=True, timeout=30)
-        return proc.returncode == 0
-    except (OSError, subprocess.TimeoutExpired):
-        return False
+    return cuopt_available(_CUOPT_CMD)
+
+
+def test_unavailable_env_raises_with_install_hint():
+    """cuOpt未導入環境の挙動(GPU不要で常に実行): availabilityがFalseになり、
+    warmstart呼び出しは導入案内付きRuntimeErrorになる(素のsubprocessエラーを出さない)。"""
+    bogus = ["wsl", "-d", "Ubuntu", "--", "/nonexistent/cuopt_cli"]
+    assert cuopt_available(bogus) is False
+    m = build_model("small")
+    with pytest.raises(RuntimeError, match="cuOpt が見つからない"):
+        cuopt_warmstart(m, time_limit=1, cuopt_cmd=bogus)
 
 
 @pytest.mark.skipif(not _cuopt_available(), reason="WSL2 cuOpt CLI が見つからない")

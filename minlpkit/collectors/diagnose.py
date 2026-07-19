@@ -127,7 +127,11 @@ RULES: list[Rule] = [
                            f"gap{_get(m, 'gap', 0) * 100:.1f}%、等式重なり{_get(m, 'eq_overlap', 0):.1f}",
         links=["gap_large_compare.html"],
         severity="warning",
-        recipe="mk.cuopt_warmstart(m, time_limit=15) でcuOpt(WSL2/GPU)の解を注入してからoptimize。"
+        # このルールは問題構造だけで判定し、GPU/cuOptの有無は見ない(未導入環境でも発火する
+        # 設計。「この問題クラスならGPU導入の価値がある」という提示自体が診断の価値のため)
+        recipe="mk.cuopt_warmstart(m, time_limit=15) でcuOpt(WSL2/GPU)の解を注入してからoptimize"
+               "(中間規模なら並走型 mk.cuopt_concurrent)。導入済みかは mk.cuopt_available() で確認、"
+               "未導入なら manual 7節の手順でWSL2側に導入(GPU実機が必要。本体依存への追加は無し)。"
                "実測: GAP large 60sで純SCIP gap 22.9%→hybrid 4.72%(cuOpt単体0.64%)。"
                "変数を共有する等式群(集合分割型)はFJ系が不発なので列生成(mk.column_generation)を検討。FINDINGS 7節",
     ),

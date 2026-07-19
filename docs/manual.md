@@ -99,8 +99,8 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 | `mk.collect_metrics(build_fn, ...)` | 観測量 dict だけを集める(診断の入力) | `experiments/run_diagnose.py` |
 | `mk.Report` | `metrics` / `findings` を保持。`.summary()` / `.dashboard(path)` | `results/report_plant.html` |
 | `mk.compare_variants({名前: build_fn}, time_limit)` | before/after をルート双対境界・gap・ノードで比較 | `experiments/run_improve_linearize.py` → `results/improve_linearize.html` |
-| `mk.linearize_product(m, y, x, y_lb, y_ub, x_lb, x_ub, name)` | 整数×連続の積を厳密線形化 | `samples/scheduling_plant.py`, `results/improve_linearize.html` |
-| `mk.pwl_sos2(m, x, breakpoints, values, name)` | 1変数関数を SOS2 で区分線形近似(Big-M不要) | `samples/pwl_sos.py`, `experiments/run_sos.py` → `results/sos.html` |
+| `mk.linearize_product(m, y, x, y_lb, y_ub, x_lb, x_ub, name)` | 整数×連続の積を厳密線形化 | `samples/others/scheduling_plant.py`, `results/improve_linearize.html` |
+| `mk.pwl_sos2(m, x, breakpoints, values, name)` | 1変数関数を SOS2 で区分線形近似(Big-M不要) | `samples/physics_and_control_minlp/pwl_sos.py`, `experiments/run_sos.py` → `results/sos.html` |
 | `mk.perspective_quadratic(m, u, p, fc, a, b, c, name)` | 半連続二次費用の遠近化(**常用非推奨**、下記の落とし穴参照) | `experiments/run_perspective.py` → `results/perspective.html` |
 | `mk.column_generation(rhs, init_columns, pricing_fn, alpha)` | 列生成(Gilmore-Gomory / Wentges安定化) | `experiments/run_colgen.py` / `run_stabilize.py` → `results/colgen.html` / `stabilize.html` |
 | `mk.price_and_branch(rhs, init_columns, pricing_fn)` | 列生成 + 整数主問題(整数解は**上界**) | `experiments/run_bnp.py` → `results/bnp.html` |
@@ -269,6 +269,17 @@ uv pip install --extra-index-url=https://pypi.nvidia.com "cuopt-cu13==25.10.*"
 ```
 
 導入後、`~/cuopt-env/bin/cuopt_cli` がCLI実行ファイルになる(`mk.cuopt_warmstart` の既定パス)。
+
+### GPUが無い環境での挙動(設計)
+
+- GPU機能は**完全に任意**。minlpkit本体の依存には何も追加されず(gpu.pyはstdlib+pyscipoptのみ)、
+  cuOpt本体はWSL2側の別venvに置くため、**未導入環境でminlpkitが何かをダウンロードすることは無い**。
+- 導入済みかは `mk.cuopt_available()` で確認できる(bool、プロセス内キャッシュ)。
+  未導入のまま `cuopt_warmstart`/`cuopt_concurrent` を呼ぶと、導入手順つきの
+  `RuntimeError` になる(素のsubprocessエラーは出さない)。
+- **診断ルール `gpu_primal` はGPUの有無に関係なく発火する**(問題構造だけで判定)。
+  これは意図した設計 — 「この問題クラスならGPU導入の価値がある」という提示自体が
+  診断の価値のため。recipeに導入手順への参照が含まれる。
 
 ### 使用例
 

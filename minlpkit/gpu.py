@@ -35,6 +35,49 @@ _SUMMARY = re.compile(
     r"Solution objective:\s*([-\d.eE+]+)\s*,\s*relative_mip_gap\s*([-\d.eE+]+)"
     r"\s*solution_bound\s*([-\d.eE+]+)")
 
+_INSTALL_HINT = (
+    "cuOpt が見つからない。GPU機能は任意(未導入でもminlpkit本体は完全動作)。"
+    "導入する場合は WSL2 Ubuntu 側で:\n"
+    "  uv venv --python 3.12 ~/cuopt-env && "
+    "VIRTUAL_ENV=~/cuopt-env uv pip install "
+    "--extra-index-url=https://pypi.nvidia.com 'cuopt-cu13==25.10.*'\n"
+    "詳細は docs/manual.md 7節(GPU warm start)。導入確認は mk.cuopt_available()。")
+
+_availability_cache: dict[tuple, bool] = {}
+
+
+def cuopt_available(cuopt_cmd: Optional[list[str]] = None) -> bool:
+    """cuOpt CLI が実行可能か(WSL2/GPU環境が使えるか)を返す。
+
+    minlpkit のGPU機能は完全に任意で、追加のPython依存も持たない(cuOpt本体は
+    WSL2側の別venv)。未導入環境でも import・診断は通常どおり動くので、
+    ``cuopt_warmstart``/``cuopt_concurrent`` を呼ぶ前の分岐にこの関数を使う。
+    結果はプロセス内でキャッシュされる。
+
+    Args:
+        cuopt_cmd: ``cuopt_warmstart`` と同じコマンド prefix。既定はWSL2経由。
+
+    Returns:
+        bool: cuopt_cli が起動可能なら True。
+    """
+    cmd_prefix = list(cuopt_cmd) if cuopt_cmd is not None else list(_DEFAULT_CUOPT_CMD)
+    key = tuple(cmd_prefix)
+    if key in _availability_cache:
+        return _availability_cache[key]
+    is_wsl = bool(cmd_prefix) and cmd_prefix[0] == "wsl"
+    try:
+        if is_wsl:
+            proc = subprocess.run(cmd_prefix[:-1] + ["test", "-x", cmd_prefix[-1]],
+                                  capture_output=True, timeout=30)
+            ok = proc.returncode == 0
+        else:
+            import shutil
+            ok = shutil.which(cmd_prefix[0]) is not None
+    except (OSError, subprocess.TimeoutExpired):
+        ok = False
+    _availability_cache[key] = ok
+    return ok
+
 
 def _to_wsl_path(p: Path) -> str:
     """Windows パス ``D:\\foo\\bar`` を WSL パス ``/mnt/d/foo/bar`` へ変換する。"""
@@ -117,6 +160,8 @@ def cuopt_warmstart(model: Model, time_limit: float = 15.0, *,
     """
     cmd_prefix = list(cuopt_cmd) if cuopt_cmd is not None else list(_DEFAULT_CUOPT_CMD)
     is_wsl = bool(cmd_prefix) and cmd_prefix[0] == "wsl"
+    if not cuopt_available(cmd_prefix):
+        raise RuntimeError(_INSTALL_HINT)
 
     workdir = Path(mps_dir) if mps_dir is not None else Path(tempfile.mkdtemp())
     workdir.mkdir(parents=True, exist_ok=True)
@@ -345,6 +390,8 @@ def cuopt_concurrent(model: Model, time_limit: float = 15.0, *,
     """
     cmd_prefix = list(cuopt_cmd) if cuopt_cmd is not None else list(_DEFAULT_CUOPT_CMD)
     is_wsl = bool(cmd_prefix) and cmd_prefix[0] == "wsl"
+    if not cuopt_available(cmd_prefix):
+        raise RuntimeError(_INSTALL_HINT)
 
     workdir = Path(mps_dir) if mps_dir is not None else Path(tempfile.mkdtemp())
     workdir.mkdir(parents=True, exist_ok=True)

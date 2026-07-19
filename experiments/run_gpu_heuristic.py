@@ -36,8 +36,8 @@ CUOPT_CLI = "/home/ubuntu_dnn/cuopt-env/bin/cuopt_cli"
 WSL_DISTRO = "Ubuntu"
 
 MODELS = {
-    "gap": ("samples.gap_large", "大規模一般化割当 (GAP)"),
-    "setpart": ("samples.set_partitioning", "大規模集合分割"),
+    "gap": ("samples.packing_and_cutting.gap_large", "大規模一般化割当 (GAP)"),
+    "setpart": ("samples.graph_and_discrete.set_partitioning", "大規模集合分割"),
 }
 
 
