@@ -141,6 +141,22 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   NODESOLVEDだけではルートの分離ループ中(数十秒)発火せず、LPSOLVED併用で
   「cuOpt完了~20s→注入34s」まで短縮(残差はルートLP再解1回分の粒度で原理的)。
   wall-clockでは直列hybrid 77s(GPU17s+SCIP60s)に対し並走60sで同一解に到達。
+- **常駐型の適用境界: SCIPのルートLPが横断できない規模では注入フックが枯れる**:
+  GAP xl(240,000バイナリ、120s)はpresolve約6sの後、残り114sが単一のルートLP求解で、
+  その間SCIPはNODESOLVED/LPSOLVEDを一切発火しない(実測 n_events=0)= 注入機会ゼロ
+  (cuOptのsetpart LP停滞と同型の「LP律速」がSCIP側で発生)。この規模では
+  optimize前に注入する直列 `cuopt_warmstart` を使う(xl実測: hybrid gap **7.99%** vs
+  純SCIP 20.72%、cuOpt単体 4.72%)。concurrentが効くのは「ルートLPは速いが
+  ヒューリスティクスが弱い」中間規模(large: 注入34s時点)。
+- **GPU優位はxlスケールでも持続**: gap 4.72%(cuOpt) / 7.99%(hybrid) / 20.72%(SCIP)。
+  largeより差は縮む(SCIPも時間比例で改善)が、可行解の質はGPU側が一貫して上。
+- **cuPDLP系(GPU一次法)は退化LPの特効薬、ただしcuOpt 25.10のMIP経路には載らない**:
+  集合分割large(40,000列)のLP緩和は DualSimplex(CPU)が120sでも未完なのに対し
+  **PDLP(GPU)は0.8sで最適**(`--relaxation --method 1`、`run_gpu_lp.py`)。
+  しかしMIP本体は `--method 1` を指定してもルートLPがDual Simplexのままで、
+  集合分割型MIPの不発はcuOpt側では解消不能(列生成=`mk.column_generation` の領分)。
+  Barrier(GPU)は cuDSS threading layer エラー(rc=254)で25.10では動かず。
+- インストール: WSL2側 `uv venv --python 3.12` + `cuopt-cu13==25.10.*`
   (`--extra-index-url=https://pypi.nvidia.com`)。RTX 5070 Ti(Blackwell, sm_120)対応済み。
   Python 3.10(Ubuntu 22.04既定)は対象外なのでuvでのPython導入が必須。
 

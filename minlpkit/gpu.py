@@ -209,6 +209,8 @@ class _ConcurrentInjector(Eventhdlr):
         self.inject_time: Optional[float] = None
         self.objective: Optional[float] = None
         self._next_check = 0.0
+        self.n_events = 0            # 診断: イベント発火回数(0なら注入機会が無かった)
+        self.fetch_ok: Optional[bool] = None  # 診断: .sol回収の成否(未実行はNone)
 
     def eventinit(self):
         # NODESOLVEDだけだとルートノードの分離ループ中(数十秒かかりうる)に発火せず
@@ -225,6 +227,7 @@ class _ConcurrentInjector(Eventhdlr):
         m = self.model
         if self.done:
             return
+        self.n_events += 1
         now = m.getSolvingTime()
         if now < self._next_check:
             return
@@ -233,7 +236,9 @@ class _ConcurrentInjector(Eventhdlr):
             return
         self.done = True
         if self.fetch_sol is not None:
-            self.fetch_sol()
+            self.fetch_ok = bool(self.fetch_sol())
+            if not self.fetch_ok:
+                return  # 回収失敗時に前回runの残骸solを読まない
         if not self.sol_path.exists():
             return
         objective, vals = _parse_sol_file(self.sol_path)
@@ -298,7 +303,9 @@ class CuoptConcurrent:
         return dict(injected=self._injector.injected,
                     objective=self._injector.objective,
                     inject_time=self._injector.inject_time,
-                    wall_time=cuopt_time, log=log)
+                    wall_time=cuopt_time, log=log,
+                    n_events=self._injector.n_events,
+                    fetch_ok=self._injector.fetch_ok)
 
 
 def cuopt_concurrent(model: Model, time_limit: float = 15.0, *,

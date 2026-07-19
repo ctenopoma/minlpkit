@@ -306,6 +306,9 @@ info = h.result()          # injected / objective / inject_time / wall_time
 
 - 実測(gap large): 直列hybrid=GPU 17s+SCIP 60s=計77s に対し、並走=計60sで同一解。
 - 注入タイミングはSCIPのイベント発火間隔(ルートLP再解1回分の粒度)に律速される。
+  **ルートLP自体が時間予算を食い尽くす規模(gap xl=24万バイナリ等)ではイベントが
+  発火せず注入できない** — その場合は直列の `cuopt_warmstart` を使う(使い分けの実測は
+  FINDINGS 7節)。`h.result()` の `n_events` が0ならこの状態。
 - MPS/.sol はWSLネイティブ/tmpに自動ステージングされる(9p `/mnt/` のI/Oは
   このサイズで読み+20s/書き+19sと支配的に遅いため。FINDINGS 7節)。
 - `num_cpu_threads` でcuOptのCPU側B&Bスレッドを絞り、並走中のSCIPとのCPU競合を抑える。
