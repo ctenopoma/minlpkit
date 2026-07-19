@@ -32,6 +32,7 @@ RESULTS_ROOT = RUNS_ROOT.parent  # results/ (runs/ はこの直下)
 app = Flask(__name__)
 _PAGE = (Path(__file__).parent / "live_page.html").read_text(encoding="utf-8")
 _PLOTLYJS = get_plotlyjs()
+_LIVE_RULES_JS = (Path(__file__).parent / "live_rules.js").read_text(encoding="utf-8")
 
 
 def _read_json(path: Path) -> dict | None:
@@ -51,6 +52,13 @@ def plotlyjs() -> Response:
     # オフライン配信(CDN不要)。長期キャッシュ可
     return Response(_PLOTLYJS, mimetype="application/javascript",
                     headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.route("/live_rules.js")
+def live_rules_js() -> Response:
+    """ライブ診断・ライブ指標の純関数(live_page.htmlとNodeユニットテストが共有)。"""
+    return Response(_LIVE_RULES_JS, mimetype="application/javascript",
+                    headers={"Cache-Control": "no-cache"})
 
 
 @app.route("/api/runs")

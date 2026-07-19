@@ -95,6 +95,21 @@ uv run python experiments/run_monitor.py --model plant --time 120
   `capture_summary`(n_params_diff・fingerprintの変数/制約内訳・git_sha短縮)に差し替える。
   フルcaptureは `/api/runs/<id>/events` のmetaにある
 
+### ライブ診断・ライブ指標(Phase 10 B)
+
+- 単一run表示時、症状バナー+ライブ指標タイルが出る。判定関数の実体は `minlpkit/live/live_rules.js`
+  1箇所のみ(サーバが`/live_rules.js`で配信、`live_page.html`が`<script src>`で読み、
+  Nodeテスト`tests/js/live_rules.test.js`が同じファイルを`require()`する。コピペ二重管理は禁止)
+- `detectLiveStall(events, now)`: `collectors/attribution.detect_stalls`と同じ思想のライブ簡易版。
+  直近30%(最低20秒)窓の双対改善レートが全体平均の50%未満 かつ 現在gap≥5%で発火(dual_stall・黄)。
+  `detectNoIncumbent`: 経過30秒でincumbent0件(黄)。`detectHighGapDone`: done時gap≥50%(グレー・情報)
+- **正直な設計原則**: ここで評価できるのは`mk.RULES`(6ルール)の一部の簡易ライブ版のみ。
+  バナー文言に必ず「全診断はmk.analyzeで実施」の1行を含める。ライブ判定を全診断の代替として謳わない
+- ライブ指標: TTFF(`computeTTFF`、最初のincumbentのtime)、Primal Integral(`primalIntegral`、
+  ref=現在のincumbent primal、区分定数積分。ライブ中は「暫定」表示、done後はref=最終primalで確定再計算)
+- 比較モードではバナーを表示しない(単一run特有の機能)。新しい判定ルールを足すときは
+  `live_rules.js`に純関数を追加し、`tests/js/live_rules.test.js`に合成イベント列のテストを足す
+
 ## デザイン規約(dataviz スキル準拠)
 
 - **チャートを書く前に必ず `dataviz` スキルをロードする**

@@ -2,6 +2,7 @@
 <html lang="ja"><head><meta charset="utf-8">
 <title>minlpkit live monitor</title>
 <script src="/plotly.js"></script>
+<script src="/live_rules.js"></script>
 <style>
   :root {
     --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
@@ -110,6 +111,17 @@
 
   code { background:var(--page); border:1px solid var(--border); border-radius:4px;
     padding:1px 4px; font-size:11px; }
+
+  /* --- ライブ診断バナー(Phase 10 B) --- */
+  .banners { display:flex; flex-direction:column; gap:6px; margin:0 0 12px; }
+  .banner { display:flex; align-items:flex-start; gap:8px; border-radius:8px;
+    padding:8px 10px; font-size:12.5px; border:1px solid transparent; }
+  .banner .msg { flex:1 1 auto; line-height:1.5; }
+  .banner .close { cursor:pointer; color:inherit; opacity:0.6; font-size:13px;
+    line-height:1; padding:1px 3px; flex:0 0 auto; }
+  .banner .close:hover { opacity:1; }
+  .banner.warn { background:rgba(250,178,25,0.15); border-color:rgba(250,178,25,0.4); color:#8a5f00; }
+  .banner.info { background:rgba(11,11,11,0.05); border-color:var(--border); color:var(--ink2); }
 </style></head>
 <body>
   <div class="appbar">
@@ -148,6 +160,7 @@
         <span class="mode-pill" id="mh-mode">単一run</span>
         <span class="badge" id="status"></span>
       </div>
+      <div class="banners" id="banners"></div>
       <div class="tiles" id="tiles"></div>
       <div class="chart" id="bounds"></div>
       <div class="chart" id="gap"></div>
@@ -200,6 +213,12 @@ function fmtDtShort(created) {
 }
 function modelLabel(r) {
   return (r && (r.title || r.model)) || '?';
+}
+function lastPrimal(events) {
+  for (let i = events.length - 1; i >= 0; i--) {
+    if (events[i].primal != null) return events[i].primal;
+  }
+  return null;
 }
 
 // ============================================================
@@ -336,6 +355,37 @@ function selectSingle(runId) {
 
 let events = [], es = null, drawn = false, dirty = false, mode = 'single';
 let detailLoadedFor = null;
+let doneSummary = null;
+let dismissedBanners = new Set();
+
+// ============================================================
+// ライブ診断バナー(Phase 10 B)
+// live_rules.js の純関数(detectLiveStall/detectNoIncumbent/detectHighGapDone)を
+// そのまま使う。ここで評価できるのは診断ルールの一部の簡易ライブ版のみ
+// (全診断は mk.analyze / experiments/run_diagnose.py を使うこと)。
+// ============================================================
+
+function renderBanners() {
+  const box = document.getElementById('banners');
+  if (mode !== 'single' || !events.length) { box.innerHTML = ''; return; }
+  const now = events[events.length - 1].time;
+  const found = [
+    detectLiveStall(events, now),
+    detectNoIncumbent(events, now),
+    doneSummary ? detectHighGapDone(doneSummary) : null,
+  ].filter(b => b && !dismissedBanners.has(b.kind));
+  box.innerHTML = found.map(b => `
+    <div class="banner ${b.severity === 'info' ? 'info' : 'warn'}" data-kind="${b.kind}">
+      <span class="msg">${b.message}</span>
+      <span class="close" data-dismiss="${b.kind}" title="このバナーを閉じる">✕</span>
+    </div>`).join('');
+  box.querySelectorAll('[data-dismiss]').forEach(el => {
+    el.addEventListener('click', () => {
+      dismissedBanners.add(el.dataset.dismiss);
+      renderBanners();
+    });
+  });
+}
 
 function setStatus(cls, text) {
   const el = document.getElementById('status');
@@ -351,6 +401,9 @@ function tiles(summary, live) {
   const primal = summary ? summary.primal : last.primal;
   const dual = summary ? summary.dual : last.dual;
   const t = summary ? summary.time : last.time;
+  const ttff = computeTTFF(events);
+  const piRef = summary ? summary.primal : lastPrimal(events);
+  const pi = primalIntegral(events, piRef);
   const items = [
     ['ステータス', summary ? summary.status : (live ? 'solving…' : '—')],
     ['Primal', fmtNum(primal)],
@@ -358,6 +411,8 @@ function tiles(summary, live) {
     ['最終gap', fmtGap(gap)],
     ['ノード数', nodes != null ? Number(nodes).toLocaleString() : '—'],
     ['求解時間', t != null ? Number(t).toFixed(1) + 's' : '—'],
+    ['TTFF(最初の可行解)', ttff != null ? ttff.toFixed(1) + 's' : '—'],
+    [summary ? 'Primal Integral' : 'Primal Integral(暫定)', pi != null ? pi.toLocaleString(undefined, {maximumFractionDigits: 2}) : '—'],
     ['イベント数', events.length],
   ];
   document.getElementById('tiles').innerHTML = items.map(
@@ -409,14 +464,17 @@ function redraw() {
     Plotly.react('gap', gapData, layout('Gap の推移(対数)','gap [%]',true, gapAnnotations), CFG);
   }
   tiles(null, true);
+  renderBanners();
 }
 setInterval(redraw, 200);
 
 function connect(runId) {
   if (es) es.close();
   events = []; drawn = false; dirty = false;
+  doneSummary = null; dismissedBanners = new Set();
   document.getElementById('bounds').innerHTML = '';
   document.getElementById('gap').innerHTML = '';
+  document.getElementById('banners').innerHTML = '';
   document.getElementById('empty').style.display = 'block';
   document.getElementById('empty').textContent = 'run を待機中…';
   setStatus('running', 'connecting…');
@@ -428,8 +486,10 @@ function connect(runId) {
   };
   es.addEventListener('done', ev => {
     const summary = JSON.parse(ev.data);
+    doneSummary = summary;
     dirty = true; redraw();
     tiles(summary, false);
+    renderBanners();
     setStatus('done', summary.status);
     es.close();
   });
@@ -591,6 +651,7 @@ function enterCompareMode() {
   document.getElementById('gap').innerHTML = '';
   document.getElementById('empty').style.display = 'none';
   document.getElementById('tiles').innerHTML = '';
+  document.getElementById('banners').innerHTML = '';
   renderTable();
   loadCompare();
 }
