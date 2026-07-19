@@ -95,6 +95,21 @@ uv run python experiments/run_monitor.py --model plant --time 120
   `capture_summary`(n_params_diff・fingerprintの変数/制約内訳・git_sha短縮)に差し替える。
   フルcaptureは `/api/runs/<id>/events` のmetaにある
 
+### GPU実験の統合 + apple-design刷新(Phase 11.1)
+
+- **engineバッジ**: GPU実験run(`run_gpu_heuristic.py --live`)は `meta.engine`(scip/cuopt/hybrid。
+  concurrentもhybridに束ねる)+ `meta.experiment:"gpu"` を持つ。UIは `engineChip(meta)` で
+  runs一覧・run詳細・比較タイルに小チップ(SCIP=青/GPU=緑/HYBRID=すみれ)を出す。plotly凡例は
+  HTMLを描けないので比較の重ね描きは系列名にテキスト接頭辞 `[GPU]`/`[HYBRID]`/`[SCIP]`(`engPrefix`)。
+  cuOptアームはSCIPイベントが無くdual/nodesがnullのeventsを書く=UI/SSEはnull許容
+- **`GET /api/gpu`**: `{available, cuopt_cmd, distro}`(`mk.cuopt_available()`)。ヘッダ右の
+  GPUインジケータ(`#gpuInd`。利用可=緑ドット+GPU、不可=灰dimmed+導入導線tooltip)が起動時に1回fetch
+- **apple-design原則の適用**(`live_page.html` の `<style>`。ライトテーマ固定・系列パレット不変):
+  デザイントークン(--ease-out/--dur-*/--shadow-*/--eng-*)、tabular-nums徹底、サイズ階層と負トラッキング、
+  面の厚み別の控えめな影、hover/active/selected の一貫応答(選択行に左アクセントバー)、
+  パネルpop/バナー/detail開閉の短いスプリング的トランジション、`:focus-visible` リング。
+  **`prefers-reduced-motion`/`prefers-contrast` 対応必須**(前者は全transition/animを実質無効化しfade置換)
+
 ### ヘッダ: レポート一覧・ドキュメントリンク(Phase 10.1)
 
 - ヘッダの「成果物ギャラリー」リンクは撤去した(自プロジェクトでは`results/index.html`が無くリンク切れになる上、

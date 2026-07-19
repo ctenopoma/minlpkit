@@ -8,54 +8,102 @@
     --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
     --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7;
     --s1:#2a78d6; --s2:#008300; --good:#0ca30c; --serious:#ec835a;
-    --border:rgba(11,11,11,0.10); --hover:rgba(11,11,11,0.035);
-    --selected:rgba(42,120,214,0.08);
-    --appbar-h:46px;
+    --border:rgba(11,11,11,0.10); --hover:rgba(11,11,11,0.045);
+    --pressed:rgba(11,11,11,0.075);
+    --selected:rgba(42,120,214,0.09); --selected-bar:#2a78d6;
+    --focus:rgba(42,120,214,0.45);
+    --appbar-h:48px;
+    /* エンジン(GPU実験)バッジ色: charts の series パレットとは独立の淡色チップ。
+       scip=青 / cuopt(GPU)=緑 / hybrid=すみれ(gpu_dashboard の #e87ba4 と同系) */
+    --eng-scip:#2a78d6; --eng-cuopt:#008300; --eng-hybrid:#b3457f;
+    /* マテリアルの深度: 大きい面ほど厚い影(restraint: いずれも控えめ) */
+    --shadow-chip:0 1px 2px rgba(11,11,11,0.06);
+    --shadow-pop:0 8px 28px rgba(11,11,11,0.14), 0 1px 3px rgba(11,11,11,0.08);
+    --shadow-head:0 1px 0 rgba(11,11,11,0.05);
+    /* モーション: 自然な減速(critically-damped 相当)。gesture発なし=控えめ */
+    --ease-out:cubic-bezier(0.22, 0.61, 0.36, 1);
+    --dur-fast:110ms; --dur-med:200ms;
   }
   * { box-sizing:border-box; }
   html, body { height:100%; }
   body { margin:0; background:var(--page); color:var(--ink);
          font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+         font-size:13px; line-height:1.5; letter-spacing:0;
+         -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
          display:flex; flex-direction:column; }
+  :focus-visible { outline:none; box-shadow:0 0 0 3px var(--focus); border-radius:6px; }
 
-  /* --- ヘッダバー --- */
+  /* --- ヘッダバー(構造層: 面としてやや厚く、下端に微かな段差) --- */
   .appbar { height:var(--appbar-h); flex:0 0 auto; display:flex; align-items:center;
             gap:14px; padding:0 16px; border-bottom:1px solid var(--border);
-            background:var(--surface); }
-  .appbar h1 { font-size:14px; font-weight:700; margin:0; letter-spacing:0.01em; }
+            background:var(--surface); box-shadow:var(--shadow-head); z-index:10; }
+  .appbar h1 { font-size:14px; font-weight:700; margin:0; letter-spacing:-0.01em; }
   .appbar .sep { color:var(--border); }
   .appbar a { color:var(--ink2); font-size:12px; text-decoration:none; }
   .appbar a:hover { color:var(--s1); text-decoration:underline; }
   .appbar .spacer { flex:1; }
   .appbar .hint { color:var(--muted); font-size:11px; }
   .appbar .docs-link { display:inline-flex; align-items:center; justify-content:center;
-    width:18px; height:18px; border-radius:50%; border:1px solid var(--border);
-    color:var(--ink2); font-size:11px; font-weight:700; text-decoration:none; }
+    width:19px; height:19px; border-radius:50%; border:1px solid var(--border);
+    color:var(--ink2); font-size:11px; font-weight:700; text-decoration:none;
+    transition:color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
   .appbar .docs-link:hover { color:var(--s1); border-color:var(--s1); text-decoration:none; }
+  .appbar .docs-link:active { background:var(--hover); }
+
+  /* --- ヘッダ: GPU状態インジケータ(控えめ。利用可=緑ドット+GPU / 不可=灰・dimmed) --- */
+  .gpu-ind { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
+    letter-spacing:0.02em; color:var(--muted); padding:2px 8px; border-radius:999px;
+    border:1px solid var(--border); cursor:default; user-select:none;
+    transition:opacity var(--dur-med) var(--ease-out), color var(--dur-med) var(--ease-out); }
+  .gpu-ind .gdot { width:7px; height:7px; border-radius:50%; background:var(--muted);
+    transition:background var(--dur-med) var(--ease-out); }
+  .gpu-ind.on { color:var(--eng-cuopt); border-color:rgba(0,131,0,0.30); }
+  .gpu-ind.on .gdot { background:var(--eng-cuopt); box-shadow:0 0 0 3px rgba(0,131,0,0.14); }
+  .gpu-ind.off { opacity:0.55; }
 
   /* --- ヘッダ: レポート一覧ドロップダウン --- */
   .reports-menu { position:relative; }
   .reports-btn { font:inherit; font-size:12px; color:var(--ink2); background:none;
-    border:1px solid transparent; border-radius:6px; padding:3px 8px; cursor:pointer; }
+    border:1px solid transparent; border-radius:6px; padding:3px 8px; cursor:pointer;
+    transition:color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
   .reports-btn:hover { color:var(--s1); background:var(--hover); }
-  .reports-btn .caret { font-size:9px; }
-  .reports-panel { position:absolute; top:calc(100% + 4px); left:0; min-width:260px; max-width:360px;
+  .reports-btn:active { background:var(--pressed); }
+  .reports-btn .caret { font-size:9px; display:inline-block;
+    transition:transform var(--dur-med) var(--ease-out); }
+  .reports-btn[aria-expanded="true"] .caret { transform:rotate(180deg); }
+  .reports-panel { position:absolute; top:calc(100% + 6px); left:0; min-width:260px; max-width:360px;
     max-height:320px; overflow-y:auto; background:var(--surface); border:1px solid var(--border);
-    border-radius:8px; box-shadow:0 6px 20px rgba(11,11,11,0.12); z-index:20; padding:4px 0; }
+    border-radius:10px; box-shadow:var(--shadow-pop); z-index:20; padding:5px 0;
+    transform-origin:top left; }
+  .reports-panel[data-anim] { animation:pop var(--dur-med) var(--ease-out); }
+  @keyframes pop { from { opacity:0; transform:scale(0.97) translateY(-3px); }
+                   to { opacity:1; transform:none; } }
   .reports-empty { padding:14px 14px; color:var(--muted); font-size:12px; }
   .reports-list { list-style:none; margin:0; padding:0; }
   .reports-list li a { display:flex; justify-content:space-between; gap:10px; align-items:baseline;
-    padding:7px 14px; color:var(--ink); font-size:12.5px; text-decoration:none; }
+    padding:7px 14px; color:var(--ink); font-size:12.5px; text-decoration:none;
+    transition:background var(--dur-fast) var(--ease-out); }
   .reports-list li a:hover { background:var(--hover); }
+  .reports-list li a:active { background:var(--pressed); }
   .reports-list li .r-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .reports-list li .r-mtime { flex:0 0 auto; color:var(--muted); font-size:11px;
     font-variant-numeric:tabular-nums; }
 
+  /* --- エンジンチップ(GPU実験run: scip/cuopt/hybrid) --- */
+  .chip { display:inline-flex; align-items:center; font-size:9.5px; font-weight:700;
+    letter-spacing:0.03em; text-transform:uppercase; padding:1px 5px; border-radius:5px;
+    line-height:1.45; vertical-align:middle; }
+  .chip.eng-scip   { color:var(--eng-scip);   background:rgba(42,120,214,0.12); }
+  .chip.eng-cuopt  { color:var(--eng-cuopt);  background:rgba(0,131,0,0.13); }
+  .chip.eng-hybrid { color:var(--eng-hybrid); background:rgba(179,69,127,0.13); }
+  td .chip { margin-right:5px; }
+  .mainhead .chip { font-size:10px; padding:2px 7px; border-radius:6px; }
+
   /* --- 比較モード: 設定差分テーブル --- */
-  .diffpanel { background:var(--surface); border:1px solid var(--border); border-radius:8px;
-    margin-bottom:12px; padding:10px 13px 13px; }
+  .diffpanel { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:12px; padding:11px 14px 14px; box-shadow:var(--shadow-chip); }
   .diffpanel-head { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-  .diffpanel-head h3 { font-size:12.5px; margin:0; color:var(--ink2); }
+  .diffpanel-head h3 { font-size:12.5px; margin:0; color:var(--ink2); letter-spacing:-0.005em; }
   .diffpanel-head label { font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:5px;
     cursor:pointer; user-select:none; }
   .diff-scroll { overflow-x:auto; }
@@ -79,10 +127,14 @@
 
   /* --- サイドバー: フィルタ --- */
   .sb-filter { padding:10px 10px 8px; flex:0 0 auto; }
-  .sb-filter input { width:100%; font:inherit; font-size:12px; padding:6px 8px;
-                     border:1px solid var(--border); border-radius:6px;
-                     background:var(--page); color:var(--ink); }
-  .sb-filter input:focus { outline:none; border-color:var(--s1); }
+  .sb-filter input { width:100%; font:inherit; font-size:12px; padding:6px 9px;
+                     border:1px solid var(--border); border-radius:7px;
+                     background:var(--page); color:var(--ink);
+                     transition:border-color var(--dur-fast) var(--ease-out),
+                                box-shadow var(--dur-fast) var(--ease-out); }
+  .sb-filter input:hover { border-color:var(--axis); }
+  .sb-filter input:focus { outline:none; border-color:var(--s1);
+                           box-shadow:0 0 0 3px var(--focus); }
   .sb-hint { padding:0 10px 8px; font-size:11px; color:var(--muted); }
 
   /* --- サイドバー: runsテーブル --- */
@@ -90,87 +142,117 @@
   table.runs { width:100%; border-collapse:collapse; font-size:11.5px; }
   table.runs thead th { position:sticky; top:0; background:var(--surface); z-index:1;
     text-align:left; font-weight:600; color:var(--ink2); padding:6px 6px;
-    border-bottom:1px solid var(--border); cursor:pointer; user-select:none; white-space:nowrap; }
+    border-bottom:1px solid var(--border); cursor:pointer; user-select:none; white-space:nowrap;
+    box-shadow:var(--shadow-head);
+    transition:color var(--dur-fast) var(--ease-out); }
   table.runs thead th.sortable:hover { color:var(--s1); }
-  table.runs thead th .arrow { font-size:9px; color:var(--muted); margin-left:2px; }
+  table.runs thead th .arrow { font-size:9px; color:var(--s1); margin-left:2px; }
   table.runs thead th.chk-col { cursor:default; width:22px; }
   table.runs tbody td { padding:5px 6px; border-bottom:1px solid var(--border);
-    color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px; }
+    color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;
+    transition:background var(--dur-fast) var(--ease-out); }
   table.runs tbody tr { cursor:pointer; }
-  table.runs tbody tr:hover { background:var(--hover); }
-  table.runs tbody tr.selected { background:var(--selected); }
-  table.runs tbody tr.selected td.col-model { color:var(--ink); font-weight:600; }
+  table.runs tbody tr:hover td { background:var(--hover); }
+  table.runs tbody tr:active td { background:var(--pressed); }
+  table.runs tbody tr.selected td { background:var(--selected); }
+  table.runs tbody tr.selected td.col-model { color:var(--ink); font-weight:600;
+    box-shadow:inset 3px 0 0 var(--selected-bar); }
   table.runs td.col-model { color:var(--ink); font-weight:500; }
   table.runs td.num { text-align:right; font-variant-numeric:tabular-nums; }
   table.runs td.chk-col { width:22px; }
+  table.runs input[type=checkbox] { accent-color:var(--s1); cursor:pointer; }
   table.runs .swatch { display:inline-block; width:8px; height:8px; border-radius:50%;
-    margin-right:5px; vertical-align:middle; }
-  .badge { font-size:10px; padding:1px 6px; border-radius:999px; font-weight:600; }
+    margin-right:5px; vertical-align:middle; box-shadow:var(--shadow-chip); }
+  .badge { font-size:10px; padding:1px 6px; border-radius:999px; font-weight:600;
+    font-variant-numeric:tabular-nums; }
   .badge.running { background:rgba(236,131,90,0.15); color:var(--serious); }
   .badge.done { background:rgba(12,163,12,0.15); color:var(--good); }
   .badge .dot { display:inline-block; width:5px; height:5px; border-radius:50%;
     background:currentColor; margin-right:4px; }
-  .badge.running .dot { animation:pulse 1s infinite; }
+  .badge.running .dot { animation:pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity:.3; } }
   .sb-empty { padding:18px 10px; color:var(--muted); font-size:12px; text-align:center; }
 
   /* --- メインパネル共通 --- */
-  .mainhead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-  .mainhead h2 { font-size:15px; margin:0; }
+  .mainhead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .mainhead h2 { font-size:17px; margin:0; letter-spacing:-0.015em; font-weight:650; }
   .mainhead .sub { color:var(--ink2); font-size:12px; }
   .mode-pill { font-size:11px; color:var(--muted); border:1px solid var(--border);
     border-radius:999px; padding:2px 9px; }
 
   .tiles { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
   .tile { background:var(--surface); border:1px solid var(--border);
-          border-radius:8px; padding:9px 13px; min-width:104px; }
-  .tile-label { font-size:11px; color:var(--muted); }
-  .tile-value { font-size:19px; font-variant-numeric:tabular-nums; }
+          border-radius:9px; padding:9px 13px; min-width:104px; box-shadow:var(--shadow-chip);
+          transition:transform var(--dur-med) var(--ease-out); }
+  .tile-label { font-size:11px; color:var(--muted); letter-spacing:0.005em; }
+  .tile-value { font-size:20px; font-variant-numeric:tabular-nums; letter-spacing:-0.02em;
+    line-height:1.25; }
   .tile.cmp { min-width:230px; }
   .tile.cmp .tile-label { font-size:11.5px; color:var(--ink2); }
-  .tile.cmp .tile-value { font-size:13px; }
+  .tile.cmp .tile-value { font-size:13px; letter-spacing:0; }
 
   .chart { background:var(--surface); border:1px solid var(--border);
-           border-radius:8px; margin-bottom:12px; height:340px; }
+           border-radius:10px; margin-bottom:12px; height:340px; box-shadow:var(--shadow-chip); }
   .empty { color:var(--muted); font-size:13px; padding:60px 0; text-align:center; }
 
   /* --- run詳細(折りたたみ) --- */
   details.rundetail { background:var(--surface); border:1px solid var(--border);
-    border-radius:8px; margin-top:4px; }
+    border-radius:10px; margin-top:4px; box-shadow:var(--shadow-chip); }
   details.rundetail > summary { cursor:pointer; padding:9px 13px; font-size:12.5px;
-    font-weight:600; color:var(--ink2); list-style:none; display:flex; align-items:center; gap:6px; }
+    font-weight:600; color:var(--ink2); list-style:none; display:flex; align-items:center; gap:6px;
+    border-radius:10px; transition:color var(--dur-fast) var(--ease-out); }
+  details.rundetail > summary:hover { color:var(--s1); }
   details.rundetail > summary::-webkit-details-marker { display:none; }
-  details.rundetail > summary::before { content:'▸'; font-size:10px; color:var(--muted); }
-  details.rundetail[open] > summary::before { content:'▾'; }
+  details.rundetail > summary::before { content:'▸'; font-size:10px; color:var(--muted);
+    transition:transform var(--dur-med) var(--ease-out); }
+  details.rundetail[open] > summary::before { transform:rotate(90deg); }
   .detail-body { padding:2px 15px 14px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .detail-body h4 { font-size:11px; text-transform:uppercase; letter-spacing:.03em;
     color:var(--muted); margin:10px 0 5px; }
   .detail-body table { width:100%; border-collapse:collapse; font-size:11.5px; }
-  .detail-body table td { padding:2px 4px; border-bottom:1px solid var(--border); color:var(--ink2); }
-  .detail-body table td.k { color:var(--muted); white-space:nowrap; padding-right:10px; }
+  .detail-body table td { padding:2px 4px; border-bottom:1px solid var(--border); color:var(--ink2);
+    font-variant-numeric:tabular-nums; }
+  .detail-body table td.k { color:var(--muted); white-space:nowrap; padding-right:10px;
+    font-variant-numeric:normal; }
   .detail-body .none { color:var(--muted); font-size:12px; font-style:italic; }
   .detail-body .kv-line { font-size:11.5px; color:var(--ink2); }
 
   code { background:var(--page); border:1px solid var(--border); border-radius:4px;
-    padding:1px 4px; font-size:11px; }
+    padding:1px 4px; font-size:11px; font-variant-numeric:tabular-nums; }
 
   /* --- ライブ診断バナー(Phase 10 B) --- */
   .banners { display:flex; flex-direction:column; gap:6px; margin:0 0 12px; }
-  .banner { display:flex; align-items:flex-start; gap:8px; border-radius:8px;
-    padding:8px 10px; font-size:12.5px; border:1px solid transparent; }
+  .banner { display:flex; align-items:flex-start; gap:8px; border-radius:9px;
+    padding:9px 11px; font-size:12.5px; border:1px solid transparent;
+    box-shadow:var(--shadow-chip); animation:banner-in var(--dur-med) var(--ease-out); }
+  @keyframes banner-in { from { opacity:0; transform:translateY(-5px); }
+                         to { opacity:1; transform:none; } }
   .banner .msg { flex:1 1 auto; line-height:1.5; }
   .banner .close { cursor:pointer; color:inherit; opacity:0.6; font-size:13px;
-    line-height:1; padding:1px 3px; flex:0 0 auto; }
-  .banner .close:hover { opacity:1; }
+    line-height:1; padding:1px 4px; border-radius:5px; flex:0 0 auto;
+    transition:opacity var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+  .banner .close:hover { opacity:1; background:rgba(11,11,11,0.06); }
   .banner.warn { background:rgba(250,178,25,0.15); border-color:rgba(250,178,25,0.4); color:#8a5f00; }
   .banner.info { background:rgba(11,11,11,0.05); border-color:var(--border); color:var(--ink2); }
+
+  /* --- モーション低減 & 透過低減(apple-design §14 必須対応) --- */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important;
+      transition-duration:0.01ms !important; scroll-behavior:auto !important; }
+    .reports-panel[data-anim], .banner { animation:fade var(--dur-med) ease; }
+    @keyframes fade { from { opacity:0; } to { opacity:1; } }
+  }
+  @media (prefers-contrast: more) {
+    :root { --border:rgba(11,11,11,0.28); --muted:#5f5e59; }
+    .chip { outline:1px solid currentColor; outline-offset:-1px; }
+  }
 </style></head>
 <body>
   <div class="appbar">
     <h1>minlpkit live monitor</h1>
     <span class="sep">/</span>
     <div class="reports-menu">
-      <button type="button" id="reportsBtn" class="reports-btn">レポート <span class="caret">▾</span></button>
+      <button type="button" id="reportsBtn" class="reports-btn" aria-expanded="false" aria-haspopup="true">レポート <span class="caret">▾</span></button>
       <div class="reports-panel" id="reportsPanel" style="display:none">
         <div class="reports-empty" id="reportsEmpty" style="display:none">
           まだレポートがありません(report.dashboard() や sweep で生成)
@@ -179,6 +261,7 @@
       </div>
     </div>
     <span class="spacer"></span>
+    <span class="gpu-ind off" id="gpuInd" title="GPU(cuOpt)状態を確認中…"><span class="gdot"></span>GPU</span>
     <span class="hint">runs一覧は5秒ごとに更新</span>
     <a class="docs-link" href="https://ctenopoma.github.io/minlpkit/" target="_blank" rel="noopener"
        title="公開ドキュメント(minlpkit)">?</a>
@@ -273,6 +356,17 @@ function fmtDtShort(created) {
 function modelLabel(r) {
   return (r && (r.title || r.model)) || '?';
 }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// GPU実験run(meta.engine ∈ {scip,cuopt,hybrid})の小さなエンジンチップ。engine 無しは空。
+const ENGINE_LABEL = {scip: 'SCIP', cuopt: 'GPU', hybrid: 'HYBRID'};
+function engineChip(meta) {
+  const e = meta && meta.engine;
+  if (!e || !ENGINE_LABEL[e]) return '';
+  return `<span class="chip eng-${e}" title="engine: ${e}">${ENGINE_LABEL[e]}</span>`;
+}
 function lastPrimal(events) {
   for (let i = events.length - 1; i >= 0; i--) {
     if (events[i].primal != null) return events[i].primal;
@@ -290,9 +384,12 @@ function fmtReportMtime(iso) {
 
 async function toggleReportsPanel() {
   const panel = document.getElementById('reportsPanel');
+  const btn = document.getElementById('reportsBtn');
   const willOpen = panel.style.display === 'none';
-  if (!willOpen) { panel.style.display = 'none'; return; }
+  if (!willOpen) { panel.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); return; }
   panel.style.display = 'block';
+  panel.setAttribute('data-anim', '');
+  btn.setAttribute('aria-expanded', 'true');
   try {
     const reports = await (await fetch('/api/reports')).json();
     const list = document.getElementById('reportsList');
@@ -321,6 +418,7 @@ document.addEventListener('click', e => {
   const panel = document.getElementById('reportsPanel');
   if (panel.style.display !== 'none' && !panel.contains(e.target) && e.target.id !== 'reportsBtn') {
     panel.style.display = 'none';
+    document.getElementById('reportsBtn').setAttribute('aria-expanded', 'false');
   }
 });
 
@@ -378,7 +476,7 @@ function renderTable() {
     const swatch = cmpIdx >= 0 ? `<span class="swatch" style="background:${CMP_COLORS[cmpIdx]}"></span>` : '';
     return `<tr class="${isSingle ? 'selected' : ''}" data-run="${r.run_id}">
       <td class="chk-col"><input type="checkbox" data-run="${r.run_id}" ${checked} ${disableChk}></td>
-      <td class="col-model" title="${modelLabel(r)}">${swatch}${modelLabel(r)}</td>
+      <td class="col-model" title="${modelLabel(r)}">${swatch}${engineChip(r)}${modelLabel(r)}</td>
       <td title="${fmtDt(r.created)}">${fmtDtShort(r.created)}</td>
       <td><span class="badge ${r.status === 'running' ? 'running' : (r.status === 'done' || r.status ? 'done' : '')}">${r.status === 'running' ? '<span class="dot"></span>' : ''}${r.status || '—'}</span></td>
       <td class="num">${fmtGap(r.gap)}</td>
@@ -640,7 +738,12 @@ function renderDetail(meta) {
   }
   panel.style.display = 'block';
   body.style.gridTemplateColumns = '1fr 1fr';
-  body.innerHTML = `
+  const engBlock = meta.engine ? `
+    <div style="grid-column:1/-1"><h4>エンジン(GPU実験)</h4>
+      <div class="kv-line">${engineChip(meta)} engine=<code>${escapeHtml(meta.engine)}</code>${
+        meta.arm ? ` · arm=<code>${escapeHtml(meta.arm)}</code>` : ''}${
+        meta.scale ? ` · scale=<code>${escapeHtml(meta.scale)}</code>` : ''}</div></div>` : '';
+  body.innerHTML = engBlock + `
     <div><h4>SCIPパラメータ差分(デフォルト比)</h4>${renderParamsDiff(cap.scip_params_diff)}</div>
     <div><h4>モデル指紋(fingerprint)</h4>${renderFingerprint(cap.fingerprint)}</div>
     <div><h4>実行環境</h4>${renderEnv(cap.env, null)}</div>
@@ -670,7 +773,8 @@ function enterSingleMode(runId) {
   document.getElementById('diffpanel').style.display = 'none';
   lastDiffData = null;
   const r = lastRuns.find(x => x.run_id === runId);
-  document.getElementById('mh-title').textContent = r ? modelLabel(r) : runId;
+  document.getElementById('mh-title').innerHTML = (r ? engineChip(r) : '') +
+    escapeHtml(r ? modelLabel(r) : runId);
   connect(runId);
   loadDetail(runId);
   renderTable();
@@ -684,6 +788,11 @@ function cmpLabel(runId, data) {
   const meta = data.meta || {};
   const dt = fmtDtShort(meta.created);
   return `${modelLabel(meta)} (${dt})`;
+}
+// plotly凡例はHTMLを描けないので、engineはテキスト接頭辞 [GPU]/[HYBRID]/[SCIP] で示す。
+function engPrefix(meta) {
+  const e = meta && meta.engine;
+  return (e && ENGINE_LABEL[e]) ? `[${ENGINE_LABEL[e]}] ` : '';
 }
 
 function cmpTraces(label, data, color) {
@@ -717,7 +826,7 @@ function cmpTiles(labelled) {
     const dual = s ? s.dual : last.dual;
     const nodes = s ? s.nodes : last.nodes;
     return `<div class="tile cmp" style="border-left:3px solid ${color}">
-      <div class="tile-label">${label}</div>
+      <div class="tile-label">${engineChip(data.meta)}${escapeHtml(label)}</div>
       <div class="tile-value">
         gap ${fmtGap(gap)} ／ primal ${fmtNum(primal)} ／ dual ${fmtNum(dual)} ／ nodes ${nodes!=null?Number(nodes).toLocaleString():'—'}
       </div>
@@ -777,7 +886,7 @@ async function loadCompare() {
   const labelled = ids.map((id, i) => ({
     id, data: datas[i], color: CMP_COLORS[i], label: cmpLabel(id, datas[i]),
   }));
-  const traces = labelled.map(l => cmpTraces(l.label, l.data, l.color));
+  const traces = labelled.map(l => cmpTraces(engPrefix(l.data.meta) + l.label, l.data, l.color));
   Plotly.react('bounds', traces.flatMap(t => t.bounds),
     layout(`Run比較(${ids.length}run): Primal / Dual bound の推移`, '目的関数値', false), CFG);
   Plotly.react('gap', traces.map(t => t.gap),
@@ -811,7 +920,31 @@ function enterCompareMode() {
 // init / ポーリング
 // ============================================================
 
+// ============================================================
+// ヘッダ: GPU(cuOpt)状態インジケータ(/api/gpu)
+// ============================================================
+
+async function refreshGpuStatus() {
+  const el = document.getElementById('gpuInd');
+  if (!el) return;
+  try {
+    const g = await (await fetch('/api/gpu')).json();
+    if (g.available) {
+      el.className = 'gpu-ind on';
+      el.title = `GPU(cuOpt)利用可 — ${g.cuopt_cmd}`;
+    } else {
+      el.className = 'gpu-ind off';
+      el.title = `GPU(cuOpt)未検出。GPU実験(engine=cuopt/hybrid)は実行不可。` +
+        `導入は manual 7節 / mk.cuopt_available() で確認(${g.cuopt_cmd})`;
+    }
+  } catch (e) {
+    el.className = 'gpu-ind off';
+    el.title = 'GPU状態の取得に失敗';
+  }
+}
+
 (async function init() {
+  refreshGpuStatus();
   await refreshRuns(false);
   if (mode === 'single' && singleRunId) enterSingleMode(singleRunId);
 

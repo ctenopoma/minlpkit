@@ -159,6 +159,13 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
 - インストール: WSL2側 `uv venv --python 3.12` + `cuopt-cu13==25.10.*`
   (`--extra-index-url=https://pypi.nvidia.com`)。RTX 5070 Ti(Blackwell, sm_120)対応済み。
   Python 3.10(Ubuntu 22.04既定)は対象外なのでuvでのPython導入が必須。
+- **cuOptの既定起動コマンドはWSL環境構成に依存し、drift しうる**(2026-07-20 Phase 11.1で判明):
+  `_DEFAULT_CUOPT_CMD` は `wsl -d Ubuntu -- /home/ubuntu_dnn/cuopt-env/bin/cuopt_cli` 固定だが、
+  現在のこのマシンのWSLは distro が `Ubuntu-24.04`・home が `naoki`(cuopt-env無し)で、
+  §7当時の `Ubuntu`/`ubuntu_dnn` 構成は現存しない → `mk.cuopt_available()` が False。
+  GPU機能は完全に任意なので False でも本体・診断・UIは全て正常動作(未導入時の設計どおり)。
+  実機再検証には WSL2側にcuopt-envを再導入し、`cuopt_cmd=["wsl","-d","Ubuntu-24.04","--",<cli>]`
+  で distro/パスを合わせる必要がある。ヘッダの `/api/gpu` インジケータがこの利用可否を可視化する。
 
 ## 6. 可視化・配信
 

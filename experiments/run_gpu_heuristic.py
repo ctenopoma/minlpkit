@@ -238,12 +238,18 @@ def run_cuopt(mps: Path, sol_out: Path, time_limit: float,
     )
 
 
+# アーム → engine(UIバッジの3分類)。concurrentもcuOpt注入の一種なのでhybridに束ねる。
+ENGINE_OF = {"scip": "scip", "cuopt": "cuopt", "hybrid": "hybrid", "concurrent": "hybrid"}
+
+
 def _make_live_logger(args, arm: str, title: str) -> RunLogger:
     """アーム1本を1runとして`results/runs/`に記録する`RunLogger`を作る。
 
     meta の model/scale/arm/params は比較モードの「設定の差分」テーブルで
     アーム間の違いが見えるように、既存run(sweep等)と同じ形(model/title/params)に
-    合わせつつ arm/scale をトップレベルにも残す。
+    合わせつつ arm/scale をトップレベルにも残す。さらに ``engine``(scip/cuopt/hybridの
+    3分類。UIのengineバッジが読む)と ``experiment: "gpu"`` タグを付け、runs一覧・比較で
+    どのソルバー系統のrunかが一目で分かるようにする。
     """
     run_id = new_run_id(f"gpu_{args.model}_{args.scale}_{arm}")
     params = dict(time_limit=args.time)
@@ -251,7 +257,8 @@ def _make_live_logger(args, arm: str, title: str) -> RunLogger:
         params["gpu_budget"] = args.gpu_budget
     return RunLogger(run_id, meta=dict(
         model=f"gpu_{args.model}", title=f"{title} ({args.scale}) [{arm}]",
-        arm=arm, scale=args.scale, params=params))
+        arm=arm, engine=ENGINE_OF.get(arm, "scip"), experiment="gpu",
+        scale=args.scale, params=params))
 
 
 def _log_cuopt_run(logger: RunLogger, result: dict) -> None:
