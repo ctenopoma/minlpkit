@@ -24,7 +24,13 @@
 
 非凸1変数関数の PWL 近似で、Big-M版は**バイナリ変数20個**を要したのに対し、
 SOS2版は**バイナリ0個**で同じ最適値に到達する(FINDINGS §3、
-[`sos.html`](../gallery/sos.html))。
+[`sos.html`](../gallery/sos.html))。折れ点を増やすほど近似は真の曲線に近づくが、
+Big-M のバイナリは折れ点数に比例して増える一方、SOS2 は 0 のまま。
+
+![非凸関数 f(x) の区分線形近似(折れ点数を変える)](../assets/playbook/02-pwl-sos2-principle.png)
+
+折れ点・近似誤差・モデル規模のトレードオフを図付きで追うには
+[手法notebook: PWL近似(SOS2)](../notebooks/improve/02_pwl_sos2.ipynb) を参照。
 
 ### 効かないとき・注意
 
