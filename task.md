@@ -660,6 +660,86 @@ Phase 11 の cuOpt 連携は同一マシンの WSL2 CLI 直叩き固定だった
   SCIP伝播がルートで潰す(結合双線形にして初めてgap残存)、水網は淡水高コスト化まで双線形が働かない。
 - 検証: `uv run pytest -q` 39 passed/2 skipped、`mkdocs build --strict` exit 0、smoke `tests/test_samples_t1.py` 4本パス。
 
+## Phase 13(拡張): 上級ティア — 研究動向ドリブンの高難度クラスタ(着手)
+
+T1-T8(事業課題ドリブン、中難度)の上に、**真に解きづらい**題材の層を追加する。根拠はWeb調査
+(2026-07、出典下記)。数学的難問化が目的ではなく、実際の業界が今まさに苦戦している構造
+(AC潮流の三角関数結合、電気化学劣化の多物理連成、複数列車の時間結合、プラント多設備の同時合成)
+を採用する。受け入れ基準はT1-T8と異なり「**gapが有意に残る/解に時間がかかることを是とする**」
+(小scaleでも証明できなくてよい。教育的visualizationの題材としての価値を優先)。
+
+### 調査で確認した事実(出典)
+- 非凸QCQPは**変数数十個規模でもSCIP/BARON級ソルバーが苦戦する**ケースが2026年時点でも現役の研究対象
+  ([Enhancing QP Solvers via Quadratic Nonconvex Reformulation, arXiv 2508.20897](https://arxiv.org/html/2508.20897v1))。
+  McCormick強化で初めて解けた事例がある = 小規模でも本当に難しい題材が作れる根拠
+- AC-OPF(交流最適潮流)は「非平滑・非凸・非線形、積と三角関数を含む」古典的難問で、
+  DER統合はMINLP化しSCIP/BARONが使われる([ARPA-E Grid Optimization報告, arXiv 2206.07843](https://arxiv.org/pdf/2206.07843)、
+  [離散決定付きAC-OPFの大域最適化, ResearchGate](https://www.researchgate.net/publication/368267843))。
+  多期AC-OPFは蓄電池等の時間結合も持つ([Scalable Multi-Period AC-OPF, arXiv 2405.14032](https://arxiv.org/pdf/2405.14032))
+- 蓄電池は**電気化学-熱-容量劣化の連成非線形モデル**が2026年時点の研究最前線
+  ([高温環境でのLiイオン電池劣化解析, Battery Energy 2026](https://onlinelibrary.wiley.com/doi/10.1002/bte2.20250043)、
+  [非線形劣化モデルによるESS運用最適化, ResearchGate](https://www.researchgate.net/publication/339606265))。
+  容量劣化は温度・Cレート・DoD・平均SOCに依存する非線形関数
+- 鉄道は**時刻表+車両運用+エネルギー(回生電力の授受同期)の同時MINLP**が研究方向
+  ([周期時刻表の走行時間・回生エネルギー同時最適化, arXiv 2605.02355](https://arxiv.org/pdf/2605.02355)、
+  [都市鉄道の時刻表+車両循環+省エネ協調最適化, ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0360544222024859))
+- 熱交換器網(HEN)同時合成は**古典的に強非凸なMINLP**(Yee-Grossmann/Ciric-Floudas型)で、
+  多設備・多ユーティリティの同時決定+反復的な面積/温度近似(=収束計算前提)が今も研究対象
+  ([HENと熱回収サイクルの同時合成MINLP, ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0098135417300522))
+
+### テーマカタログ(上級ティア T9-T13)
+- **T9 AC電力網(交流潮流)**: 極座標/直交座標のAC-OPF(電圧×電圧×cos/sinの真の非凸結合)、
+  DER/スイッチのon-off混在、セキュリティ制約(N-1)版。現行のDC近似(T2 weekly_uc_ramp)を
+  真の非凸に格上げする対比題材として位置づけ
+- **T10 蓄電池・蓄熱の精緻化**: サイクル劣化コスト(温度・Cレート・DoD依存の非線形容量減衰)を
+  充放電計画に内生化、蓄熱は熱損失が温度差の非線形関数、電力上限との結合
+- **T11 鉄道運行の複雑化**: 複数列車の位置・速度・加減速(運動エネルギー~v²)、駅容量/進路競合、
+  変電所の電力上限を複数列車が共有(結合)、回生電力の授受タイミング同期
+- **T12 プラント多設備の同時物理合成**: 熱交換器網+ユーティリティ系統の同時合成(Yee-Grossmann型)、
+  複数設備(圧縮機・多段分離等)の非線形性能曲線を連成、面積/温度が反復的に決まる構造
+- **T13 横断: 小規模・真の非凸QCQPショーケース**: 変数数十個でもSCIP/BARONが苦戦する規模の
+  合成QCQP(調査文献のパターンを参考に自作)。空間分枝木・McCormickアニメの「本当に効く」実演用
+
+### 進め方
+- T9(AC-OPFの定式化パターン確立、三角関数×非凸のPySCIPOpt実装知見が要る)をOpusで先行
+- T10-T13はパターン確立後Sonnet中心で順次
+- 受け入れは「小scaleで実行可能解が出ること」のみ必須(最適証明は不要)。時間制限内gapが
+  大きく残ることは**成功**とみなす。ライブモニタ・空間分枝木・診断のvisualization題材として
+  有効かを主眼に確認する
+
+### T9 完了 — AC最適潮流(AC-OPF)/ 上級ティアの定式化パターン確立(2026-07-20)
+
+`samples/energy_and_microgrid/ac_opf.py` 新規。極座標形式 AC-OPF に離散コンデンサ
+バンク(整数)を混ぜた MINLP。T2 `weekly_uc_ramp.py`(簡易DC・線形)を**真の交流潮流**
+(電圧×電圧×cos/sin の非凸)へ格上げした対比題材。
+
+**定式化パターン(T10-T13 への申し送り)**
+- **PySCIPOpt の sin/cos は利用可**: `from pyscipopt import sin, cos, sqrt`(6.2.1 で確認)。
+  `cos(theta[i]-theta[j])`(位相角差=アフィン式)がそのまま非線形式ノードになり、SCIP が
+  空間分枝で厳密に扱う。変数分離等の代替表現は不要。Ybus のスパース性を使い隣接バス+自己項
+  のみ和をとる(密和は避ける)。
+- **落とし穴: 非線形目的は SCIP 非対応**。二次発電費用 `c·Pg²` は補助変数の epigraph 制約
+  (`cost_g >= a + b·Pg + c·Pg²`)へ移す。凸なので `>=` で厳密。T10 以降でも二次/非線形目的は
+  epigraph 化が定石。
+- **効いた実行可能性確保策**: 位相角差 ±30°(±π/6)制限・電圧境界を small でやや広め
+  [0.90,1.12]・発電容量をピーク需要の2倍超・基準バス θ=0 固定・整数(コンデンサ)は
+  無効バランスに**線形**に入れて真の非凸を V·V·cos/sin 側へ集約。→ small は**バランス等式の
+  スラック無し**(真の AC のまま)で 30-40 秒に 13-14 実行可能解。緩和変種は不要だった。
+
+**可視化題材としての評価**: 極めて良好。
+- small(5バス)で **weak_relaxation + dual_stall が発火**(非自明findings)、gap≈190%。
+- tree collector で small を解くと **spatial 293 / integer 106 / root 1**(最大深さ16)。
+  空間分枝は連続電圧・位相角(`V_2,V_3,theta_3,...`)に集中 = 非凸潮流の緩和を締める分割、
+  整数分枝はコンデンサ段数。**空間分枝木 × McCormick アニメの「本当に効く」実演材料**。
+- default(14バス)は gap 854%(30秒)、実行可能解5個。求解は一瞬で終わらず診断に十分。
+- 受け入れ: `experiments/acceptance.py` **1/1 PASS**。詳細 `results/acceptance_t9.md`、
+  smoke `tests/test_samples_t9.py`(small 実行可能を time_limit 明示・timelimit 許容)。
+
+**残課題(T10-T13 申し送り)**: 本モデルは整数を線形に入れて実行可能性を優先した。より難な
+「送電線 on/off・離散タップ(アドミタンス自体を離散化 → 非凸項に整数を掛け込む)」や
+セキュリティ制約(N-1)版は未実装。T13 の小規模QCQPショーケースでは本 epigraph 化と
+sin/cos の知見が再利用できる。
+
 ## スコープ外
 
 - **ML/GNN系(Forge、学習分岐等)・LLM支援**: 基盤の導入可否判断が必要なため当面除外。診断ルール表の将来拡張候補として名前だけ残す
