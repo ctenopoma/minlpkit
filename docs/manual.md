@@ -355,62 +355,50 @@ SCIP互換 .sol 化 → `readSolFile` + `addSol` で注入する。ヘルスは 
 [LP/MILP examples](https://docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/examples/milp-examples.html)、
 wire形式は [NVIDIA/cuopt](https://github.com/NVIDIA/cuopt) の `python/cuopt_self_hosted/cuopt_sh_client`）
 
-> **重要(正直な注記・更新: 2026-07-20 実サーバ疎通確認済み)**: 実装は公式仕様への準拠 +
-> モック契約テスト(`tests/test_gpu_http.py`、公式のリクエスト/レスポンス形に忠実なモックサーバ)に加え、
-> **2026-07-20、LAN上のGPUマシン(WSL2 + cuopt-env)`http://192.168.50.37:8001` に対して実サーバE2Eを
-> 実施し成功**(ヘルスチェック200 OK → 超小型MILP投入 → cuOpt目的値1.0の取得 → SCIPへの
-> `addSol` 注入 `accepted=True` まで一通り疎通)。無限境界は JSON が Infinity を表現できないため
-> `±1e20` センチネルへ丸めており、この丸め自体は実サーバ疎通で経路上は通過したが、
-> 無限境界を含む問題での厳密さそのものは引き続き未検証。動作確認済みの設定例:
-> `MINLPKIT_CUOPT_URL=http://192.168.50.37:8001`(社内LANに限定されたホストの一例であり、
-> 外部からアクセス可能なアドレスではない)。
+> **実装の検証範囲**: 公式仕様への準拠 + モック契約テスト(`tests/test_gpu_http.py`、
+> 公式のリクエスト/レスポンス形に忠実なモックサーバ)に加え、実サーバに対するE2E疎通
+> (ヘルスチェック → 超小型MILP投入 → cuOpt目的値の取得 → SCIPへの `addSol` 注入)も
+> 確認済み。無限境界は JSON が Infinity を表現できないため `±1e20` センチネルへ丸めており、
+> 無限境界を含む問題での厳密さは環境によって検証が必要。
 
-#### GPUサーバ側のセットアップ(2ルート。例: LAN上の Windows マシン `192.168.50.37`、WSL2あり)
+#### GPUサーバ側のセットアップ
 
-**ルートA: Docker Desktop で公式 cuOpt サーバコンテナを起動(推奨・簡便)**
+以下いずれかの方法で、GPUを持つホスト(Linux、またはWSL2を有効化したWindows)に
+cuOptサーバを立てる。
 
-```powershell
-# GPUマシン(Windows + Docker Desktop + WSL2 backend + NVIDIA Container Toolkit)で
+**方法A: 公式Dockerコンテナ(推奨)**
+
+```bash
+# GPUホスト(Docker + NVIDIA Container Toolkit導入済み)で
 # NGC にログイン(要 NVIDIA AI Enterprise / NGC APIキー)
 docker login nvcr.io          # Username: $oauthtoken / Password: <NGC APIキー>
 
 # cuOpt サーバコンテナを起動(GPU全公開、8000番でREST APIを待受)
-docker run --gpus all -d --rm -p 8000:8000 -e CUOPT_SERVER_PORT=8000 `
+docker run --gpus all -d --rm -p 8000:8000 -e CUOPT_SERVER_PORT=8000 \
   nvcr.io/nvidia/cuopt/cuopt:25.10
-
-# Windows ファイアウォールで 8000/tcp を LAN に開放(管理者PowerShell)
-New-NetFirewallRule -DisplayName "cuOpt 8000" -Direction Inbound `
-  -Action Allow -Protocol TCP -LocalPort 8000
 ```
-※ 正確なイメージタグは [NGC カタログ](https://catalog.ngc.nvidia.com/)の「pull tag」で確認
-（バージョンにより `nvcr.io/nvidia/cuopt/cuopt:<tag>`。上は 25.10 系の想定)。
 
-**ルートB: 既存の WSL2 cuopt-env に cuopt-server(pip)を入れて起動 + netsh で LAN 公開**
+正確なイメージタグは [NGC カタログ](https://catalog.ngc.nvidia.com/)の「pull tag」で確認する
+(バージョンにより `nvcr.io/nvidia/cuopt/cuopt:<tag>`。上は 25.10 系の想定)。
+ホストのファイアウォールでポートを開放し、クライアントから到達可能にすること。
 
-FINDINGS §7 のGPU実測はこの `192.168.50.37` の WSL2(cuopt-env)で行われていた。既存venvを流用する場合:
+**方法B: pipパッケージから直接起動(WSL2等の既存Python環境がある場合)**
 
 ```bash
-# GPUマシンの WSL2 Ubuntu 内(既存 ~/cuopt-env を流用)
-source ~/cuopt-env/bin/activate
 uv pip install --extra-index-url=https://pypi.nvidia.com "cuopt-server-cu13==25.10.*"
-# サーバ起動(0.0.0.0 で待受。ポートは環境変数で指定)
 CUOPT_SERVER_PORT=8000 python -m cuopt_server.cuopt_service   # 提供される起動コマンドに従う
 ```
-```powershell
-# WSL2 の待受を Windows ホスト経由で LAN 公開(管理者PowerShell)。<WSL_IP> は `wsl hostname -I`
-netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=8000 `
-  connectaddress=<WSL_IP> connectport=8000
-New-NetFirewallRule -DisplayName "cuOpt 8000" -Direction Inbound `
-  -Action Allow -Protocol TCP -LocalPort 8000
-```
-※ `cuopt-server` のパッケージ名/起動コマンドはバージョンで異なりうる。
-[self-hosted server overview](https://docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/index.html) で対象バージョンの正確な名称を確認すること。
+
+パッケージ名・起動コマンドはバージョンで異なりうるため、
+[self-hosted server overview](https://docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/index.html)
+で対象バージョンの正確な名称を確認する。WSL2からLANへポートを転送する場合は
+`netsh interface portproxy` と該当ポートのファイアウォール開放が必要。
 
 #### クライアント側(このリポジトリ)
 
 ```python
 import os, minlpkit as mk
-os.environ["MINLPKIT_CUOPT_URL"] = "http://192.168.50.37:8000"   # これだけ
+os.environ["MINLPKIT_CUOPT_URL"] = "http://<gpu-host>:8000"   # これだけ
 m = build_model()                       # 線形MILP、最適化前
 res = mk.cuopt_warmstart(m, time_limit=15)
 m.setParam("limits/time", 60); m.optimize()
@@ -419,5 +407,5 @@ m.setParam("limits/time", 60); m.optimize()
 サーバを立てたら、まず疎通確認スクリプトでE2E確認する(ヘルス + 超小型MILPの2段階):
 
 ```bash
-uv run python experiments/check_cuopt_server.py --url http://192.168.50.37:8000
+uv run python experiments/check_cuopt_server.py --url http://<gpu-host>:8000
 ```

@@ -855,6 +855,56 @@ sin/cos の知見が再利用できる。
   記載を汎用化した修正=を確認したが、自セッションが変更したものではないため
   `git add` 対象から明示的に除外し、不可侵を遵守)。
 
+## Phase 15: docs全面刷新(Diataxis化+サンプルカタログ+学習用notebook)— 着手
+
+背景: 現行docsは作業ログの延長で書かれ、(a)開発環境のLAN IPが公開docsに漏れていた、
+(b)リファレンスに内部検討メモ(「ルートA/B」等)が混在、(c)1ページが長すぎ(playbook.md 760行)、
+(d)使い方が「手法を知っている前提」でnotebookが不足、という4点の指摘を受けた。
+目指す形は**scikit-learn/FastAPI/PyTorch的な良いdocsの型**(Diataxis: チュートリアル/
+ハウツー/リファレンス/解説を混在させない)。mkdocs.yml には mermaid(pymdownx.superfences経由)・
+drawio プラグインが有効なので、アーキテクチャ図・決定フローに活用する。
+
+### 15.0 IP漏洩の除去 — 完了(親が直接対応)
+docs/manual.md の cuOptリモートサーバ節から実IP(192.168.50.37)・内部検討メモ(「ルートA/B」
+「FINDINGS §7の実測はここで行われていた」等)を除去し、`<gpu-host>` プレースホルダの
+一般的な手順書(方法A: Docker / 方法B: pipパッケージ)に書き換え済み。
+
+### 15.1 サンプルカタログ(全126本を対象。見せ方の設計が要)
+「1問題1notebookを全部作る」のではなく、**カテゴリ別・自動生成の一覧ページ**にする
+(scikit-learnのExample gallery方式)。各サンプルの docstring 冒頭(事業ストーリー1-2行)を
+抽出してテーブル化するジェネレータスクリプトを作り、手作業で126個書かない(census.mdの
+「実測から自動生成」パターンを踏襲)。カテゴリ(10個)ごとにページを分け(1ページに126行は長すぎる)、
+各行から該当.pyのGitHubソースへリンク。カテゴリごとに1-2行の紹介文。事業ストーリーが薄い/
+docstringが定型のみのサンプルも隠さず一覧に含める(全数を見せるのが今回の要件)
+
+### 15.2 Diataxis再編(playbook/manual分割)
+- `docs/playbook.md`(760行)→ `docs/playbook/` 配下: `index.md`(症状ジャンプ表のみ)+
+  手法ごとの短いページ(各<5分読了、目安800-1200字+コード)。参考(SCIP既定・非推奨)枠は
+  1ページにまとめてよい
+- `docs/manual.md`(423行)→ `docs/manual/` 配下: インストール/ワークフロー/ライブモニタ/
+  GPU設定/落とし穴・制約、に分割。各ページはリファレンストーン(散文的な作業ログ調を排除)
+- mermaid図: ライブモニタの書き手/読み手分離アーキテクチャ、症状→手法の決定フロー、
+  ベンダーズ/列生成のループ図、診断→改善→検証のパイプライン図
+- 全内部リンク(playbook.html#3-... 等のアンカー参照)を新パスに更新。mkdocs build --strict
+
+### 15.3 学習用notebook(手を動かして学ぶ層。厳選、フォルダ整理)
+方針: 全126本ではなく、**手法・可視化機能・旗艦サンプル**の3系統で厳選する(むやみに量産しない)。
+各notebookは「素朴にやる→診断→手法適用→before/afterをグラフで」の型で、実行結果(グラフ)込み。
+- `docs/notebooks/improve/`(手法、~8-9本): 整数×連続線形化(既存hands_on_improvementを昇華 or 独立化)、
+  PWL-SOS2、Big-M/Indicator、チューニング+スイープ、ベンダーズ、列生成(基礎+安定化+price-and-branch)、
+  GPU warm start(GPU無し環境でのfallback含む)、条件数・数値健全性
+- `docs/notebooks/diagnose/`(可視化機能、~4-5本): McCormick緩和+空間分枝木、違反ヒートマップ、
+  gap停滞とattribution、静的診断(係数スケール・ブロック構造・対称性)
+- `docs/notebooks/samples/`(旗艦サンプル、T1/T2/T3/T9クラスタから2本ずつ程度=7-8本): 事業ストーリー
+  →素朴な定式化→診断→改善、を1本の物語として。既存hands_on_diagnosis/improvementはここに統合 or 参照
+- 既存 docs/notebooks/quickstart.ipynb は「学ぶ」入口として残す
+
+### 進め方
+- 15.1(カタログ生成)と15.2(Diataxis分割)はOpusで先行(編集判断が要る)。mkdocs.yml競合を避け**逐次**実行
+- 15.3(notebook群)はパターン確立(Opus、2-3本)後Sonnetで量産。既存の run_*.py / results/*.html の
+  実測を可能な限り再利用し新規solveを増やしすぎない
+- 各段階でmkdocs build --strict・pytest・push・CI成功を確認
+
 ## スコープ外
 
 - **ML/GNN系(Forge、学習分岐等)・LLM支援**: 基盤の導入可否判断が必要なため当面除外。診断ルール表の将来拡張候補として名前だけ残す
