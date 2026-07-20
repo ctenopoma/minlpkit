@@ -37,6 +37,13 @@ flowchart LR
 8反復で収束する(FINDINGS §3、[`colgen.html`](../gallery/colgen.html))。**正直な知見**: この
 LP境界はコンパクト定式化の材料下界(23.52)と**同等**であり、列生成の価値は「LP強度」では
 なく「指数的な列を列挙せず暗黙に扱う」こと(実務ではコンパクトが構築不能な規模で効く)。
+生成済み列だけを使った制限主問題(整数)は、対称なコンパクト定式化(5231ノード)に対し
+**わずか1ノード**で同じ整数最適(24ロール)に到達する。
+
+![列生成の収束: RMPのLP境界が材料下界へ単調に締まる](../assets/playbook/06-colgen-convergence.png)
+
+原理(RMP↔pricing反復)から効果測定までを図付きで追うには
+[手法notebook: 列生成](../notebooks/improve/06_column_generation.ipynb) を参照。
 
 ## 双対安定化(Wentges)
 

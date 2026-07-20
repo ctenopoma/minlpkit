@@ -43,6 +43,13 @@ flowchart LR
 `facility`(施設配置)を主問題(開設 y)/サブ問題(輸送LP)に分解する。単一問題を直接解いた
 最適値 1340 に**完全一致**(下界=上界=1340)、**3反復・2カットで収束**する
 (下界 360→1280→1340、FINDINGS §3、[`benders.html`](../gallery/benders.html))。
+規模を大きくした合成インスタンス(14施設・20顧客)でも同様に monolithic の最適値と
+厳密一致するまで下界・上界が収束する(下図、65反復・64カット)。
+
+![ベンダーズ反復の収束: 下界(主問題)と上界(サブ問題)がmonolithicの最適値へ収束](../assets/playbook/05-benders-convergence.png)
+
+原理(カット往復ループ)から効果測定までを図付きで追うには
+[手法notebook: ベンダーズ分解](../notebooks/improve/05_benders.ipynb) を参照。
 
 ### 効かないとき・注意
 
