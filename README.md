@@ -79,6 +79,8 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 [チュートリアル](https://ctenopoma.github.io/minlpkit/notebooks/quickstart.html)は
 [Colab で直接実行](https://colab.research.google.com/github/ctenopoma/minlpkit/blob/main/notebooks/quickstart.ipynb)できます。
 実際の求解結果は[ギャラリー](https://ctenopoma.github.io/minlpkit/gallery.html)にまとめています。
+同梱する 126 本のサンプルは[サンプルカタログ](https://ctenopoma.github.io/minlpkit/samples/index.html)で
+カテゴリ別に一覧できます(`uv run python experiments/gen_sample_catalog.py` で `docs/samples/` を再生成)。
 
 ## Development
 

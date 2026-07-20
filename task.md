@@ -877,6 +877,26 @@ docs/manual.md の cuOptリモートサーバ節から実IP(192.168.50.37)・内
 各行から該当.pyのGitHubソースへリンク。カテゴリごとに1-2行の紹介文。事業ストーリーが薄い/
 docstringが定型のみのサンプルも隠さず一覧に含める(全数を見せるのが今回の要件)
 
+**15.1完了(2026-07-20)**: `experiments/gen_sample_catalog.py`(新規)が `samples/` を `ast` で
+**静的**スキャン(import/solve せず=速く・安全・引数必須でも可)し、モジュール docstring 冒頭から
+事業ストーリー1行を抽出して `docs/samples/` に11ファイル(index + 10カテゴリ)を生成する。
+- **件数: 126本**(全数一致)。カテゴリ内訳: scheduling 21 / energy_and_microgrid 16 /
+  location_and_network_design 14 / routing_and_logistics 13 / others 12 / graph_and_discrete 11 /
+  physics_and_control_minlp 11 / manufacturing_and_blending 10 / finance_and_pricing 9 /
+  packing_and_cutting 9。旗艦 ⭐ 11本(T1×3/T2×4/T3×3/T9×1)、`scale` 引数対応 15本を検出。
+- 各カテゴリページ=テーブル(サンプル名/事業ストーリー/scale/GitHubソースリンク)+ カテゴリ紹介文。
+  index.md はカテゴリ一覧(件数+旗艦数+概要)+ 旗艦一覧。旗艦は ⭐、`docs/notebooks/samples/<stem>.ipynb`
+  が存在すれば学習notebookリンクを**動的**に付与(今は0本なのでリンク非表示)。
+- docstring 抽出品質: 全126本が docstring を持ちファイル名補完(フォールバック)発火は**0本**。
+  RST見出し(「事業ストーリー」+下線)・実行例・数式行はスキップして散文だけを連結する処理を実装。
+- 再生成: `uv run python experiments/gen_sample_catalog.py`(samples/ 動的スキャンなので他クラスタ追加も自動で拾う)。
+  README.md の Documentation 節に再生成コマンドの案内を1行追加。
+- 検証: 11ファイル生成・件数126一致、`uv run mkdocs build --strict` exit 0(docs/samples/ は
+  nav未接続だが orphan は INFO レベルで strict を通過)、`uv run pytest -q` 53 passed/2 skipped。
+- **mkdocs.yml へ追加すべき nav(親が一括反映)**: 「実践」セクション配下に
+  `- サンプルカタログ: samples/index.md` を追加(カテゴリ10ページは index からの相互リンクで到達可能。
+  全11ページを nav 明示したい場合はサブメニュー化も可)。
+
 ### 15.2 Diataxis再編(playbook/manual分割)
 - `docs/playbook.md`(760行)→ `docs/playbook/` 配下: `index.md`(症状ジャンプ表のみ)+
   手法ごとの短いページ(各<5分読了、目安800-1200字+コード)。参考(SCIP既定・非推奨)枠は
