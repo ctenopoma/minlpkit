@@ -102,8 +102,10 @@ nav:
           - 整数×連続の厳密線形化: notebooks/improve/01_linearize_product.ipynb
           - PWL近似(SOS2): notebooks/improve/02_pwl_sos2.ipynb
           - Big-M排除(tight M・Indicator): notebooks/improve/03_bigm_indicator.ipynb
+          - SCIPパラメータチューニング: notebooks/improve/04_tuning.ipynb
           - ベンダーズ分解: notebooks/improve/05_benders.ipynb
           - 列生成: notebooks/improve/06_column_generation.ipynb
+          - GPU warm start: notebooks/improve/07_gpu_warmstart.ipynb
           - 条件数・数値健全性: notebooks/improve/08_condition_number.ipynb
       - ハンズオン(1)可視化・診断編: notebooks/hands_on_diagnosis.ipynb
       - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb

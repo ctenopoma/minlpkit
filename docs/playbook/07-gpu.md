@@ -31,6 +31,12 @@ cuOpt単体 gap **0.64%**、hybrid(cuOpt注入→SCIP)gap **4.72%**(FINDINGS §7
 ローカル成果物のためドキュメントサイトには未同梱)。xlスケール(240,000バイナリ、120秒)
 でも優位は持続する: SCIP 20.72% / cuOpt 4.72% / hybrid 7.99%。
 
+![GPU warm startの before/after: ルート双対境界・最終gap・ノード数](../assets/playbook/07-gpu-effect.png)
+
+原理(warm startがB&Bの枝刈りの出発点をどう変えるか)から適用・効果測定までを図付きで追うには
+[手法notebook: GPU warm start](../notebooks/improve/07_gpu_warmstart.ipynb) を参照
+(GPUサーバに接続できない環境向けのfallback経路も収録)。
+
 ### 効かないとき・注意
 
 - **等式制約が変数を共有する構造(集合分割型)には効かない**。集合分割 large(40,000列)では
