@@ -816,6 +816,45 @@ T1-T8(事業課題ドリブン、中難度)の上に、**真に解きづらい**
 セキュリティ制約(N-1)版は未実装。T13 の小規模QCQPショーケースでは本 epigraph 化と
 sin/cos の知見が再利用できる。
 
+### T10 完了 — 蓄電池・蓄熱の精緻化(2026-07-20)
+
+`samples/energy_and_microgrid/battery_degradation_dispatch.py`・
+`samples/energy_and_microgrid/thermal_storage_lossy.py` 新規。2モデルとも
+**PASS**(`experiments/acceptance.py` 2/2、詳細 `results/acceptance_t10.md`)。
+事業ストーリー1行ずつ:
+
+- **battery_degradation_dispatch**: BESS運用者が電力価格差アービトラージと
+  サイクル劣化コスト(Cレート・DoD・外気温のべき乗積で加速、
+  `deg_t >= K_DEG*crate_t^1.5*dod_t^1.3*temp_factor_t`)を同時最適化する充放電
+  計画。容量 `cap_t` を分母に持つ `crate_t*cap_t >= 充放電電力` の双曲線が
+  「容量が痩せるほどCレートが実質的に上がり劣化が加速する」自己強化フィードバックを
+  作り、SOC推移(時間結合1)+ 容量劣化の不可逆累積(時間結合2)の二重構造を持つ。
+  small(24期)最適1.3s / default(72期、has_nonlinear=True)**gap 4.3% +
+  numerical_scale** でPASS。
+- **thermal_storage_lossy**: 蓄熱運用者が複数槽の充放熱を、契約電力上限と共有
+  ヒートポンプ容量の制約下で計画する。自然対流損失(`loss >= UA*dtemp^1.25`)+
+  COPの温度リフト依存(`q_charge == (COP_MAX-K_COP*dtemp)*p_elec` の真の双線形)
+  の二重の非線形構造。small(槽2×24期)最適3.0s / default(槽4×72期)
+  **gap 62.2%(root timelimit)+ numerical_scale** でPASS。
+- 知見(詳細は `results/acceptance_t10.md` 末尾): **「物理的に正しい非線形性」が
+  必ずしも「診断的に難しい」構造を生むとは限らない**。当初 thermal_storage_lossy
+  はCOPを定数とし自然対流損失(温度差^1.25)のみを非線形項としたところ、
+  small・default とも1ノード(root)で即時最適(gap0%)になった——`x^1.25`(x>=0)
+  は単変数の**凸**関数であり、epigraph形の不等式制約はSCIPの凸NLP求解でそのまま
+  厳密に解けてしまうため。T2 hydro_cascade_efficiency・T3 microgrid_design_
+  operation・T10 battery_degradation_dispatch に続き、真の非凸(分枝を要する)には
+  **2つ以上の決定変数の積**(双線形/双曲線)が必要という教訓を再確認し、COPの
+  温度リフト依存(状態変数×運用変数の積、カルノー効率低下の定性的傾向として物理的に
+  正当)を追加して解消した。battery_degradation_dispatch は整数変数を持たない
+  「純粋な連続非凸MINLP」として tree collector で small が spatial 290/root 1
+  (最大深さ34)を記録し、T1-T9にない分枝パターン(整数分枝ゼロ)の可視化題材と
+  なった。
+- 検証: `uv run pytest -q` 53 passed/2 skipped、smoke `tests/test_samples_t10.py`
+  3本パス。`mkdocs build --strict` exit 0(自セッションの変更分に対して確認。
+  `docs/manual.md` に他セッション由来の未コミット差分=cuOptサーバIPアドレスの
+  記載を汎用化した修正=を確認したが、自セッションが変更したものではないため
+  `git add` 対象から明示的に除外し、不可侵を遵守)。
+
 ## スコープ外
 
 - **ML/GNN系(Forge、学習分岐等)・LLM支援**: 基盤の導入可否判断が必要なため当面除外。診断ルール表の将来拡張候補として名前だけ残す
