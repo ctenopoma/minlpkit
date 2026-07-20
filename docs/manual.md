@@ -3,6 +3,10 @@
 MINLP の **観測(analyze)→ 診断(findings/recipe)→ 改善(transforms/frameworks)→ 検証(compare_variants)**
 を1本で通すためのマニュアル。コード例はすべてコピペで動く(本リポジトリの doctest / demo で検証済み)。
 
+> **列生成・ベンダーズ・再定式化などの手法を知らない場合**は、このマニュアル(API仕様の網羅)
+> より先に [プレイブック(症状→打ち手)](playbook.md) を読むほうが早い。症状から該当する
+> 手法へ直接ジャンプでき、「なぜ効くか」「どのくらい効くか」を実測付きで説明している。
+>
 > 手を動かして学ぶなら、実サンプルで診断を読む
 > [ハンズオン(1)可視化・診断編](notebooks/hands_on_diagnosis.ipynb) と、recipe の効果を
 > before/after で測る [ハンズオン(2)改善編](notebooks/hands_on_improvement.ipynb) が近道。
@@ -121,7 +125,7 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 
 ---
 
-## 4. ライブモニタの使い方
+## 4. ライブモニタの使い方 {#4-live}
 
 TensorBoard 型(書き手/読み手分離)。2ターミナルで使う。
 
@@ -189,7 +193,7 @@ parallel coordinates 図(パラメータ軸 + final_dual/final_gap 軸)を出力
 
 ---
 
-## 5. 診断ルール一覧(7ルール)
+## 5. 診断ルール一覧(7ルール) {#5-rules}
 
 `minlpkit/collectors/diagnose.py` の `RULES` を転記。`mk.evaluate(metrics)` は発火したルールを
 重要度順(critical→serious→warning→good)で返す。
@@ -254,7 +258,7 @@ parallel coordinates 図(パラメータ軸 + final_dual/final_gap 軸)を出力
 
 ---
 
-## 7. GPU warm start(cuOpt)
+## 7. GPU warm start(cuOpt) {#7-gpu-warmstart}
 
 `mk.cuopt_warmstart` は「GPUは可行解探索、CPUは証明」という分業を1関数に閉じ込めたもの。
 NVIDIA cuOpt(GPU上のMIPヒューリスティクス)を短時間走らせて可行解を掘り、SCIPへ

@@ -54,6 +54,7 @@ plugins:
             heading_level: 2
 
 markdown_extensions:
+  - attr_list
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -69,14 +70,17 @@ markdown_extensions:
       permalink: true
 
 nav:
-  - ホーム: index.md
-  - 利用マニュアル: manual.md
-  - 試してみる:
+  - はじめに: index.md
+  - 学ぶ:
       - クイックスタート: notebooks/quickstart.ipynb
+  - プレイブック(症状→打ち手): playbook.md
+  - 実践:
       - ハンズオン(1)可視化・診断編: notebooks/hands_on_diagnosis.ipynb
       - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb
-  - 診断センサス: census.md
-  - APIリファレンス:
+      - 診断センサス: census.md
+      - ギャラリー: gallery.md
+  - リファレンス:
+      - 利用マニュアル: manual.md
       - パイプライン (analyze/Report): api/pipeline.md
       - 比較 (compare_variants): api/compare.md
       - 変換 (transforms): api/transforms.md
@@ -84,4 +88,3 @@ nav:
       - 診断ルール (diagnose): api/diagnose.md
       - ライブ可視化 (live): api/live.md
       - チューニング (tune): api/tune.md
-  - ギャラリー: gallery.md

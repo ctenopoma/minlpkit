@@ -647,3 +647,31 @@ Phase 11 の cuOpt 連携は同一マシンの WSL2 CLI 直叩き固定だった
 - ~~GPU(cuOpt等)~~ → **Phase 11で解禁**(実機RTX 5070 Ti + WSL2でcuOpt導入済み)
 - Pyomo、量子(QUBO/イジング、専用ハード前提)
 - ※ MDDは非ML/GPU/LLMのため上記監査の❌に移動(スコープ外ではなく「やり残し」)
+
+## Phase 14: 実務者プレイブック執筆 + docs情報設計の再編 — 完了 2026-07-20
+
+想定読者を「モデリングはできるが列生成・ベンダーズ・再定式化などの手法を知らない実務者」に
+絞り、FINDINGS.md/census/notebooksの実測だけを根拠にした症状起点のプレイブックを新設した。
+
+- [x] **`docs/playbook.md`**: 症状ジャンプ表(冒頭)+ 13節(診断そのもの/対称性除去/
+  被約コスト固定/整数×連続の厳密線形化/PWL-SOS2/Big-M排除/SCIPチューニング+スイープ/
+  ベンダーズ分解/列生成(基礎・双対安定化・price-and-branch)/GPU warm start/条件数・数値
+  健全性/ライブ監視・run記録・rerun/Perspective再定式化)。各節は「こんな課題ありませんか→
+  診断で何がわかるか→打ち手の仕組み→効果(実測)→効かないとき・注意→使い方」の統一
+  フォーマット。SCIPが自動でやる/かえって悪化する事実(FINDINGS §1・§2)を隠さず反映
+  (対称性除去・被約コスト固定・perspectiveは「常用非推奨/通常不要」と明記)
+- [x] **docs情報設計の再編**(`mkdocs.yml` nav): 「はじめに」→「学ぶ」(quickstart)→
+  「プレイブック(症状→打ち手)」→「実践」(ハンズオン2本+診断センサス+ギャラリー)→
+  「リファレンス」(manual+API群)の読者の旅に沿った構成に変更。`docs/index.md` と
+  `docs/manual.md` 冒頭にプレイブックへの導線を追加、`README.md` の Documentation 節にも
+  1文追加
+  - `attr_list` 拡張を追加してプレイブック内節見出しに `{#id}` の安定アンカーを付与
+    (症状ジャンプ表からのリンク先)、`manual.md` の該当見出しにも `{#5-rules}` 等を追加
+- [x] **検証**: playbook内の全コード片(analyze/compare_variants/linearize_product/
+  pwl_sos2/Indicator/matrix_condition・scip_basis_condition/benders/column_generation・
+  price_and_branch/perspective_quadratic)を実行して動作確認(scratchpadで smoke test)。
+  `uv run mkdocs build --strict` exit 0(リンク・アンカー切れ0件、gallery内の実在ファイルへ
+  リンクを揃え、ローカル専用の`results/gpu/*.html`は非リンク表記に修正)。`uv run pytest -q`
+  35 passed / 2 skipped(既存回帰、触っていないことを確認)
+- [x] **公開**: main直コミット→push→GitHub Actionsでdocsビルド→
+  https://ctenopoma.github.io/minlpkit/playbook.html が200であることを確認
