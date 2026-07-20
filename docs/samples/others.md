@@ -8,7 +8,7 @@
 | --- | --- | :---: | :---: |
 | bike_sharing_rebalancing | シェアサイクル再配置ルーティング (Bike Sharing Rebalancing) — シェアサイクル運営会社のオペレーションチームが、夜間にトラックで自転車を運び、 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/others/bike_sharing_rebalancing.py) |
 | fixed_charge | 固定費付き生産計画 (MILP) — Big-M改善の実証用 — 各施設 i は開設(y_i=1)して初めて生産 x_i>0 できる。開設に固定費 f_i。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/others/fixed_charge.py) |
-| fixed_charge_network | Fixed Charge Network Flow Problem. — This model minimizes the total cost of routing flow through a network, where | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/others/fixed_charge_network.py) |
+| fixed_charge_network | 固定費用付きネットワークフロー問題 (Fixed Charge Network Flow Problem) — 物流ネットワーク設計担当者が、複数の配送センター・中継拠点・最終拠点からなる | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/others/fixed_charge_network.py) |
 | media_mix_advertising | 広告予算メディアミックス配分 (Media Mix Advertising). — マーケティング部門のメディアプランナーが、四半期の広告予算を複数のメディア | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/others/media_mix_advertising.py) |
 | parallel_machines | 恒等並列機械へのジョブ割当 (MILP, 強い対称性を持つ) — 対称性検出・対称性除去(Phase 4)の題材。機械が恒等なので任意の2機械を | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/others/parallel_machines.py) |
 | railway_line_planning | 鉄道運行系統・線路容量計画 (Railway Line Planning) — 鉄道事業者の「運行計画部門」が、複数の運行系統(路線)についてダイヤ改正時の運行頻度 | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/others/railway_line_planning.py) |
