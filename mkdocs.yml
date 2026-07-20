@@ -122,14 +122,14 @@ nav:
               - ガイド: playbook/09-live-monitor.md
               - セットアップ手順: manual/live-monitor.md
           - "参考: SCIPが自動でやること": playbook/10-reference-scip-handles.md
-      - 旗艦サンプルで学ぶ(事業ストーリー→診断→改善):
-          - 石油プーリング多期計画(T1): notebooks/samples/petroleum_pooling.ipynb
-          - 鋳造の多期チャージ配合(T1): notebooks/samples/foundry_charge_mix_multiperiod.ipynb
-          - 週次UC+送電混雑(T2): notebooks/samples/weekly_uc_ramp.ipynb
-          - 水頭依存効率の水力カスケード(T2): notebooks/samples/hydro_cascade_efficiency.ipynb
-          - 送電線増強計画+運用(T3): notebooks/samples/transmission_expansion_operation.ipynb
-          - マイクログリッド設計+運用(T3): notebooks/samples/microgrid_design_operation.ipynb
-          - 交流最適潮流 AC-OPF(T9): notebooks/samples/ac_opf.ipynb
+      - サンプルnotebookで学ぶ(事業ストーリー→診断→改善):
+          - 石油プーリング多期計画: notebooks/samples/petroleum_pooling.ipynb
+          - 鋳造の多期チャージ配合: notebooks/samples/foundry_charge_mix_multiperiod.ipynb
+          - 週次UC+送電混雑: notebooks/samples/weekly_uc_ramp.ipynb
+          - 水頭依存効率の水力カスケード: notebooks/samples/hydro_cascade_efficiency.ipynb
+          - 送電線増強計画+運用: notebooks/samples/transmission_expansion_operation.ipynb
+          - マイクログリッド設計+運用: notebooks/samples/microgrid_design_operation.ipynb
+          - 交流最適潮流 AC-OPF: notebooks/samples/ac_opf.ipynb
       - 診断ベンチマーク結果(全サンプル一括診断): census.md
   - サンプル:
       - サンプルカタログ:
