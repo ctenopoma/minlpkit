@@ -736,6 +736,43 @@ Phase 11 の cuOpt 連携は同一マシンの WSL2 CLI 直叩き固定だった
   がnav未登録)により実行時エラーとなったが、自セッションが `mkdocs.yml`/`docs/` を
   一切変更していないことを `git status`/`git diff` で確認済み(不可侵の遵守)。
 
+### T4 完了 — サプライチェーン統合クラスタ(2026-07-20)
+
+3モデルとも **PASS**(`results/acceptance_t4.md`)。事業ストーリー1行ずつ:
+
+- **production_distribution_integrated**(`samples/routing_and_logistics/`, 新規):
+  生産・物流統合計画者が複数工場のロットサイジング(段取り+在庫)と複数DCへの
+  トラック配送(共有車隊+共有ドライバー労務時間の多次元ナップサック)を同時決定。
+  small(工場2×DC3×期3)最適0.6s / default(工場9×DC16×期14、4634変数)は
+  30秒でroot LPの求解自体が終わらず `nsols=3` のまま **gap 77.1%** でPASS。
+- **multi_echelon_inventory_realistic**(`samples/routing_and_logistics/`, 新規):
+  サプライチェーン計画者が工場→DC→小売の3段階在庫について、各段の整数ロット
+  発注・リードタイム跨ぎの在庫バランス(時間結合)・工場生産能力の共有(統合
+  意思決定)・安全在庫割れと欠品のペナルティを同時決定。small(DC2×小売4×期4)
+  最適0.9s / default(DC4×小売12×期8、736変数)**gap 4.2% + `numerical_scale`**
+  でPASS。
+- **maritime_inventory_routing_realistic**(`samples/routing_and_logistics/`, 新規、
+  既存 `maritime_inventory_routing.py`(Phase16精緻化版、期あたり隻数の集計変数)
+  とは別に個々の船舶を区別した精緻化版): 海運計画者が異容量の複数タンカーの
+  配船スケジュール(航海サイクル=時間結合)と港湾在庫を同時決定、複数港が
+  同一船隊を取り合う。small(船3×港3×期6)最適7.0s / default(船5×港6×期10、
+  720変数)**gap 19.4% + `dual_stall`** でPASS。
+- 知見(詳細は `results/acceptance_t4.md` 末尾): T4は**T1-T3のどの手法も
+  素直には効かなかった**クラスタ。固定費用ネットワークフロー型MILP
+  (`production_distribution_integrated`)は共有資源(車隊・労務時間)を
+  どれだけタイト化しても多数レーンでの「ならし効果」によりroot nodeで
+  gap<1%に収束してしまい、**唯一有効だったのは変数・制約規模を純粋に
+  拡大してLPソルブ時間そのものを使い切ること**(工場9×DC16×期14まで拡大)
+  だった。また純粋MILPでは `numerical_scale`(big-M残存)を狙って発火させる
+  のも困難(SCIPのbound-tightening presolveが非凸性の無いモデルでは
+  big-Mを完全に締めてしまう)ことを確認した。一方 `maritime_inventory_routing_realistic`
+  は船隊の総スループットと港湾総消費量を臨界点(94%)まで拮抗させることで
+  bin-packing的な組合せ判断を作れ、`multi_echelon_inventory_realistic` は
+  発注-在庫のデカップリング(小売発注はDC在庫と無関係に確定)がDC在庫の
+  負値リスクを生むため緊急補充バックストップが必須という、T1-T3の
+  「バックストップは他制約と整合しないと機能しない」教訓の新パターンを確認した。
+- 検証: `uv run pytest -q` 57 passed/2 skipped、smoke `tests/test_samples_t4.py` 4本パス。
+
 ## Phase 13(拡張): 上級ティア — 研究動向ドリブンの高難度クラスタ(着手)
 
 T1-T8(事業課題ドリブン、中難度)の上に、**真に解きづらい**題材の層を追加する。根拠はWeb調査
