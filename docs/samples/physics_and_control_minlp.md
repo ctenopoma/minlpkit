@@ -6,8 +6,8 @@
 
 | サンプル | 事業ストーリー | scale | ソース |
 | --- | --- | :---: | :---: |
-| ⭐ **district_heating_detailed_physics** | 地域熱供給網 (District Heating Network) の詳細物理最適化モデル (MINLP) — 地域熱供給事業者の「プラント運転員」が、熱源プラントから放射状(木構造)に広がる配管網を | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/physics_and_control_minlp/district_heating_detailed_physics.py) |
-| ⭐ **water_network_reuse** | 工場内 用水・再利用ネットワーク (Industrial Water Reuse Network Synthesis). — 化学/製紙/半導体などの工場の「ユーティリティ設計チーム」が、複数の水使用プロセス | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/physics_and_control_minlp/water_network_reuse.py) |
+| ⭐ **district_heating_detailed_physics** | 地域熱供給網 (District Heating Network) の詳細物理最適化モデル (MINLP) — 地域熱供給事業者の「プラント運転員」が、熱源プラントから放射状(木構造)に広がる配管網を通じて複数需要家へ熱を届けるための、各期(時間帯)ごとの質量流量・温度・熱源出力・ポンプ動力を決める意思決定である。 | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/physics_and_control_minlp/district_heating_detailed_physics.py) |
+| ⭐ **water_network_reuse** | 工場内 用水・再利用ネットワーク (Industrial Water Reuse Network Synthesis). — 化学/製紙/半導体などの工場の「ユーティリティ設計チーム」が、複数の水使用プロセス(洗浄・冷却・反応など)の間に**再利用配管**をどう敷設し、各プロセスへ淡水・再利用水・再生水をどう配分するかを決め、**淡水購入費と排水処理費と設備費を最小化**する意思決定である。 | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/physics_and_control_minlp/water_network_reuse.py) |
 | chp_plant_synthesis_minlp | 熱電併給(CHP)プラントのスーパー構造ベース合成最適化 (MINLP) — ガスタービン(GT)、排熱回収ボイラー(HRSG)、蒸気タービン(ST)、および補助ボイラーからなる | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/physics_and_control_minlp/chp_plant_synthesis_minlp.py) |
 | data_center_cooling_power_minlp | データセンターのITジョブと冷却・電力システムの連成最適化 (MINLP) — 大量の電力を消費するデータセンターにおいて、計算ジョブ（バッチ処理）の | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/physics_and_control_minlp/data_center_cooling_power_minlp.py) |
 | heat_exchanger_network | 熱交換ネットワーク合成問題 (Heat Exchanger Network Synthesis - HENS) — 化学プロセス設計において、エネルギー消費量（外部ユーティリティ使用量）と | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/physics_and_control_minlp/heat_exchanger_network.py) |

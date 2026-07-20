@@ -130,7 +130,7 @@ nav:
           - 送電線増強計画+運用(T3): notebooks/samples/transmission_expansion_operation.ipynb
           - マイクログリッド設計+運用(T3): notebooks/samples/microgrid_design_operation.ipynb
           - 交流最適潮流 AC-OPF(T9): notebooks/samples/ac_opf.ipynb
-      - 診断センサス(全サンプル一括診断の結果): census.md
+      - 診断ベンチマーク結果(全サンプル一括診断): census.md
   - サンプル:
       - サンプルカタログ:
           - 概要(全129本): samples/index.md

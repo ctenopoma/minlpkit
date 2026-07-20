@@ -139,23 +139,49 @@ def _content_lines(doc: str) -> list[str]:
     return out
 
 
+def _first_paragraph_after_heading(doc: str) -> str | None:
+    """「事業ストーリー」見出し直後の段落を、行の折り返しを解いた1つの文として復元する。"""
+    raw = doc.splitlines()
+    n = len(raw)
+    for i in range(n):
+        if raw[i].strip() != "事業ストーリー":
+            continue
+        j = i + 1
+        if j < n and _is_underline(raw[j].strip()):
+            j += 1
+        while j < n and not raw[j].strip():
+            j += 1
+        para: list[str] = []
+        while j < n and raw[j].strip():
+            para.append(raw[j].strip())
+            j += 1
+        if para:
+            return "".join(para)
+    return None
+
+
 def summarize_docstring(doc: str | None, stem: str) -> tuple[str, bool]:
-    """docstring から1行の事業ストーリー要約を作る。(要約, docstringから取れたか)。"""
+    """docstring から事業ストーリー要約を作る。(要約, docstringから取れたか)。"""
     if not doc:
         return _fallback_story(stem), False
     lines = _content_lines(doc)
     if not lines:
         return _fallback_story(stem), False
-    first = lines[0]
-    story = first
-    # 2行目(散文)があれば連結してより説明的に
-    if len(lines) >= 2:
-        story = f"{first} — {lines[1]}"
+    title = lines[0]
+    # 「事業ストーリー」見出し直後の段落を、行の折り返しを解いて丸ごと復元する
+    # (単一の折り返し行だけを拾うと文の途中で切れるため)
+    body = _first_paragraph_after_heading(doc)
+    if not body and len(lines) >= 2:
+        body = lines[1]
+    story = f"{title} — {body}" if body else title
     story = story.replace("|", "/").strip()
-    # 長すぎる場合は切り詰め
-    limit = 130
+    # 長すぎる場合は文の区切り(。)で切り詰める(単語・括弧の途中で切らない)
+    limit = 260
     if len(story) > limit:
-        story = story[:limit].rstrip() + "…"
+        cut = story.rfind("。", 0, limit)
+        if cut == -1:
+            cut = story.rfind("、", 0, limit)
+        story = (story[: cut + 1] if cut != -1 else story[:limit].rstrip() + "…")
     # 実質空/超短(見出しの残骸のみ)ならフォールバック扱い
     ok = len(story) >= 8
     return (story if ok else _fallback_story(stem)), ok
@@ -261,17 +287,19 @@ def write_index(by_cat: dict[str, list[SampleInfo]]) -> Path:
     lines.append("")
     lines.append(
         "minlpkit に同梱する **" + str(total) + " 本**の MINLP/MILP サンプルモデルを"
-        "カテゴリ別に一覧化したギャラリーです(scikit-learn の Example gallery に相当)。")
+        "カテゴリ別に一覧化したカタログです(scikit-learn の Example gallery に相当)。")
     lines.append(
         "各サンプルは実在する事業課題を題材にした `build_model()` を持ち、"
-        "可視化・診断・改善手法の検証台(センサス)として使えます。")
+        "可視化・診断・改善手法の検証台として使えます。実行結果を見たい場合は"
+        "[成果ギャラリー](../gallery.md)を参照。")
     lines.append(
         "説明文は各ファイルのモジュール docstring から自動抽出しています"
         f"(再生成: `uv run python experiments/gen_sample_catalog.py`)。")
     lines.append("")
     lines.append(
-        f"⭐ マークは事業ストーリーが特に厚い**旗艦サンプル**({flag_total} 本、"
-        "T1/T2/T3/T9 クラスタ)。手法を物語として学ぶ入口に向いています。")
+        f"⭐ マークは事業ストーリーが特に厚い**旗艦サンプル**({flag_total} 本)。"
+        "事業ストーリー→素朴な定式化→診断→改善を1本の物語として追える題材で、"
+        "手法を物語として学ぶ入口に向いている。")
     lines.append("")
     lines.append("## カテゴリ一覧")
     lines.append("")
@@ -306,8 +334,9 @@ def write_index(by_cat: dict[str, list[SampleInfo]]) -> Path:
     lines.append("")
     lines.append(
         "!!! note \"学習用 notebook\"\n"
-        "    旗艦サンプルの学習用 notebook は `docs/notebooks/samples/` に順次追加予定です。"
-        "notebook が存在するサンプルには自動でリンクが表示されます。")
+        "    旗艦サンプルの学習用 notebook は `docs/notebooks/samples/` にある"
+        "(事業ストーリー→診断→改善を1本の物語として実行できる)。"
+        "notebook が存在するサンプルには自動でリンクが表示される。")
     lines.append("")
     out = OUT_DIR / "index.md"
     out.write_text("\n".join(lines), encoding="utf-8")
