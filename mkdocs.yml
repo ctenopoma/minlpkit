@@ -82,37 +82,47 @@ markdown_extensions:
 nav:
   - ホーム: index.md
   - はじめに:
-      - インストール: manual/index.md
+      - セットアップ: manual/index.md
       - クイックスタート: notebooks/quickstart.ipynb
   - ガイド:
-      - プレイブック(症状→打ち手):
-          - 症状から打ち手へ(目次): playbook/index.md
-          - 0. 診断そのもの: playbook/00-diagnose.md
-          - 1. 整数×連続の厳密線形化: playbook/01-linearize.md
-          - 2. PWL近似(SOS2): playbook/02-pwl-sos2.md
-          - 3. Big-M排除: playbook/03-bigm.md
-          - 4. SCIPパラメータチューニング: playbook/04-tuning.md
-          - 5. ベンダーズ分解: playbook/05-benders.md
-          - 6. 列生成: playbook/06-column-generation.md
-          - 7. GPU warm start: playbook/07-gpu.md
-          - 8. 条件数・数値健全性: playbook/08-condition.md
-          - 9. ライブ監視・run記録・再現: playbook/09-live-monitor.md
+      - 症状から手法を選ぶ:
+          - 目次: playbook/index.md
+          - 0. 診断そのもの:
+              - ガイド: playbook/00-diagnose.md
+              - 空間分枝木: notebooks/diagnose/01_mccormick_spatial_tree.ipynb
+              - 違反ヒートマップ: notebooks/diagnose/02_violation_heatmap.ipynb
+              - gap停滞とattribution: notebooks/diagnose/03_gap_stall_attribution.ipynb
+              - 静的診断(スケール・ブロック構造・対称性): notebooks/diagnose/04_static_diagnosis.ipynb
+          - 1. 整数×連続の厳密線形化:
+              - ガイド: playbook/01-linearize.md
+              - ノートブックで確認: notebooks/improve/01_linearize_product.ipynb
+          - 2. PWL近似(SOS2):
+              - ガイド: playbook/02-pwl-sos2.md
+              - ノートブックで確認: notebooks/improve/02_pwl_sos2.ipynb
+          - 3. Big-M排除:
+              - ガイド: playbook/03-bigm.md
+              - ノートブックで確認: notebooks/improve/03_bigm_indicator.ipynb
+          - 4. SCIPパラメータチューニング:
+              - ガイド: playbook/04-tuning.md
+              - ノートブックで確認: notebooks/improve/04_tuning.ipynb
+          - 5. ベンダーズ分解:
+              - ガイド: playbook/05-benders.md
+              - ノートブックで確認: notebooks/improve/05_benders.ipynb
+          - 6. 列生成:
+              - ガイド: playbook/06-column-generation.md
+              - ノートブックで確認: notebooks/improve/06_column_generation.ipynb
+          - 7. GPU warm start:
+              - ガイド: playbook/07-gpu.md
+              - セットアップ手順: manual/gpu-setup.md
+              - ノートブックで確認: notebooks/improve/07_gpu_warmstart.ipynb
+          - 8. 条件数・数値健全性:
+              - ガイド: playbook/08-condition.md
+              - ノートブックで確認: notebooks/improve/08_condition_number.ipynb
+          - 9. ライブ監視・run記録・再現:
+              - ガイド: playbook/09-live-monitor.md
+              - セットアップ手順: manual/live-monitor.md
           - "参考: SCIPが自動でやること": playbook/10-reference-scip-handles.md
-      - 手法notebook(原理→適用→効果):
-          - 整数×連続の厳密線形化: notebooks/improve/01_linearize_product.ipynb
-          - PWL近似(SOS2): notebooks/improve/02_pwl_sos2.ipynb
-          - Big-M排除(tight M・Indicator): notebooks/improve/03_bigm_indicator.ipynb
-          - SCIPパラメータチューニング: notebooks/improve/04_tuning.ipynb
-          - ベンダーズ分解: notebooks/improve/05_benders.ipynb
-          - 列生成: notebooks/improve/06_column_generation.ipynb
-          - GPU warm start: notebooks/improve/07_gpu_warmstart.ipynb
-          - 条件数・数値健全性: notebooks/improve/08_condition_number.ipynb
-      - 可視化notebook(診断エンジンの中身):
-          - McCormick緩和+空間分枝木: notebooks/diagnose/01_mccormick_spatial_tree.ipynb
-          - 違反ヒートマップ: notebooks/diagnose/02_violation_heatmap.ipynb
-          - gap停滞とattribution: notebooks/diagnose/03_gap_stall_attribution.ipynb
-          - 静的診断(スケール・ブロック構造・対称性): notebooks/diagnose/04_static_diagnosis.ipynb
-      - 旗艦サンプルnotebook(事業ストーリー→診断→改善):
+      - 旗艦サンプルで学ぶ(事業ストーリー→診断→改善):
           - 石油プーリング多期計画(T1): notebooks/samples/petroleum_pooling.ipynb
           - 鋳造の多期チャージ配合(T1): notebooks/samples/foundry_charge_mix_multiperiod.ipynb
           - 週次UC+送電混雑(T2): notebooks/samples/weekly_uc_ramp.ipynb
@@ -120,12 +130,10 @@ nav:
           - 送電線増強計画+運用(T3): notebooks/samples/transmission_expansion_operation.ipynb
           - マイクログリッド設計+運用(T3): notebooks/samples/microgrid_design_operation.ipynb
           - 交流最適潮流 AC-OPF(T9): notebooks/samples/ac_opf.ipynb
-      - ハンズオン(1)可視化・診断編: notebooks/hands_on_diagnosis.ipynb
-      - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb
-      - 診断センサス: census.md
+      - 診断センサス(全サンプル一括診断の結果): census.md
   - サンプル:
       - サンプルカタログ:
-          - 概要(全126本): samples/index.md
+          - 概要(全129本): samples/index.md
           - スケジューリング: samples/scheduling.md
           - エネルギー・マイクログリッド: samples/energy_and_microgrid.md
           - 立地・ネットワーク設計: samples/location_and_network_design.md
@@ -139,9 +147,8 @@ nav:
       - ギャラリー: gallery.md
   - リファレンス:
       - 利用マニュアル:
+          - マニュアル概要: manual/index.md
           - ワークフロー全体像: manual/workflow.md
-          - ライブモニタの使い方: manual/live-monitor.md
-          - GPU warm start: manual/gpu-setup.md
           - 制約・落とし穴: manual/pitfalls.md
       - パイプライン (analyze/Report): api/pipeline.md
       - 比較 (compare_variants): api/compare.md

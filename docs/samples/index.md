@@ -1,7 +1,8 @@
 # サンプルカタログ
 
-minlpkit に同梱する **129 本**の MINLP/MILP サンプルモデルをカテゴリ別に一覧化したギャラリーです(scikit-learn の Example gallery に相当)。
-各サンプルは実在する事業課題を題材にした `build_model()` を持ち、可視化・診断・改善手法の検証台(センサス)として使えます。
+minlpkit に同梱する **129 本**の MINLP/MILP サンプルモデルをカテゴリ別に一覧化したカタログです(scikit-learn の Example gallery に相当)。
+各サンプルは実在する事業課題を題材にした `build_model()` を持ち、可視化・診断・改善手法の検証台として使えます。
+実行結果(グラフ・ダッシュボード)を見たい場合は [成果ギャラリー](../gallery.md) を参照。
 説明文は各ファイルのモジュール docstring から自動抽出しています(再生成: `uv run python experiments/gen_sample_catalog.py`)。
 
 ⭐ マークは事業ストーリーが特に厚い**旗艦サンプル**(11 本、T1/T2/T3/T9 クラスタ)。手法を物語として学ぶ入口に向いています。
