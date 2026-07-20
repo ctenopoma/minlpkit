@@ -1004,3 +1004,21 @@ gas_pipeline_weymouth / district_heating_detailed_physics / ac_opf / microgrid_d
 hydrogen_hub_transport / battery_degradation_dispatch / thermal_storage_lossy も対象外。
 
 全バッチ完了後、親が docs/samples/ カタログを再生成し、task.mdへ統合記録する。
+
+### Phase 16 完了(全51本)
+
+5バッチ(Sonnet並列)で完了。全51本のdocstringを事業ストーリー2-4文に書き換え、
+2-4変数のトイLPを業務的に自然な範囲で拡張(複数期/複数拠点/整数決定/自然な非線形結合)。
+カタログ自動生成(15.1のスクリプト)で再チェックした結果、**docstring薄い判定=0本**
+(126本全て)。バッチ実行の記録は `results/refine_batch{1..5}.md` に個別保存。
+
+- バッチ1(10本)commit 3f62aad、バッチ2(10本)+バッチ3(10本)は並行実行の巻き込みで
+  commit 6ff58c6 に合算(両者とも diff 検証済みで内容は正しい。コミット境界が意図と
+  ずれただけでデータ損失なし)、バッチ4(10本)commit 05f412d、バッチ5(11本)commit ef9f552
+- 各ファイルで変数数・制約数を有意に拡張(目安: 10-30変数・5-20制約)、全て`optimal`到達を確認
+- 途中でモデルバグ(実行不能設定・非線形目的関数の不使用箇所等)を複数発見・修正(結果ファイルに記録)
+- カタログ再生成(`uv run python experiments/gen_sample_catalog.py`)→ 全10カテゴリで
+  「docstring薄い0本」を確認、`mkdocs build --strict` exit 0
+
+Phase 15(docs全面刷新)は 15.0(IP漏洩除去)・15.1(全126本カタログ)が完了。
+15.2(playbook/manual のDiataxis分割)・15.3(学習用notebook厳選)は継続タスクとして残る。
