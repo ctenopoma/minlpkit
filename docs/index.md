@@ -7,6 +7,19 @@
 MINLP(混合整数非線形計画)の **可視化 → 診断 → 改善 → 検証** を PySCIPOpt(SCIP)上で
 一体化したツールキット。
 
+```mermaid
+graph LR
+  A[1. 観測<br>mk.analyze] -->|Report| B(2. 診断<br>mk.evaluate)
+  B -->|Recipe| C{3. 改善<br>mk.transforms}
+  C -->|Improved Model| D[4. 検証<br>mk.compare_variants]
+  D -.->|定量化| A
+  
+  style A fill:#eef6fc,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+  style B fill:#fff9e5,stroke:#f59e0b,stroke-width:2px,color:#78350f
+  style C fill:#fef5f5,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
+  style D fill:#f1fcf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+```
+
 設計思想は **SCIP-aware**: 現代の SCIP が presolve / 分離 / 対称性処理 / 被約コスト固定などで
 **自動でやってしまうこと**は推薦しない。診断が推すのは、SCIP が自動ではやらない
 「整数構造を突いた厳密線形化」「分解(ベンダーズ/列生成)」など、非凸緩和の弱さに効く

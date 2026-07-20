@@ -19,6 +19,34 @@
   letter-spacing: 0.02em; /* Slightly spaced out looks better for Righteous */
 }
 
+/* Fix for inline code (`code`) inside gradient headings becoming invisible */
+.md-typeset h1 code,
+.md-typeset h2 code {
+  -webkit-text-fill-color: var(--md-default-fg-color) !important;
+  color: var(--md-default-fg-color) !important;
+  background-color: rgba(128, 128, 128, 0.1) !important;
+}
+
+/* Fix for Table of Contents (目次) or navigation links accidentally inheriting transparent text-fill-color */
+.md-nav__link,
+.md-nav__link code,
+.md-nav__link * {
+  -webkit-text-fill-color: initial !important;
+}
+
+/* Fix text and icon colors in the header for light mode (white text on white bg issue) */
+html:not([data-md-color-scheme="slate"]) .md-header__button,
+html:not([data-md-color-scheme="slate"]) .md-header__title,
+html:not([data-md-color-scheme="slate"]) .md-header__topic,
+html:not([data-md-color-scheme="slate"]) .md-tabs__link,
+html:not([data-md-color-scheme="slate"]) .md-search__icon {
+  color: var(--md-default-fg-color) !important;
+}
+html:not([data-md-color-scheme="slate"]) .md-search__input {
+  color: var(--md-default-fg-color) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
 /* Glassmorphism for the Top Navigation Header */
 .md-header {
   background-color: rgba(255, 255, 255, 0.75) !important;

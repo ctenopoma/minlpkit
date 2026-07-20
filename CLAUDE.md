@@ -87,3 +87,15 @@ Phase 1-4を一体化したmodel非依存のパイプライン。`import minlpki
 - `tests/` — pytest(実SCIPで回すtransforms/frameworks/diagnose/pipelineのテスト。`uv run pytest`)
 - `README.md` — プロジェクト概要とクイックスタート
 - `task.md` — 取り組みプランと進捗、`FINDINGS.md` — 調査知見
+
+## ドキュメント(MkDocs)の知見
+
+ドキュメントサイト(`docs/`, `mkdocs.yml`)は、MkDocs MaterialをベースにモダンなUXを提供するための設定が行われている。
+
+- **Zenn風 Admonition**: `extra.css` にて、デフォルトの太い左線を消し、パステル背景＋アイコンのフラットデザインに上書き。
+- **Mermaid**: `pymdownx.superfences` の `custom_fences` に `!!python/name:pymdownx.superfences.fence_code_format` を指定することで、MkDocs Material組み込みのMermaidレンダラーを安全に起動できる。(`fence_mermaid_format` はモジュールエラーになるため不可)。
+- **Draw.io**: `mkdocs-drawio` プラグインを使用し、`![図](...drawio)` でインライン描画。
+- **Lightbox**: `mkdocs-glightbox` プラグインを使用し、画像のクリック拡大を有効化。
+- **最終更新日**: `mkdocs-git-revision-date-localized-plugin` プラグインを使用し、Gitのコミットから更新日時を自動付与。
+- **変数マクロ**: `mkdocs-macros-plugin` プラグインを使用し、`mkdocs.yml` の `extra` で定義した変数(例: `{{ minlpkit_version }}`)をMarkdown内に埋め込み可能。
+  - ※注意: `macros` を有効にすると Jinja2 構文が有効になるため、MkDocsの `attr_list` 用の見出しID `{#id-name}` が「Jinja2の未終端コメント」と解釈されて構文エラーになる。これを回避するため、見出しIDには必ずスペースを入れた `{: #id-name }` を使用すること。

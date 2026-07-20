@@ -34,6 +34,11 @@ theme:
 
 plugins:
   - search
+  - drawio
+  - glightbox
+  - git-revision-date-localized:
+      type: timeago
+  - macros
   - mkdocs-jupyter:
       include_source: true
       execute: false
@@ -57,7 +62,11 @@ markdown_extensions:
   - attr_list
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
@@ -91,3 +100,12 @@ nav:
 
 extra_css:
   - stylesheets/extra.css
+
+extra:
+  minlpkit_version: "0.1.0"
+
+extra_javascript:
+  - javascripts/copy_md.js
+
+hooks:
+  - hooks.py

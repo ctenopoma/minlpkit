@@ -125,7 +125,7 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 
 ---
 
-## 4. ライブモニタの使い方 {#4-live}
+## 4. ライブモニタの使い方 {: #4-live}
 
 TensorBoard 型(書き手/読み手分離)。2ターミナルで使う。
 
@@ -193,7 +193,7 @@ parallel coordinates 図(パラメータ軸 + final_dual/final_gap 軸)を出力
 
 ---
 
-## 5. 診断ルール一覧(7ルール) {#5-rules}
+## 5. 診断ルール一覧(7ルール) {: #5-rules}
 
 `minlpkit/collectors/diagnose.py` の `RULES` を転記。`mk.evaluate(metrics)` は発火したルールを
 重要度順(critical→serious→warning→good)で返す。
@@ -258,7 +258,7 @@ parallel coordinates 図(パラメータ軸 + final_dual/final_gap 軸)を出力
 
 ---
 
-## 7. GPU warm start(cuOpt) {#7-gpu-warmstart}
+## 7. GPU warm start(cuOpt) {: #7-gpu-warmstart}
 
 `mk.cuopt_warmstart` は「GPUは可行解探索、CPUは証明」という分業を1関数に閉じ込めたもの。
 NVIDIA cuOpt(GPU上のMIPヒューリスティクス)を短時間走らせて可行解を掘り、SCIPへ
