@@ -1,6 +1,6 @@
-"""双対境界改善の分枝変数への帰属を可視化する (Phase 2.c)
+"""双対境界改善の分枝変数への帰属を可視化する
 
-Phase 1(双対境界の推移)と Phase 2.b(分枝変数)を1画面で結合し、
+双対境界の推移と分枝変数の履歴を1画面で結合し、
 「gap停滞を抜けた瞬間にどの分枝が効いたか」「空間分枝と離散分枝の
 どちらが境界を押し上げているか」を見せる。
 
@@ -168,7 +168,7 @@ def main() -> None:
           border-radius:8px; margin-bottom:12px; overflow:hidden; }}
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
 </style></head><body><div class="wrap">
-<h1>gap停滞と「効いた分枝変数」の紐付け(Phase 2.c)</h1>
+<h1>gap停滞と「効いた分枝変数」の紐付け</h1>
 <div class="sub">{MODELS[args.model]} — 双対境界の増分を直前の分枝変数に帰属させ、停滞と改善の因果を見る</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>
@@ -178,7 +178,7 @@ def main() -> None:
 双対境界(緑線)が上がるとgapが縮む。灰帯は境界がほぼ横ばいの<b>停滞区間</b>。改善点の色は
 その改善に効いた分枝の型で、<b>青=空間分枝(連続変数)</b>・緑=整数分枝・桃=0-1分枝。
 下段は改善量の帰属先。<b>空間分枝の寄与率が高いほど、非凸緩和の締めが最適性証明の律速</b>であり、
-Phase 3では「その空間分枝が刺さる変数の境界タイト化・区分線形近似」が改善候補になる。
+その空間分枝が刺さる変数の境界タイト化・区分線形近似が改善候補になる。
 </p>
 </div></body></html>"""
     out.write_text(html, encoding="utf-8")

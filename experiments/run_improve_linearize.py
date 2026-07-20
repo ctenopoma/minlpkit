@@ -1,4 +1,4 @@
-"""Phase 4: n·s の厳密線形化(分解)の効果検証 — plantの weak_relaxation 対応
+"""n·s の厳密線形化(分解)の効果検証 — plantの weak_relaxation 対応
 
 診断の[重大]「energy三重積の緩和が支配的ボトルネック→再定式化」に対し、
 整数nと連続sの積 n·s を指示変数で厳密線形化し、三重積を双線形に落とす。
@@ -106,7 +106,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>n·s 厳密線形化の効果検証(Phase 4)</h1>
+<h1>n·s 厳密線形化の効果検証</h1>
 <div class="sub">scheduling_plant — 診断[重大]weak_relaxation(energy三重積)への再定式化</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>

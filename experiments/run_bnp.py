@@ -1,4 +1,4 @@
-"""Phase 7.2: branch-and-price(整数最適)+ 汎用列生成ドライバの実証
+"""branch-and-price(整数最適)+ 汎用列生成ドライバの実証
 
 minlpkit.column_generation / price_and_branch は問題固有部分(pricing_fn)だけ差し替える
 汎用ドライバ。列生成でLP下界を得た後、生成列上で整数主問題を解いて整数最適を得る。
@@ -100,7 +100,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>branch-and-price(Phase 7.2 / 汎用列生成ドライバ)</h1>
+<h1>branch-and-price(汎用列生成ドライバ)</h1>
 <div class="sub">cutting stock — minlpkit.price_and_branch(汎用)で LP下界→整数最適まで</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>

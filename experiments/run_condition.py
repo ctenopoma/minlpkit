@@ -1,4 +1,4 @@
-"""Phase 6: 行列条件数 κ(A) 診断(Model Analyzer の核心)
+"""行列条件数 κ(A) 診断(Model Analyzer の核心)
 
 ノートの Gurobi Model Analyzer が指す条件数 κ(A)=‖A‖·‖A⁻¹‖ を実装。
 - 静的 κ(A): 線形制約の係数行列のSVDから(solve前)。定式化の悪条件を検出
@@ -96,7 +96,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>条件数 κ(A) 診断(Phase 6 / Model Analyzer の核心)</h1>
+<h1>条件数 κ(A) 診断(Model Analyzer の核心)</h1>
 <div class="sub">係数行列の条件数 κ(A)=‖A‖·‖A⁻¹‖ を静的(SVD)とSCIP LP基底(getCondition)で計測</div>
 <div class="card">{d1}</div>
 <p class="note">

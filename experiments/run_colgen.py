@@ -1,4 +1,4 @@
-"""Phase 4: 列生成(Gilmore-Gomory)の効果検証 — cutting stock
+"""列生成(Gilmore-Gomory)の効果検証 — cutting stock
 
 列生成の真の価値は「指数的に多いパターン(列)を列挙せず、pricingで必要な列だけ生成して
 最適LP境界に到達する」こと。LP境界自体はコンパクト定式化と同等(ともに材料下界)だが、
@@ -129,7 +129,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>列生成(Gilmore-Gomory)の効果検証(Phase 4)</h1>
+<h1>列生成(Gilmore-Gomory)の効果検証</h1>
 <div class="sub">cutting stock — 診断 decomposable への対応。指数的な列を暗黙に扱う再定式化</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>

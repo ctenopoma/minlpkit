@@ -31,7 +31,7 @@
 
 単位変換(mg→g)だけで κ(A) が桁違いに改善する実演から、`unit_commitment` での
 SCIP LP基底κの実測までを図付きで追うには
-[手法notebook: 条件数・数値健全性](../notebooks/improve/08_condition_number.ipynb) を参照。
+[条件数・数値健全性](../notebooks/improve/08_condition_number.ipynb) を参照。
 
 ### 効かないとき・注意
 

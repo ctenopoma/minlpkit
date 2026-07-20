@@ -1,4 +1,4 @@
-"""Phase 8.1: Perspective(遠近)再定式化の検証
+"""Perspective(遠近)再定式化の検証
 
 半連続な二次燃料費 fc >= a·u + b·p + c·p^2 を perspective 化して
 c·p^2 <= (fc − a·u − b·p)·u に置き換える古典的強化を UC で検証する。
@@ -184,7 +184,7 @@ def main() -> None:
              padding:10px 14px; margin-bottom:14px; font-size:12.5px; color:{C['ink']}; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>Perspective(遠近)再定式化の検証(Phase 8.1)</h1>
+<h1>Perspective(遠近)再定式化の検証</h1>
 <div class="sub">半連続な二次燃料費 <code>fc ≥ a·u + b·p + c·p²</code> を perspective 化して
 <code>c·p² ≤ (fc − a·u − b·p)·u</code> に置換。unit_commitment で検証(<code>mk.perspective_quadratic</code> ヘルパー経由)</div>
 <div class="verdict"><b>判定: 負の結果(効かない)。</b>

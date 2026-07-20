@@ -1,4 +1,4 @@
-"""Phase 6: ベンダーズ分解の効果検証(facility)
+"""ベンダーズ分解の効果検証(facility)
 
 主問題(施設開設)/サブ問題(輸送LP)に分解し、最適性カットで下界を押し上げて
 単一問題と同じ最適値に収束することを示す。診断 decomposable への実装対応。
@@ -95,7 +95,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>ベンダーズ分解の効果検証(Phase 6 / 診断: decomposable)</h1>
+<h1>ベンダーズ分解の効果検証(診断: decomposable)</h1>
 <div class="sub">facility(施設配置)を 主問題(開設 y)/サブ問題(輸送LP)に分解して求解</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>

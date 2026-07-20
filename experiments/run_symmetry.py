@@ -1,7 +1,7 @@
-"""対称性(入替可能な変数群)の可視化 (Phase 2.c)
+"""対称性(入替可能な変数群)の可視化
 
 構造シグネチャで検出した対称変数群をサイズ順に表示する。大きな群 = 強い対称性 =
-探索木が対称解で膨張しやすい → Phase 3の辞書式順序制約(対称性除去)の対象。
+探索木が対称解で膨張しやすい → 辞書式順序制約による対称性除去の対象。
 
 実行: uv run python experiments/run_symmetry.py --model parallel   ->  results/symmetry.html
       (facility は対称性なしの対照として --model facility)
@@ -112,7 +112,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>対称性の兆候検出(Phase 2.c)</h1>
+<h1>対称性の兆候検出</h1>
 <div class="sub">{MODELS[args.model]} — 構造シグネチャ(1-hop color refinement)で入替可能な変数群を検出</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{body}</div>
@@ -121,7 +121,7 @@ def main() -> None:
 各変数の(型・目的係数・境界・所属制約の形状と自身の係数)からシグネチャを作り、同一シグネチャの
 変数群=<b>入れ替えても問題が変わらない対称変数</b>を検出。恒等な並列機械では各ジョブの機械割当変数が
 入替可能(+等処理時間ジョブも)で大きな群になる。<code>facility</code>(施設が非対称)では群は出ない(偽陽性なし)。
-対称性が強いほど探索木が同値解で膨張する → Phase 3の<b>辞書式順序制約による対称性除去</b>の対象。
+対称性が強いほど探索木が同値解で膨張する → <b>辞書式順序制約による対称性除去</b>の対象。
 検出結果はSCIP自身の対称性計算(並列機械で生成子6個)とも整合。
 </p>
 </div></body></html>"""

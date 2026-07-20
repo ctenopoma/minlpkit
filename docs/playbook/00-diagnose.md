@@ -32,12 +32,12 @@
 Optuna や ML のような重い判定ではない。閾値はすべてこのリポジトリの実測(FINDINGS.md)から
 決めている。presolve**前**でなく presolve**後**の残存値で判断するのが要点で(例:
 `residual_coef_ratio`)、これにより「SCIPが自動で締めるので発火させるべきでない」症状を
-誤検出しない設計になっている(FINDINGS §1・診断センサス参照)。
+誤検出しない設計になっている(FINDINGS §1参照)。
 
 ### 効果(このリポジトリでの実測)
 
-診断センサス(`experiments/run_census.py`)で4カテゴリ約50本に一括適用した結果
-([診断センサス](../census.md)):
+`experiments/run_census.py` で4カテゴリ約50本に一括適用した結果
+([診断ベンチマーク](../census.md)):
 
 - 解析成功46本のうち残存gap>0.1%はわずか6本。現代SCIPの大半は瞬時に最適化する。
 - 最も多く発火したのは `symmetry_info`(23本)・`decomposable`(9本)という **good(対応不要)**

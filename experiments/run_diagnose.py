@@ -1,6 +1,6 @@
-"""診断ダッシュボード: 観測量を収集→診断ルール適用→改善提案を表示 (Phase 3)
+"""診断ダッシュボード: 観測量を収集→診断ルール適用→改善提案を表示
 
-Phase 1-2 の収集器を実際に走らせてモデルの観測量(metrics)を集め、
+各収集器を実際に走らせてモデルの観測量(metrics)を集め、
 diagnose.py のルールに通して「検出した症状→推薦する改善→根拠」を1画面に出す。
 
 実行: uv run python experiments/run_diagnose.py --model plant --time 20
@@ -161,8 +161,8 @@ def main() -> None:
  .frow .k {{ display:inline-block; width:44px; color:{C['muted']}; }}
  a {{ text-decoration:none; }}
 </style></head><body><div class="wrap">
-<h1>診断サマリと改善提案(Phase 3)</h1>
-<div class="sub">{MODELS[args.model]} — Phase 1-2の観測量を診断ルールに通した結果。推薦はPhase 4で実施・検証する</div>
+<h1>診断サマリと改善提案</h1>
+<div class="sub">{MODELS[args.model]} — 観測量を診断ルールに通した結果。推薦した改善は別途実施・検証する</div>
 <h2>観測量</h2>
 <div class="tiles">{_metric_row(metrics)}</div>
 <h2>検出した症状 → 推薦する改善({len(findings)}件)</h2>

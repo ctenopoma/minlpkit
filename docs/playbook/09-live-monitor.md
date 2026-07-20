@@ -38,7 +38,7 @@ TensorBoard型の「書き手/読み手分離」。書き手(`solve_with_monitor
 20秒求解で338 SSEフレームのライブ配信+done確定を確認。実データ検証では
 `experiments/run_monitor.py --model plant --time 45` の実行(826イベント、gap 105.8%)に
 対してライブ簡易stall判定が正しく発火(windowRate 0.514 < 0.5×overallRate 1.712)、
-`detectHighGapDone` も gap 105.8%≥50%で発火する(task.md Phase 10-B)。
+`detectHighGapDone` も gap 105.8%≥50%で発火する。
 
 ### 効かないとき・注意
 

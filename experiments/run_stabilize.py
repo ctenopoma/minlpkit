@@ -1,4 +1,4 @@
-"""Phase 6: 列生成の双対安定化(Wentges smoothing)の効果検証
+"""列生成の双対安定化(Wentges smoothing)の効果検証
 
 素の列生成は後半に双対が振動して収束が遅くなる(tailing-off)。安定化中心(最良Lagrange
 下界を与えた双対)へ双対を平滑化 π̃=α·π_center+(1−α)·π して反復を減らす。
@@ -130,7 +130,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>列生成の双対安定化(Phase 6 / 2.c)</h1>
+<h1>列生成の双対安定化</h1>
 <div class="sub">cutting stock({len(WIDTHS)}品目)— Wentges smoothing で tailing-off を抑える</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>
