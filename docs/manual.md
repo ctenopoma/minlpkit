@@ -355,11 +355,15 @@ SCIP互換 .sol 化 → `readSolFile` + `addSol` で注入する。ヘルスは 
 [LP/MILP examples](https://docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/examples/milp-examples.html)、
 wire形式は [NVIDIA/cuopt](https://github.com/NVIDIA/cuopt) の `python/cuopt_self_hosted/cuopt_sh_client`）
 
-> **重要(正直な注記)**: 実cuOptサーバはこの開発環境には無いため、**実サーバE2Eは未実施**。
-> 実装は上記公式仕様への準拠 + モック契約テスト(`tests/test_gpu_http.py`、公式のリクエスト/
-> レスポンス形に忠実なモックサーバ)まで。ユーザーがサーバを立てた後、
-> `experiments/check_cuopt_server.py` で実E2E確認する。無限境界は JSON が Infinity を
-> 表現できないため `±1e20` センチネルへ丸めており、実サーバでの無限表現の厳密さは未検証。
+> **重要(正直な注記・更新: 2026-07-20 実サーバ疎通確認済み)**: 実装は公式仕様への準拠 +
+> モック契約テスト(`tests/test_gpu_http.py`、公式のリクエスト/レスポンス形に忠実なモックサーバ)に加え、
+> **2026-07-20、LAN上のGPUマシン(WSL2 + cuopt-env)`http://192.168.50.37:8001` に対して実サーバE2Eを
+> 実施し成功**(ヘルスチェック200 OK → 超小型MILP投入 → cuOpt目的値1.0の取得 → SCIPへの
+> `addSol` 注入 `accepted=True` まで一通り疎通)。無限境界は JSON が Infinity を表現できないため
+> `±1e20` センチネルへ丸めており、この丸め自体は実サーバ疎通で経路上は通過したが、
+> 無限境界を含む問題での厳密さそのものは引き続き未検証。動作確認済みの設定例:
+> `MINLPKIT_CUOPT_URL=http://192.168.50.37:8001`(社内LANに限定されたホストの一例であり、
+> 外部からアクセス可能なアドレスではない)。
 
 #### GPUサーバ側のセットアップ(2ルート。例: LAN上の Windows マシン `192.168.50.37`、WSL2あり)
 

@@ -168,7 +168,7 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   開発マシンにcuopt-envが無いのは当然で、実GPUは 192.168.50.37 側に存在する。
   GPU機能は完全に任意なので False でも本体・診断・UIは全て正常動作(未導入時の設計どおり)。
   ヘッダの `/api/gpu` インジケータがこの利用可否を可視化する。
-- **cuOpt self-hosted サーバの LP/MILP REST API 仕様**(2026-07-20 Phase 11.2、調査。実サーバE2E未実施):
+- **cuOpt self-hosted サーバの LP/MILP REST API 仕様**(2026-07-20 Phase 11.2、調査):
   エンドポイントは `GET /cuopt/health`(200)/ `POST /cuopt/request`(JSON body)/
   非同期なら `GET /cuopt/solution/{reqId}` をポーリング。**生MPSを受けるHTTPエンドポイントは無い** —
   公式クライアント `cuopt-sh-client` は `cuopt_mps_parser` でMPSを**クライアント側で**
@@ -180,8 +180,16 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   出典: docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/(quick-start / client-api / examples)、
   wire形式は github.com/NVIDIA/cuopt の `python/cuopt_self_hosted/cuopt_sh_client`。
   → `minlpkit.gpu` に `server_url=` / 環境変数 `MINLPKIT_CUOPT_URL` でHTTPバックエンドを追加
-  (標準ライブラリ urllib のみ、新規依存なし)。無限境界は JSON制約から `±1e20` センチネルに丸め(実サーバ未検証)。
+  (標準ライブラリ urllib のみ、新規依存なし)。無限境界は JSON制約から `±1e20` センチネルに丸め。
   モック契約テスト `tests/test_gpu_http.py`、疎通確認 `experiments/check_cuopt_server.py`。
+- **実サーバE2E成功(2026-07-20)**: LAN上のGPUサーバ `http://192.168.50.37:8001`(cuopt-server)に対し
+  `uv run python experiments/check_cuopt_server.py --url http://192.168.50.37:8001` を実行し疎通確認。
+  ヘルスチェック `GET /cuopt/health` → 200 OK、続けて超小型MILP(`min x+y s.t. x+y>=1`、2値変数)を
+  投入し cuOpt目的値 = 1.0(期待値どおり)・bound/gap = 1.0/0.0・wall_time 1.20s を取得、
+  SCIPへの `addSol` 注入も `accepted=True`(SCIP最終primal = 1.0、注入解から証明継続)で成功。
+  これによりHTTPバックエンド(Phase 11.2)の「モック契約テストのみ・実サーバ未検証」という
+  制約は解消。無限境界の `±1e20` センチネル丸めもこの実サーバ疎通で経路上は通過している
+  (ただし今回のテスト問題に無限境界は含まれないため、無限境界そのものの厳密さは引き続き未検証)。
 
 ## 6. 可視化・配信
 
