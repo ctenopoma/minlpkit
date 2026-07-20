@@ -696,6 +696,46 @@ Phase 11 の cuOpt 連携は同一マシンの WSL2 CLI 直叩き固定だった
   変更分に対して確認。docs/mkdocs.yml は並行セッションの作業中につき不可侵)、smoke
   `tests/test_samples_t2.py` 5本パス。
 
+### T3 完了 — エネルギー計画(設計+運用の統合意思決定)クラスタ(2026-07-20)
+
+3モデルとも **PASS**(`results/acceptance_t3.md`)。事業ストーリー1行ずつ:
+
+- **transmission_expansion_operation**(`samples/location_and_network_design/`, 新規):
+  系統計画者が「どの候補送電コリドーを増強するか(整数)」と「増強後の複数需要シナリオ
+  それぞれに対する給電運用(DC潮流)」を同時決定する。候補線は disjunctive(big-M)で
+  増強しなければ物理法則(潮流=感受率×位相角差)自体が無効化される真の結合。small
+  (バス5×候補線4×シナリオ3)最適0.0s / default(バス9×候補線8×シナリオ5、83変数)は
+  `numerical_scale` + `symmetry_info` でPASS(gap0.9%、根ノードで最適発見)。
+- **microgrid_design_operation**(`samples/energy_and_microgrid/`, 新規): マイクログリッド
+  設計者が「PV/蓄電池容量(連続)・発電機台数(整数)」と「複数代表日の運用(充放電・
+  出力配分)」を同時決定する。蓄電池の内部抵抗損失を `loss * cap_batt >= k * (充放電出力)^2`
+  という双曲線で表現し、容量(設計)そのものが非線形項に現れる真の結合を作った(T2
+  `hydro_cascade_efficiency` の放流×水頭パターンを設計変数に転用)。small(代表日2×
+  時刻6)最適0.1s / default(代表日4×時刻14、約170変数、`has_nonlinear=True`)は
+  `numerical_scale` でPASS(gap0.1%)。
+- **hydrogen_hub_transport**(`samples/location_and_network_design/`, 新規): 水素サプライ
+  チェーン計画者が「生産・貯蔵ハブの開設・容量(整数+連続)」と「複数期の輸送・在庫
+  計画(連続)」を同時決定する。開設可否を固定すれば残る生産・貯蔵・輸送・外部調達の
+  決定は純粋LPになる(配置=主問題、輸送=サブ問題というベンダーズ分解適性を意図的に
+  保持)。small(候補ハブ4×需要地5×期6)最適0.0s / default(候補ハブ7×需要地10×
+  期10、176変数)は `numerical_scale` + `symmetry_info` でPASS(gap0.0%)。
+- 知見(詳細は `results/acceptance_t3.md` 末尾): T3の3モデルは全て根ノード(`nodes=1`)で
+  最適に到達し、`numerical_scale`(一部`symmetry_info`併発)という非自明findingsのみで
+  PASSを確保した。これはT1(双線形の実行可能性)・T2(`mk.analyze`自身のコスト)に続く
+  **T3固有の教訓**: 設計×運用の統合意思決定を big-M disjunctive で組むと、SCIPの強力な
+  presolve/heuristicsが根ノードでLP緩和相当の解を即座に発見してしまい、gap自体は診断
+  題材にならない(受け入れ基準の「gap≥10% **または** 非自明findings」の「または」で
+  救われる形)。真にgapを残すには disjunctive をやめて双線形/非線形結合に寄せる必要が
+  あり、`microgrid_design_operation` ではその方針(蓄電池損失の双曲線)を1本採用した。
+  また `transmission_expansion_operation` は当初シナリオ別需要が発電総容量を上回る
+  設定にしていたため、送電投資の有無に関わらず常に計画外停電が発生する自明な問題に
+  なっており(T1/T2で繰り返された「バックストップは他制約と整合しないと機能しない」
+  教訓の再確認)、需要係数を発電総容量比0.80・シナリオ倍率上限1.05まで引き下げて解消した。
+- 検証: `uv run pytest -q` 50 passed/2 skipped、smoke `tests/test_samples_t3.py` 4本パス。
+  `mkdocs build --strict` は並行セッションの docs/mkdocs.yml 未完了差分(`docs/hooks.py`
+  がnav未登録)により実行時エラーとなったが、自セッションが `mkdocs.yml`/`docs/` を
+  一切変更していないことを `git status`/`git diff` で確認済み(不可侵の遵守)。
+
 ## Phase 13(拡張): 上級ティア — 研究動向ドリブンの高難度クラスタ(着手)
 
 T1-T8(事業課題ドリブン、中難度)の上に、**真に解きづらい**題材の層を追加する。根拠はWeb調査
