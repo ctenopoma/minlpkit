@@ -161,11 +161,27 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   Python 3.10(Ubuntu 22.04既定)は対象外なのでuvでのPython導入が必須。
 - **cuOptの既定起動コマンドはWSL環境構成に依存し、drift しうる**(2026-07-20 Phase 11.1で判明):
   `_DEFAULT_CUOPT_CMD` は `wsl -d Ubuntu -- /home/ubuntu_dnn/cuopt-env/bin/cuopt_cli` 固定だが、
-  現在のこのマシンのWSLは distro が `Ubuntu-24.04`・home が `naoki`(cuopt-env無し)で、
+  **開発を行っているこのマシン**のWSLは distro が `Ubuntu-24.04`・home が `naoki`(cuopt-env無し)で、
   §7当時の `Ubuntu`/`ubuntu_dnn` 構成は現存しない → `mk.cuopt_available()` が False。
+  **訂正(2026-07-20 Phase 11.2)**: §7の当初「WSL構成drift」という理解は正確でなく、真相は
+  **§7のGPU実測は別マシン(LAN上の Windows `192.168.50.37`、WSL2 + cuopt-env)で行われていた**もの。
+  開発マシンにcuopt-envが無いのは当然で、実GPUは 192.168.50.37 側に存在する。
   GPU機能は完全に任意なので False でも本体・診断・UIは全て正常動作(未導入時の設計どおり)。
-  実機再検証には WSL2側にcuopt-envを再導入し、`cuopt_cmd=["wsl","-d","Ubuntu-24.04","--",<cli>]`
-  で distro/パスを合わせる必要がある。ヘッダの `/api/gpu` インジケータがこの利用可否を可視化する。
+  ヘッダの `/api/gpu` インジケータがこの利用可否を可視化する。
+- **cuOpt self-hosted サーバの LP/MILP REST API 仕様**(2026-07-20 Phase 11.2、調査。実サーバE2E未実施):
+  エンドポイントは `GET /cuopt/health`(200)/ `POST /cuopt/request`(JSON body)/
+  非同期なら `GET /cuopt/solution/{reqId}` をポーリング。**生MPSを受けるHTTPエンドポイントは無い** —
+  公式クライアント `cuopt-sh-client` は `cuopt_mps_parser` でMPSを**クライアント側で**
+  cuOptデータモデルJSON(`csr_constraint_matrix`/`constraint_bounds`/`objective_data`/
+  `variable_bounds`/`variable_types`(`"I"`/`"C"`)/`variable_names`/`solver_config.time_limit`)へ
+  変換して送る。応答の解は `response.solver_response.solution.vars`(名→値)/ `primal_objective` /
+  `status`(`Optimal`/`Feasible`)。ヘッダは `Content-Type: application/json` + `CLIENT-VERSION`。
+  Dockerは `docker run --gpus all -p 8000:8000 -e CUOPT_SERVER_PORT=8000 nvcr.io/nvidia/cuopt/cuopt:<tag>`。
+  出典: docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/(quick-start / client-api / examples)、
+  wire形式は github.com/NVIDIA/cuopt の `python/cuopt_self_hosted/cuopt_sh_client`。
+  → `minlpkit.gpu` に `server_url=` / 環境変数 `MINLPKIT_CUOPT_URL` でHTTPバックエンドを追加
+  (標準ライブラリ urllib のみ、新規依存なし)。無限境界は JSON制約から `±1e20` センチネルに丸め(実サーバ未検証)。
+  モック契約テスト `tests/test_gpu_http.py`、疎通確認 `experiments/check_cuopt_server.py`。
 
 ## 6. 可視化・配信
 

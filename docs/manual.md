@@ -111,8 +111,8 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 | `mk.column_generation(rhs, init_columns, pricing_fn, alpha)` | 列生成(Gilmore-Gomory / Wentges安定化) | `experiments/run_colgen.py` / `run_stabilize.py` → `results/colgen.html` / `stabilize.html` |
 | `mk.price_and_branch(rhs, init_columns, pricing_fn)` | 列生成 + 整数主問題(整数解は**上界**) | `experiments/run_bnp.py` → `results/bnp.html` |
 | `mk.benders(master_build, subproblem_solve)` | ベンダーズ分解(コールバック方式) | `experiments/run_benders.py` → `results/benders.html` |
-| `mk.cuopt_warmstart(model, time_limit, cuopt_cmd, mps_dir, heuristics_only)` | cuOpt(GPU)の解をSCIPへwarm start注入(要 WSL2 + cuOpt) | `experiments/run_gpu_heuristic.py` → 下記「GPU warm start」 |
-| `mk.cuopt_concurrent(model, time_limit, num_cpu_threads, ...)` | 常駐型: cuOptをSCIPと並走させ終了次第mid-solve注入(GPU待ちゼロ) | 下記「常駐型(並走)」 |
+| `mk.cuopt_warmstart(model, time_limit, cuopt_cmd, server_url, mps_dir, heuristics_only)` | cuOpt(GPU)の解をSCIPへwarm start注入(WSL2 CLI or リモートHTTPサーバ) | `experiments/run_gpu_heuristic.py` → 下記「GPU warm start」 |
+| `mk.cuopt_concurrent(model, time_limit, server_url, num_cpu_threads, ...)` | 常駐型: cuOptをSCIPと並走させ終了次第mid-solve注入(GPU待ちゼロ) | 下記「常駐型(並走)」 |
 | `mk.RULES` / `mk.Rule` / `mk.evaluate(metrics)` | 診断ルール(プラガブル) | 下記「診断ルール一覧」 |
 
 条件数など静的診断の補助関数として、
@@ -329,3 +329,87 @@ info = h.result()          # injected / objective / inject_time / wall_time
 - MPS/.sol はWSLネイティブ/tmpに自動ステージングされる(9p `/mnt/` のI/Oは
   このサイズで読み+20s/書き+19sと支配的に遅いため。FINDINGS 7節)。
 - `num_cpu_threads` でcuOptのCPU側B&Bスレッドを絞り、並走中のSCIPとのCPU競合を抑える。
+
+### リモートサーバ構成(cuOpt self-hosted HTTP バックエンド)
+
+同一マシンのWSL2 CLIを叩く代わりに、**LAN上のGPUマシンで cuOpt サーバ(REST API)を
+立てて HTTP で叩く**構成にも対応する。クライアント側は環境変数 `MINLPKIT_CUOPT_URL`
+(または `server_url=` 引数)を設定するだけで、`mk.cuopt_warmstart` / `mk.cuopt_concurrent` /
+`mk.cuopt_available` が自動的にHTTPバックエンドへ切り替わる(解決順: 引数 > 環境変数 > CLI)。
+
+**API仕様(調査結果、出典つき)**: 公式クライアント `cuopt-sh-client` は MPS を
+**クライアント側で** cuOpt データモデルJSONへパースし、`POST /cuopt/request` に JSON として送る
+(生MPSを受け付けるHTTPエンドポイントは存在しない)。本バックエンドも同じデータモデルJSON
+(`csr_constraint_matrix` / `constraint_bounds` / `objective_data` / `variable_bounds` /
+`variable_types` / `variable_names` / `solver_config`)を PySCIPOpt の線形構造から直接組み立てて送る
+(`cuopt_mps_parser` 依存を避けるため。**線形MILP専用** — cuOpt自体がMILP専用)。応答が
+`{"reqId": ...}` のみなら `GET /cuopt/solution/{reqId}` をポーリングし、
+`response.solver_response.solution.vars`(変数名→値)/ `primal_objective` / `status` を取り出して
+SCIP互換 .sol 化 → `readSolFile` + `addSol` で注入する。ヘルスは `GET /cuopt/health`(200)。
+（出典: [cuOpt self-hosted server (25.10)](https://docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/quick-start.html)、
+[client-api reference](https://docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/client-api/sh-cli-api.html)、
+[LP/MILP examples](https://docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/examples/milp-examples.html)、
+wire形式は [NVIDIA/cuopt](https://github.com/NVIDIA/cuopt) の `python/cuopt_self_hosted/cuopt_sh_client`）
+
+> **重要(正直な注記)**: 実cuOptサーバはこの開発環境には無いため、**実サーバE2Eは未実施**。
+> 実装は上記公式仕様への準拠 + モック契約テスト(`tests/test_gpu_http.py`、公式のリクエスト/
+> レスポンス形に忠実なモックサーバ)まで。ユーザーがサーバを立てた後、
+> `experiments/check_cuopt_server.py` で実E2E確認する。無限境界は JSON が Infinity を
+> 表現できないため `±1e20` センチネルへ丸めており、実サーバでの無限表現の厳密さは未検証。
+
+#### GPUサーバ側のセットアップ(2ルート。例: LAN上の Windows マシン `192.168.50.37`、WSL2あり)
+
+**ルートA: Docker Desktop で公式 cuOpt サーバコンテナを起動(推奨・簡便)**
+
+```powershell
+# GPUマシン(Windows + Docker Desktop + WSL2 backend + NVIDIA Container Toolkit)で
+# NGC にログイン(要 NVIDIA AI Enterprise / NGC APIキー)
+docker login nvcr.io          # Username: $oauthtoken / Password: <NGC APIキー>
+
+# cuOpt サーバコンテナを起動(GPU全公開、8000番でREST APIを待受)
+docker run --gpus all -d --rm -p 8000:8000 -e CUOPT_SERVER_PORT=8000 `
+  nvcr.io/nvidia/cuopt/cuopt:25.10
+
+# Windows ファイアウォールで 8000/tcp を LAN に開放(管理者PowerShell)
+New-NetFirewallRule -DisplayName "cuOpt 8000" -Direction Inbound `
+  -Action Allow -Protocol TCP -LocalPort 8000
+```
+※ 正確なイメージタグは [NGC カタログ](https://catalog.ngc.nvidia.com/)の「pull tag」で確認
+（バージョンにより `nvcr.io/nvidia/cuopt/cuopt:<tag>`。上は 25.10 系の想定)。
+
+**ルートB: 既存の WSL2 cuopt-env に cuopt-server(pip)を入れて起動 + netsh で LAN 公開**
+
+FINDINGS §7 のGPU実測はこの `192.168.50.37` の WSL2(cuopt-env)で行われていた。既存venvを流用する場合:
+
+```bash
+# GPUマシンの WSL2 Ubuntu 内(既存 ~/cuopt-env を流用)
+source ~/cuopt-env/bin/activate
+uv pip install --extra-index-url=https://pypi.nvidia.com "cuopt-server-cu13==25.10.*"
+# サーバ起動(0.0.0.0 で待受。ポートは環境変数で指定)
+CUOPT_SERVER_PORT=8000 python -m cuopt_server.cuopt_service   # 提供される起動コマンドに従う
+```
+```powershell
+# WSL2 の待受を Windows ホスト経由で LAN 公開(管理者PowerShell)。<WSL_IP> は `wsl hostname -I`
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=8000 `
+  connectaddress=<WSL_IP> connectport=8000
+New-NetFirewallRule -DisplayName "cuOpt 8000" -Direction Inbound `
+  -Action Allow -Protocol TCP -LocalPort 8000
+```
+※ `cuopt-server` のパッケージ名/起動コマンドはバージョンで異なりうる。
+[self-hosted server overview](https://docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/index.html) で対象バージョンの正確な名称を確認すること。
+
+#### クライアント側(このリポジトリ)
+
+```python
+import os, minlpkit as mk
+os.environ["MINLPKIT_CUOPT_URL"] = "http://192.168.50.37:8000"   # これだけ
+m = build_model()                       # 線形MILP、最適化前
+res = mk.cuopt_warmstart(m, time_limit=15)
+m.setParam("limits/time", 60); m.optimize()
+```
+
+サーバを立てたら、まず疎通確認スクリプトでE2E確認する(ヘルス + 超小型MILPの2段階):
+
+```bash
+uv run python experiments/check_cuopt_server.py --url http://192.168.50.37:8000
+```
