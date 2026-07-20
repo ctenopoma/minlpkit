@@ -1,11 +1,22 @@
-"""
-Shift Scheduling Problem.
+"""シフトスケジューリング (Shift Scheduling Problem)
 
-This model schedules employees to shifts to meet varying demand across periods,
-minimizing total workforce size while ensuring minimum staffing levels and
-shift constraints.
-Reference: Dantzig, G. B. (1954). A comment on Edie's "Traffic delays at toll booths". 
-Operations Research, 2(3), 339-341.
+事業ストーリー
+--------------
+コールセンターの運営マネージャーが、1日24時間分の時間帯別必要人数(午前は少なく
+夕方の問い合わせ集中時間帯に多い)を満たすよう、8時間勤務のシフトを何本・何時から
+組むかを決める。シフトは1時間刻みで開始でき、開始時刻から8時間(日をまたぐ場合を
+含む)にわたってその時間帯をカバーする。必要人数を割り込むとサービスレベル
+(応答率)が悪化するため、各時間帯の必要人数を満たしつつ、投入するシフト本数
+(=人件費)を最小化する。
+
+各制約の業務的意味:
+- **時間帯別必要人数のカバー**: 各時間帯において、その時間帯を含むシフトの
+  投入本数の合計が、その時間帯に必要な最低人数以上でなければならない。
+- **シフト本数最小化**: シフト本数(24時間パターンのいずれかを何本組むか)の
+  合計を最小化することで、総労働時間・人件費を抑える。
+
+(元の参考文献: Dantzig, G. B. (1954). A comment on Edie's "Traffic delays at toll booths".
+Operations Research, 2(3), 339-341.)
 """
 
 from pyscipopt import Model, quicksum

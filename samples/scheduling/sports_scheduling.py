@@ -1,9 +1,22 @@
-"""
-Sports Scheduling Problem
+"""スポーツリーグの試合日程編成 (Sports Scheduling Problem)
 
-This model formulates a single round-robin tournament scheduling problem.
-It aims to minimize the travel distance of teams playing away games.
-Relevant concept: Nemhauser and Trick (1998) - Scheduling a major college basketball conference.
+事業ストーリー
+--------------
+地域バスケットボールリーグの運営担当者が、4チームによるシングルラウンドロビン
+(総当たり戦を1回ずつ)の試合日程を組む。全チームが週に1試合ずつ、他の全チームと
+ちょうど1回対戦するように組み合わせと開催週を決める必要がある。アウェーチームの
+移動距離が長いほど遠征コスト・選手の疲労が増えるため、リーグ全体の総移動距離
+(アウェー側の移動)を最小化する日程を編成する。
+
+各制約の業務的意味:
+- **週1試合の制約**: 各チームは各週にちょうど1試合(ホームまたはアウェー)を行う
+  (同週に2試合を組むと選手の休養が確保できない)。
+- **総当たり制約**: 各チームの組は、リーグ全期間を通じてちょうど1回対戦する
+  (同じ対戦を2度組んだり、対戦しないまま終わるのを防ぐ)。
+- **総移動距離最小化**: アウェーチームの移動距離の合計を最小化し、遠征コストと
+  選手の負担を抑える。
+
+(元の学術的定義: Nemhauser and Trick (1998) - Scheduling a major college basketball conference.)
 """
 
 from pyscipopt import Model, quicksum
