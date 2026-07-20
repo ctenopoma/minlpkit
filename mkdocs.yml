@@ -88,6 +88,18 @@ nav:
       - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb
       - 診断センサス: census.md
       - ギャラリー: gallery.md
+      - サンプルカタログ:
+          - 概要(全126本): samples/index.md
+          - スケジューリング: samples/scheduling.md
+          - エネルギー・マイクログリッド: samples/energy_and_microgrid.md
+          - 立地・ネットワーク設計: samples/location_and_network_design.md
+          - 経路・物流: samples/routing_and_logistics.md
+          - その他(基礎・拡張題材): samples/others.md
+          - グラフ・離散構造: samples/graph_and_discrete.md
+          - 物理・制御MINLP: samples/physics_and_control_minlp.md
+          - 製造・ブレンド: samples/manufacturing_and_blending.md
+          - 金融・価格設計: samples/finance_and_pricing.md
+          - パッキング・カッティング: samples/packing_and_cutting.md
   - リファレンス:
       - 利用マニュアル: manual.md
       - パイプライン (analyze/Report): api/pipeline.md
