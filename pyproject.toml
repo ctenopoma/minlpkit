@@ -42,4 +42,5 @@ dev = [
     "jupyter>=1.1.1",
     "nbconvert>=7.17.1",
     "mkdocs-jupyter>=0.26.3",
+    "mkdocs-drawio>=1.16.2",
 ]
