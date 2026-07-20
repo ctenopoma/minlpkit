@@ -660,6 +660,42 @@ Phase 11 の cuOpt 連携は同一マシンの WSL2 CLI 直叩き固定だった
   SCIP伝播がルートで潰す(結合双線形にして初めてgap残存)、水網は淡水高コスト化まで双線形が働かない。
 - 検証: `uv run pytest -q` 39 passed/2 skipped、`mkdocs build --strict` exit 0、smoke `tests/test_samples_t1.py` 4本パス。
 
+### T2 エネルギー運用クラスタ 完了 — 2026-07-20
+4モデルとも **PASS**(`results/acceptance_t2.md`)。事業ストーリー1行ずつ:
+
+- **weekly_uc_ramp**(`samples/energy_and_microgrid/`, 新規): 電力会社の需給運用部が翌週の
+  起動停止・出力配分を決める週次UC。簡易DC潮流(PTDF)で単一ユニットの出力を全送電線制約に
+  結合する。small(4ユニット×4バス×5線×8時間)最適1.4s / default(15ユニット×8バス×10線×
+  48時間、3984変数)は`numerical_scale`(送電線容量のbig-Mスケール差)発火でPASS(gapはSCIPの
+  presolve/heuristicsがLP緩和とほぼ一致する解を即座に見つけるため実質0%)。
+- **hydro_cascade_efficiency**(`samples/energy_and_microgrid/`, 新規): 水系運用担当者が
+  複数ダムの放流計画を決める。発電量=放流量×水頭(貯水位依存)の双線形、上流放流の1期遅れ
+  流下、灌漑取水下限。small(ダム2×期8)最適2s / default(ダム5×期22、572変数)**gap 28.4% +
+  weak_relaxation/dual_stall/numerical_scale** でPASS。
+- **gas_pipeline_weymouth**(`samples/location_and_network_design/`, 新規): ガス圧送運用部が
+  基本供給・コンプレッサ運転・ピークシェイビングを決める。Weymouth式(流量²∝圧力²差、非凸)+
+  コンプレッサon/off×昇圧量(整数×連続)+ラインパック(配管内ガス在庫)による時間結合。
+  small(ノード4×コンプレッサ1×3期)最適0.1s / default(ノード6×コンプレッサ2×10期、370変数)
+  **gap 0.8%(<10%だが)+ `numerical_scale`** でPASS。
+- **district_heating_detailed_physics**(`samples/physics_and_control_minlp/`, 既存精緻化):
+  地域熱供給プラント運転員の熱源出力・ポンプ動力計画。既存の流量×温度双線形・圧力損失²の
+  物理構造を維持したまま `scale` 引数を追加(ノード数・期数を可変化)、熱源出口温度のランプ
+  制約(熱慣性)で期間の独立分解を防止。small(ノード4×期4)最適(nsols>0, 23.5s) / default
+  (ノード12×期12、708変数)**gap 125.1%(SCIP `getGap()`は(primal-dual)/|dual|なので100%
+  超あり) + `numerical_scale`** でPASS。既存センサスの weak_relaxation 発火実績を維持。
+- 知見(詳細は `results/acceptance_t2.md` 末尾): **`mk.analyze` は `build_fn()` を約7回
+  呼び直すため、非線形制約が多い/変数規模が大きいモデルでは収集器のセットアップコストが
+  乗算され、SCIPの`limits/time`を守っていても全体は数百秒かかりうる**(weekly_uc_ramp を
+  週次168時間×24ユニット・22,500変数の当初案で作ったところ analyze 全体が350秒に)。
+  対策として (a) 二次燃料費など難度に寄与しない非線形項は外して純粋MILP化、(b) 既定scale
+  はT1同様、変数・制約数を低〜中千のオーダーに抑える、の2点を全モデルに適用して解消
+  (32秒/15秒/33秒/69秒に短縮)。また gas_pipeline_weymouth は当初「期ごとに独立した定常状態」
+  設計だったため presolve が期を独立成分に分解し瞬時に最適化してしまい(gap0%・findings無し)、
+  ラインパック(配管内ガス在庫の期間変化)を追加して初めて期をまたぐ結合が生まれた。
+- 検証: `uv run pytest -q` 46 passed/2 skipped、`mkdocs build --strict` exit 0(自セッションの
+  変更分に対して確認。docs/mkdocs.yml は並行セッションの作業中につき不可侵)、smoke
+  `tests/test_samples_t2.py` 5本パス。
+
 ## Phase 13(拡張): 上級ティア — 研究動向ドリブンの高難度クラスタ(着手)
 
 T1-T8(事業課題ドリブン、中難度)の上に、**真に解きづらい**題材の層を追加する。根拠はWeb調査
