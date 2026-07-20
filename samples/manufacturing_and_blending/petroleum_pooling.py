@@ -151,16 +151,18 @@ def build_model(scale: str = "default") -> Model:
             m.addCons(smass[l, t] == conc[l, t] * inv[l, t],
                       name=f"conc_def_{l}_{t}")
 
-    # 5. 需要充足: 各製品の受取総量 >= 需要
+    # 5. 需要充足: 各製品の受取総量(プール払い出し + スポット) >= 需要
     for j in J:
         for t in T:
-            m.addCons(quicksum(y[l, j, t] for l in L) >= float(demand[j, t]),
+            m.addCons(quicksum(y[l, j, t] for l in L) + spot[j, t]
+                      >= float(demand[j, t]),
                       name=f"demand_{j}_{t}")
 
     # 6. 製品品質規格(双線形): 加重平均硫黄濃度 <= 規格上限
+    #    スポットは規格適合(硫黄0相当)なので分子に寄与せず、分母(総量)には寄与する
     for j in J:
         for t in T:
-            recv = quicksum(y[l, j, t] for l in L)
+            recv = quicksum(y[l, j, t] for l in L) + spot[j, t]
             sulf = quicksum(conc[l, t] * y[l, j, t] for l in L)
             m.addCons(sulf <= float(spec[j]) * recv, name=f"spec_{j}_{t}")
 
@@ -169,10 +171,11 @@ def build_model(scale: str = "default") -> Model:
                         for i in F for l in L for t in T)
     fixed = quicksum(float(fix_cost[i]) * z[i, t] for i in F for t in T)
     holding = quicksum(float(hold[l]) * inv[l, t] for l in L for t in T)
-    m.setObjective(buy_cost + fixed + holding, "minimize")
+    spot_pen = quicksum(spot_cost * spot[j, t] for j in J for t in T)
+    m.setObjective(buy_cost + fixed + holding + spot_pen, "minimize")
 
     m.data = {"z": z, "x": x, "y": y, "inv": inv, "smass": smass, "conc": conc,
-              "scale": scale, "dims": (nF, nL, nJ, nT)}
+              "spot": spot, "scale": scale, "dims": (nF, nL, nJ, nT)}
     return m
 
 

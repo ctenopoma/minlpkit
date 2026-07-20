@@ -641,6 +641,25 @@ Phase 11 の cuOpt 連携は同一マシンの WSL2 CLI 直叩き固定だった
 - 各クラスタ完了時: 受け入れ実測 → census再実行(該当分)→ docs/census.md 更新 → push
 - ブランチ操作禁止・main直コミットの規約適用
 
+### T1 プロセス産業クラスタ 完了 — 2026-07-20
+受け入れハーネス `experiments/acceptance.py` を確立(以降の全クラスタ共通部品)。判定基準=
+「小scaleで最適到達(≤120s)」かつ「既定scaleで30秒 analyze で gap≥10% または 非自明findings
+(symmetry_info/decomposable以外)発火」。3モデルとも **PASS**(`results/acceptance_t1.md`)。
+- **petroleum_pooling**(`samples/manufacturing_and_blending/`, 新規): 多期石油プーリング(調達→
+  中間タンク→製品ブレンド)。プール品質=濃度×流量/濃度×在庫の双線形、契約on/off(固定費)、
+  タンク在庫の期跨ぎ、スポット市場バックストップで常時可行。small最適0.4s / default(原料8×プール5×
+  製品4×期8)gap 3.8% + **numerical_scale**(take-or-payのbig-M)発火でPASS。
+- **foundry_charge_mix_multiperiod**(`samples/manufacturing_and_blending/`, 新規): 鋳造の多期チャージ。
+  ヒート回数(整数)×サイズ(連続)+溶湯組成(濃度×質量/濃度×配分)を注文間で共通溶湯結合させ、
+  スクラップ在庫希少+規格窓狭+銅上限タイト。small最適0.0s / default(ロット12×注文8×期8)
+  **gap 52.5% + dual_stall** でPASS。既存 foundry_charge_mix.py は残置。
+- **water_network_reuse**(`samples/physics_and_control_minlp/`, 新規): 工場内用水再利用網。濃度×流量の
+  混合双線形、再利用配管on/off(固定費)、再生処理の規模の経済を素の非凸 TT^0.7 で保持。淡水を高コスト化して
+  再利用を必須化。small(nP=3)最適39s / default(nP=9)**gap 24.3% + numerical_scale** でPASS。
+- 知見: プーリング双線形*等式*系はincumbent発見が難所(バックストップで実行可能性担保)、純粋な整数×連続は
+  SCIP伝播がルートで潰す(結合双線形にして初めてgap残存)、水網は淡水高コスト化まで双線形が働かない。
+- 検証: `uv run pytest -q` 39 passed/2 skipped、`mkdocs build --strict` exit 0、smoke `tests/test_samples_t1.py` 4本パス。
+
 ## スコープ外
 
 - **ML/GNN系(Forge、学習分岐等)・LLM支援**: 基盤の導入可否判断が必要なため当面除外。診断ルール表の将来拡張候補として名前だけ残す
