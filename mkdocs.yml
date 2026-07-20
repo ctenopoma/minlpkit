@@ -114,6 +114,12 @@ plugins:
       include_source: true
       execute: false
       ignore_h1_titles: true
+  # i18n が API 頁を ja(ルート)/en(/en/)へ二重生成するため、mkdocstrings のアンカーは
+  # 各識別子につき2 URL 持つ。autorefs を明示し resolve_closest=true にすると、参照は
+  # 最も近い(同一言語の)URL へ解決され「Multiple primary URLs」警告(strictでabort)を出さない。
+  # ※ autorefs は mkdocstrings より前に列挙する必要がある。
+  - autorefs:
+      resolve_closest: true
   - mkdocstrings:
       default_handler: python
       handlers:
