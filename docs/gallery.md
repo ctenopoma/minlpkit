@@ -52,4 +52,4 @@
 
 ★ = SCIP が自動ではやらない「真の価値がある改善」。その他は SCIP 内蔵機能の再確認や、
 presolve が補償する定式化差。ライブモニタで自分のモデルを動かす場合は
-`uv run python -m minlpkit.live.server` を参照(`docs/manual.md` の「ライブモニタの使い方」)。
+`uv run python -m minlpkit.live.server` を参照([利用マニュアル: ライブモニタ](manual/live-monitor.md))。

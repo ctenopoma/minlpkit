@@ -7,7 +7,7 @@
     uv run python experiments/check_cuopt_server.py --url http://192.168.50.37:8000
 
 環境変数 MINLPKIT_CUOPT_URL を設定済みなら --url は省略可。
-サーバ起動手順は docs/manual.md 7節「リモートサーバ構成」を参照。
+サーバ起動手順は docs/manual/gpu-setup.md「リモートサーバ構成」を参照。
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ def main() -> int:
         print("      NG: /cuopt/health が200を返しません。")
         print("      - サーバコンテナ/プロセスが起動しているか")
         print("      - ポート公開・ファイアウォール/portproxy 設定")
-        print("      docs/manual.md 7節「リモートサーバ構成」を参照。")
+        print("      docs/manual/gpu-setup.md「リモートサーバ構成」を参照。")
         return 1
 
     # 2段階目: 超小型MILPを1問投げて解が返り、SCIPへ注入できるか

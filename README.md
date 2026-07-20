@@ -73,8 +73,8 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 
 ドキュメントは <https://ctenopoma.github.io/minlpkit/> にあります。
 列生成・ベンダーズ・再定式化などの手法を知らない場合は
-[プレイブック(症状→打ち手)](https://ctenopoma.github.io/minlpkit/playbook.html)から読むのが近道です。
-[利用マニュアル](https://ctenopoma.github.io/minlpkit/manual.html)と
+[プレイブック(症状→打ち手)](https://ctenopoma.github.io/minlpkit/playbook/index.html)から読むのが近道です。
+[利用マニュアル](https://ctenopoma.github.io/minlpkit/manual/index.html)と
 [API リファレンス](https://ctenopoma.github.io/minlpkit/api/pipeline.html)を参照してください。
 [チュートリアル](https://ctenopoma.github.io/minlpkit/notebooks/quickstart.html)は
 [Colab で直接実行](https://colab.research.google.com/github/ctenopoma/minlpkit/blob/main/notebooks/quickstart.ipynb)できます。

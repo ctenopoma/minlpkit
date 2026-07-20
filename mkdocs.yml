@@ -79,15 +79,28 @@ markdown_extensions:
       permalink: true
 
 nav:
-  - はじめに: index.md
-  - 学ぶ:
+  - ホーム: index.md
+  - はじめに:
+      - インストール: manual/index.md
       - クイックスタート: notebooks/quickstart.ipynb
-  - プレイブック(症状→打ち手): playbook.md
-  - 実践:
+  - ガイド:
+      - プレイブック(症状→打ち手):
+          - 症状から打ち手へ(目次): playbook/index.md
+          - 0. 診断そのもの: playbook/00-diagnose.md
+          - 1. 整数×連続の厳密線形化: playbook/01-linearize.md
+          - 2. PWL近似(SOS2): playbook/02-pwl-sos2.md
+          - 3. Big-M排除: playbook/03-bigm.md
+          - 4. SCIPパラメータチューニング: playbook/04-tuning.md
+          - 5. ベンダーズ分解: playbook/05-benders.md
+          - 6. 列生成: playbook/06-column-generation.md
+          - 7. GPU warm start: playbook/07-gpu.md
+          - 8. 条件数・数値健全性: playbook/08-condition.md
+          - 9. ライブ監視・run記録・再現: playbook/09-live-monitor.md
+          - "参考: SCIPが自動でやること": playbook/10-reference-scip-handles.md
       - ハンズオン(1)可視化・診断編: notebooks/hands_on_diagnosis.ipynb
       - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb
       - 診断センサス: census.md
-      - ギャラリー: gallery.md
+  - サンプル:
       - サンプルカタログ:
           - 概要(全126本): samples/index.md
           - スケジューリング: samples/scheduling.md
@@ -100,8 +113,13 @@ nav:
           - 製造・ブレンド: samples/manufacturing_and_blending.md
           - 金融・価格設計: samples/finance_and_pricing.md
           - パッキング・カッティング: samples/packing_and_cutting.md
+      - ギャラリー: gallery.md
   - リファレンス:
-      - 利用マニュアル: manual.md
+      - 利用マニュアル:
+          - ワークフロー全体像: manual/workflow.md
+          - ライブモニタの使い方: manual/live-monitor.md
+          - GPU warm start: manual/gpu-setup.md
+          - 制約・落とし穴: manual/pitfalls.md
       - パイプライン (analyze/Report): api/pipeline.md
       - 比較 (compare_variants): api/compare.md
       - 変換 (transforms): api/transforms.md
