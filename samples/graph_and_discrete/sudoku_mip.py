@@ -1,9 +1,23 @@
-"""
-Sudoku Solver (MIP Formulation)
-This model solves a 9x9 Sudoku puzzle using integer programming.
-Reference: Bartlett, A. C., Chartier, T. P., Langville, A. N., & Rankin, T. D. (2008). 
-An integer programming model for the Sudoku problem. 
-Journal of Online Mathematics and its Applications, 8(1), 1-13.
+"""数独ソルバー (MIP定式化) — Sudoku Solver
+
+事業ストーリー
+--------------
+パズル誌の編集担当者が、出題した9x9数独パズルに唯一解が存在するかを検証する
+ため、整数計画法でパズルを解かせる。目的関数を持たない純粋な充足可能性問題
+(feasibility problem)として定式化し、与えられたヒント数字と数独のルール
+(行・列・3x3ブロックでの数字重複禁止)をすべて満たす解を1つ求める。
+
+各制約の業務的意味:
+- **Cell**: 各マスには1〜9のいずれか1つの数字だけが入る(空欄・重複入力の禁止)。
+- **Row / Col**: 各行・各列には1〜9の数字がそれぞれちょうど1回ずつ出現する
+  (数独の基本ルール)。
+- **Block**: 各3x3ブロック内にも1〜9の数字がそれぞれちょうど1回ずつ出現する。
+- **Given**: 出題時にすでに埋まっているヒント数字はそのまま固定し、解が
+  元の出題と矛盾しないようにする。
+
+参考文献: Bartlett, A. C., Chartier, T. P., Langville, A. N., & Rankin, T. D.
+(2008). An integer programming model for the Sudoku problem. Journal of
+Online Mathematics and its Applications, 8(1), 1-13.
 """
 
 from pyscipopt import Model
