@@ -27,6 +27,12 @@
 `unit_commitment` は LP基底 κ≈2.6e11 と極端で、実際に数値不安定リスクがある領域
 (FINDINGS §3b、[`condition.html`](../gallery/condition.html))。
 
+![係数レンジと特異値スペクトル: mg単位(raw)とg単位(rescale)の比較](../assets/playbook/08-condition-principle.png)
+
+単位変換(mg→g)だけで κ(A) が桁違いに改善する実演から、`unit_commitment` での
+SCIP LP基底κの実測までを図付きで追うには
+[手法notebook: 条件数・数値健全性](../notebooks/improve/08_condition_number.ipynb) を参照。
+
 ### 効かないとき・注意
 
 - 係数の max/min 比だけで「数値問題あり」と早合点しないこと。自然なコスト差(~1e3程度)は

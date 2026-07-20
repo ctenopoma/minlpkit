@@ -101,6 +101,8 @@ nav:
       - 手法notebook(原理→適用→効果):
           - 整数×連続の厳密線形化: notebooks/improve/01_linearize_product.ipynb
           - PWL近似(SOS2): notebooks/improve/02_pwl_sos2.ipynb
+          - Big-M排除(tight M・Indicator): notebooks/improve/03_bigm_indicator.ipynb
+          - 条件数・数値健全性: notebooks/improve/08_condition_number.ipynb
       - ハンズオン(1)可視化・診断編: notebooks/hands_on_diagnosis.ipynb
       - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb
       - 診断センサス: census.md
