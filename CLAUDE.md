@@ -80,6 +80,7 @@ Phase 1-4を一体化したmodel非依存のパイプライン。`import minlpki
   実体を持つのは mccormick/plant_terms/interval/bottleneck/colgen/benders/attribution等の残置分のみ
 - `experiments/run_*.py` — 各機能の調査用CLI(monitor/tree/attribution/violation/bottleneck/static_diag/
   interval/symmetry/diagnose/improve_*/colgen/stabilize/benders/bnp/sos/condition/perspective/tune/
+  infeasibility=弾性緩和+削除フィルタでinfeasibleの矛盾制約(IIS核)特定/
   gpu_heuristic=cuOpt(WSL2/GPU)×SCIPハイブリッド)。
   実行は `uv run python experiments/run_<name>.py ...`(出力は `results/` へ)
 - `demo.py` — minlpkit一気通貫デモ(ルート残置のクイックスタート)
@@ -94,6 +95,7 @@ Phase 1-4を一体化したmodel非依存のパイプライン。`import minlpki
 
 - **Zenn風 Admonition**: `extra.css` にて、デフォルトの太い左線を消し、パステル背景＋アイコンのフラットデザインに上書き。
 - **Mermaid**: `pymdownx.superfences` の `custom_fences` に `!!python/name:pymdownx.superfences.fence_code_format` を指定することで、MkDocs Material組み込みのMermaidレンダラーを安全に起動できる。(`fence_mermaid_format` はモジュールエラーになるため不可)。
+- **数式(KaTeX)**: 本文は `pymdownx.arithmatex`(generic)+ KaTeX(CDN)。`docs/javascripts/katex.js` は本文では正規化後の `\(`/`\[` のみ拾い、notebook(`.jp-RenderedMarkdown`)では生の `$`/`$$` も拾う(mkdocs-jupyterはMathJaxを空srcで吐くため)。この初期化は**必ず try/catch + `setTimeout` で非同期化**する(`document$` はmermaidレンダラーと共有で、例外を投げると図が描画されなくなる)。**mermaidラベル内の `$$...$$` も可だが `<>&"` は不可**(HTMLエスケープでKaTeXが落ち図が空白化)。不等号は `\lt`/`\gt` を使う。詳細は `FINDINGS.md` 6節。
 - **Draw.io**: `mkdocs-drawio` プラグインを使用し、`![図](...drawio)` でインライン描画。
 - **Lightbox**: `mkdocs-glightbox` プラグインを使用し、画像のクリック拡大を有効化。
 - **最終更新日**: `mkdocs-git-revision-date-localized-plugin` プラグインを使用し、Gitのコミットから更新日時を自動付与。

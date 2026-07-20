@@ -1,6 +1,6 @@
 # 8. 条件数・数値健全性
 
-[← プレイブック目次](index.md)
+[← 手法ガイド目次](index.md)
 
 ### こんな課題ありませんか
 
@@ -16,21 +16,27 @@
 ### 打ち手の仕組み
 
 係数の max/min 比は「レンジの広さ」を見るだけで、行列の悪条件性(数値誤差の増幅度合い)の
-正確な指標ではない。真の条件数 κ(A) は係数行列の特異値分解(SVD)の `σ_max/σ_min` で得る
-(`matrix_condition`、solve前の定式化診断)。加えて、実際に解いたときの最適LP基底の条件数は
+正確な指標ではない。真の条件数は係数行列の特異値分解(SVD)から
+
+$$
+\kappa(A) = \frac{\sigma_{\max}(A)}{\sigma_{\min}(A)}
+$$
+
+で得る(`matrix_condition`、solve前の定式化診断)。加えて、実際に解いたときの最適LP基底の条件数は
 `scip_basis_condition`(SCIPの `getCondition()`)で別途測れる。前者は定式化そのものの
 悪条件、後者は「実際に解いたときの基底の不安定度」を測るという意味で相補的。
 
 ### 効果(このリポジトリでの実測)
 
-緩いBig-Mで κ(A)=3.5e4、tight化で κ(A)=32(**定式化の選び方が数値健全性を100倍以上左右する**)。
-`unit_commitment` は LP基底 κ≈2.6e11 と極端で、実際に数値不安定リスクがある領域
+緩いBig-Mで $\kappa(A) = 3.5\times10^{4}$、tight化で $\kappa(A) = 32$
+(**定式化の選び方が数値健全性を100倍以上左右する**)。
+`unit_commitment` は LP基底 $\kappa \approx 2.6\times10^{11}$ と極端で、実際に数値不安定リスクがある領域
 (FINDINGS §3b、[`condition.html`](../gallery/condition.html))。
 
 ![係数レンジと特異値スペクトル: mg単位(raw)とg単位(rescale)の比較](../assets/playbook/08-condition-principle.png)
 
-単位変換(mg→g)だけで κ(A) が桁違いに改善する実演から、`unit_commitment` での
-SCIP LP基底κの実測までを図付きで追うには
+単位変換(mg→g)だけで $\kappa(A)$ が桁違いに改善する実演から、`unit_commitment` での
+SCIP LP基底 $\kappa$ の実測までを図付きで追うには
 [条件数・数値健全性](../notebooks/improve/08_condition_number.ipynb) を参照。
 
 ### 効かないとき・注意

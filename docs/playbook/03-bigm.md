@@ -1,6 +1,6 @@
 # 3. Big-M排除(tight M・Indicator)
 
-[← プレイブック目次](index.md)
+[← 手法ガイド目次](index.md)
 
 ### こんな課題ありませんか
 
@@ -16,18 +16,20 @@
 
 ### 打ち手の仕組み
 
-Big-M 制約 `x ≤ M·u`(u はバイナリ)は M が緩い(実際に必要な値より大きい)ほど LP 緩和が
-緩む。打ち手は2つ:
+Big-M 制約 $x \le M u$($u \in \{0,1\}$)は、$M$ が緩い(実際に必要な値より大きい)ほど
+LP 緩和が緩む。$u$ が $0$ と $1$ の間で連続緩和されると $x \le M u$ はほとんど効かず、
+$u$ を小さい端数にするだけで $x$ が自由に動けてしまうため。打ち手は2つ:
 
-1. **tight M**: 変数境界などから導出できる最小の M に絞る。
-2. **Indicator制約**: `u=1 → x ≤ c` のような論理制約を SCIP の Indicator 機能に直接渡す。
-   Big-M の値そのものを選ぶ必要がなくなる。
+1. **tight M**: 変数境界などから導出できる最小の $M = \overline{x}$ に絞る。
+2. **Indicator制約**: $u = 1 \Rightarrow x \le c$ のような論理制約を SCIP の Indicator 機能に
+   直接渡す。Big-M の値そのものを選ぶ必要がなくなる。
 
 ### 効果(このリポジトリでの実測)
 
 緩い Big-M を持つ固定費モデル(8施設)で、純粋LP緩和境界が **1594→7127(+347%)**、
 最適値7180にほぼ到達する(FINDINGS §3、[`improve_bigm.html`](../gallery/improve_bigm.html))。
-条件数も緩いBig-Mで κ(A)=3.5e4 → tight化で κ=32 と**100倍以上改善**する(FINDINGS §3b)。
+条件数も緩いBig-Mで $\kappa(A) = 3.5\times10^{4}$ → tight化で $\kappa(A) = 32$ と
+**100倍以上改善**する(FINDINGS §3b)。
 
 ![Big-M排除の before/after: 純粋LP緩和境界・既定設定でのルート双対境界・ノード数](../assets/playbook/03-bigm-effect.png)
 

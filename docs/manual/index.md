@@ -40,7 +40,7 @@ ImportError(`uv add "minlpkit[viz]"` など)が出る。
 ## このマニュアルの範囲
 
 このページはインストール手順とマニュアル全体の構成を示す。API仕様を網羅するリファレンスであり、
-手法の選び方は [プレイブック(症状→打ち手)](../playbook/index.md) が扱う。プレイブックは
+手法の選び方は [手法ガイド(症状→打ち手)](../playbook/index.md) が扱う。手法ガイドは
 「gapが縮まらない」等の症状から該当する手法へ直接到達でき、「なぜ効くか」「どのくらい効くか」を
 実測付きで説明する。各ページからは、原理・効果をグラフで確認できるnotebookにもリンクしている。
 
@@ -49,11 +49,12 @@ ImportError(`uv add "minlpkit[viz]"` など)が出る。
 ## マニュアル構成
 
 - **セットアップ**(このページ) — リポジトリ内 / 外部プロジェクトからの導入
+- [機能マップ(できること一覧)](capabilities.md) — 何ができて・どのAPIで・どのコマンドで試せて・何が出るかの索引
 - [ワークフロー全体像](workflow.md) — 観測→診断→改善→検証の流れ・一気通貫例・API/診断ルール表
 - [制約・落とし穴](pitfalls.md) — 測定方法論・PySCIPOpt APIの注意点
 
-ライブモニタの操作手順は [プレイブック 9. ライブ監視](../playbook/09-live-monitor.md) から、
-GPU warm start の導入手順は [プレイブック 7. GPU warm start](../playbook/07-gpu.md) からそれぞれ
+ライブモニタの操作手順は [手法ガイド 9. ライブ監視](../playbook/09-live-monitor.md) から、
+GPU warm start の導入手順は [手法ガイド 7. GPU warm start](../playbook/07-gpu.md) からそれぞれ
 リンクしている。
 
 API の詳細は [API リファレンス](../api/pipeline.md)(mkdocstrings 生成)を参照。

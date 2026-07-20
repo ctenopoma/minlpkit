@@ -62,6 +62,16 @@ def collect_metrics(build_fn: BuildFn, time_limit: float = 20.0,
     m["ttff"] = summ.get("ttff")          # 最初の可行解までの秒(可行解ゼロならNone)
     m["solve_time"] = summ["time"]
 
+    # 実行不可能を検出したら、矛盾制約(IIS核)診断を回して infeasible_core ルールへ渡す。
+    # 犯人特定は mk.diagnose_infeasibility(弾性緩和+削除フィルタ)に委譲する。
+    if str(summ.get("status")) == "infeasible":
+        from .collectors.infeasibility import diagnose_infeasibility
+        try:
+            inf = diagnose_infeasibility(build_fn, time_limit=min(time_limit, 10.0))
+            m.update(inf["metrics"])
+        except Exception:
+            m["infeasible"] = True
+
     # 非線形制約の違反(非線形制約があるモデルのみ)
     # 注: build_fn()の結果は必ずローカル変数に保持する(反復中にGCされるとPySCIPOptが
     #     アクセス違反=segfaultするため)。

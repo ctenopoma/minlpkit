@@ -63,6 +63,8 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 | `mk.collect_metrics(build_fn, ...)` | 観測量 dict だけを集める(診断の入力) | `experiments/run_diagnose.py` |
 | `mk.Report` | `metrics` / `findings` を保持。`.summary()` / `.dashboard(path)` | `results/report_plant.html` |
 | `mk.compare_variants({名前: build_fn}, time_limit)` | before/after をルート双対境界・gap・ノードで比較 | `experiments/run_improve_linearize.py` → `results/improve_linearize.html` |
+| `mk.diagnose_infeasibility(build_fn, time_limit)` | 実行不可能の犯人特定: presolve当たり + 弾性緩和(緩める必要量) + 削除フィルタ(IIS核) | `experiments/run_infeasibility.py` → `results/infeasibility.html` |
+| `mk.elastic_filter(build_fn)` / `mk.deletion_filter(build_fn)` | 各線形制約の必要違反量 / 極小非可行部分系(IIS)の核。人が怪しい制約をOff・緩和して探す作業の自動化 | `samples/others/infeasible_supply_plan.py`, `experiments/run_bottleneck.py` |
 | `mk.linearize_product(m, y, x, y_lb, y_ub, x_lb, x_ub, name)` | 整数×連続の積を厳密線形化 | `samples/others/scheduling_plant.py`, `results/improve_linearize.html` |
 | `mk.pwl_sos2(m, x, breakpoints, values, name)` | 1変数関数を SOS2 で区分線形近似(Big-M不要) | `samples/physics_and_control_minlp/pwl_sos.py`, `experiments/run_sos.py` → `results/sos.html` |
 | `mk.perspective_quadratic(m, u, p, fc, a, b, c, name)` | 半連続二次費用の遠近化(**常用非推奨**、[落とし穴](pitfalls.md)参照) | `experiments/run_perspective.py` → `results/perspective.html` |
@@ -71,6 +73,9 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 | `mk.benders(master_build, subproblem_solve)` | ベンダーズ分解(コールバック方式) | `experiments/run_benders.py` → `results/benders.html` |
 | `mk.cuopt_warmstart(model, time_limit, cuopt_cmd, server_url, mps_dir, heuristics_only)` | cuOpt(GPU)の解をSCIPへwarm start注入(WSL2 CLI or リモートHTTPサーバ) | `experiments/run_gpu_heuristic.py` → [GPU設定](gpu-setup.md) |
 | `mk.cuopt_concurrent(model, time_limit, server_url, num_cpu_threads, ...)` | 常駐型: cuOptをSCIPと並走させ終了次第mid-solve注入(GPU待ちゼロ) | [GPU設定: 常駐型](gpu-setup.md) |
+| `mk.live.solve_with_monitor(model, time_limit, gap_limit, logger, ...)` | 求解を計器化し境界トラジェクトリを run へ逐次追記(ライブ監視の書き手、要 `viz`) | `experiments/run_monitor.py`, [ライブ監視](../playbook/09-live-monitor.md) |
+| `mk.sweep(build_fn, param_sets, ...)` / `mk.rerun(build_fn, run_id, ...)` | パラメータスイープ(parallel coordinates 比較) / 記録した run 条件からの再現実行(要 `viz`) | `experiments/run_sweep.py` → `results/sweep.html` |
+| `mk.tune(n_trials, time_limit)` | SCIPパラメータの Optuna 探索(問題クラス特化、要 `tune`) | `experiments/run_tune.py` → `results/tune.html` |
 | `mk.RULES` / `mk.Rule` / `mk.evaluate(metrics)` | 診断ルール(プラガブル) | 下記「診断ルール一覧」 |
 
 条件数など静的診断の補助関数として、`matrix_condition(model)`(SVD による κ(A)、solve前)と

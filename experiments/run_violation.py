@@ -122,8 +122,9 @@ def main() -> None:
 <code>conversion</code>(ネストexp)が緩く、<code>arrhenius</code>/<code>tmax</code>/<code>jobtime</code> は
 ほぼタイト。これは空間分枝が <code>t_k</code>・<code>t_tau</code> に集中していた所見と整合する。
 改善候補: energy/conversion の<b>区分線形近似・凸包再定式化・変数境界タイト化</b>。
-<br>※ 線形制約のIIS/スラック可視化は、このモデルでは全線形制約がpresolveで非線形/varboundに吸収され
-純粋な線形制約が残らないため対象外(別モデルで別途)。
+<br>※ この違反可視化は<b>実行可能だが緩和が緩い</b>制約(双対境界のボトルネック)を対象にする。
+<b>実行不可能(infeasible)</b>のときに矛盾する制約(IIS核)・必要な緩和量を特定するには
+<code>run_infeasibility.py</code>(弾性緩和 + 削除フィルタ)を使う。
 </p>
 </div></body></html>"""
     out.write_text(html, encoding="utf-8")

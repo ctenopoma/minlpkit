@@ -1,6 +1,6 @@
 # 7. GPU warm start(cuOpt)
 
-[← プレイブック目次](index.md)
+[← 手法ガイド目次](index.md)
 
 !!! info "このページの範囲"
     GPU warm startが効く原理と実測効果を扱う。WSL2/Dockerの導入手順・HTTPバックエンド構成は

@@ -48,6 +48,23 @@ def _get(m: dict, key: str, default=None):
 # --- ルール定義(task.md の診断ルール表をコード化) ---
 RULES: list[Rule] = [
     Rule(
+        id="infeasible_core",
+        symptom="モデルが実行不可能(制約が互いに矛盾)",
+        cause="少数の制約が矛盾する極小非可行部分系(IIS)を形成。人が怪しい制約をOff/緩和して探す箇所",
+        recommendation="IIS核の制約のどれかを緩和/修正する。弾性緩和のスラックが立った制約が実際の違反箇所",
+        condition=lambda m: _get(m, "infeasible", False) is True,
+        evidence=lambda m: f"IIS核{m.get('iis_size', '?')}本 / 全{m.get('n_conss', '?')}本"
+                           f"(presolve証明={m.get('presolve_infeasible')})、"
+                           f"最大スラック制約={m.get('top_elastic_constraint')}"
+                           f"({_get(m, 'top_elastic_slack', 0):.3g})",
+        links=["infeasibility.html"],
+        severity="critical",
+        recipe="mk.diagnose_infeasibility(build_fn) で presolve当たり→弾性緩和スラック→削除フィルタ核を算出。"
+               "スラック上位の制約を緩める/RHSを見直す、または核の制約の1本を外す。"
+               "個別には mk.elastic_filter(build_fn)(線形制約の必要違反量)/ "
+               "mk.deletion_filter(build_fn)(極小核)。例: infeasibility.html",
+    ),
+    Rule(
         id="weak_relaxation",
         symptom="特定の非線形制約に緩和違反が集中(かつ空間分枝が多い)",
         cause="その制約の凸緩和が支配的ボトルネック(非凸項の緩和が緩い)",

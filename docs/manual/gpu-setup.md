@@ -4,13 +4,13 @@
 
 !!! info "このページの範囲"
     WSL2/Dockerでのcuopt導入手順とCLI/HTTPバックエンドの設定を扱う。効く原理・効かない条件・
-    実測効果は[プレイブック 7. GPU warm start](../playbook/07-gpu.md)を参照。
+    実測効果は[手法ガイド 7. GPU warm start](../playbook/07-gpu.md)を参照。
 
 `mk.cuopt_warmstart` は「GPUは可行解探索、CPUは証明」という分業を1関数に閉じ込めたもの。
 NVIDIA cuOpt(GPU上のMIPヒューリスティクス)を短時間走らせて可行解を掘り、SCIPへ
 `addSol` で注入してから通常の `optimize()` に続ける。cuOpt自身は最適性証明をしないため、
 下界の改善・最適性の証明はSCIP側に委ねる。手法の効果・効かない条件は
-[プレイブック 7. GPU warm start](../playbook/07-gpu.md) を参照。
+[手法ガイド 7. GPU warm start](../playbook/07-gpu.md) を参照。
 
 ## 導入(WSL2)
 
@@ -35,7 +35,7 @@ uv pip install --extra-index-url=https://pypi.nvidia.com "cuopt-cu13==25.10.*"
   未導入のまま `cuopt_warmstart`/`cuopt_concurrent` を呼ぶと、導入手順つきの
   `RuntimeError` になる(素のsubprocessエラーは出さない)。
 - 診断ルール `gpu_primal` の発火条件(GPU未導入でも発火する設計とその理由)は
-  [プレイブック 7. GPU warm start](../playbook/07-gpu.md)の「診断で何がわかるか」節を参照。
+  [手法ガイド 7. GPU warm start](../playbook/07-gpu.md)の「診断で何がわかるか」節を参照。
   recipeに本ページの導入手順への参照が含まれる。
 
 ## 使用例

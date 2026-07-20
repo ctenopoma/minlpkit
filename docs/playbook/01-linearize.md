@@ -1,6 +1,6 @@
 # 1. 整数×連続の厳密線形化
 
-[← プレイブック目次](index.md)
+[← 手法ガイド目次](index.md)
 
 ### こんな課題ありませんか
 
@@ -17,11 +17,32 @@
 
 ### 打ち手の仕組み
 
-SCIP は「整数 y × 連続 x」の積を、一般の双線形項と同じく **McCormick 緩和**(4本の線形不等式
-で囲む凸包近似)で扱う。しかし y が整数だと、y のとりうる値ごとに指示変数 δ_v(y=v)を作り、
-x を `x = Σ_v x_v` に分解して `w = Σ_v v·x_v` とすれば、y·x を**緩和ギャップ0**で厳密に
-線形表現できる(y の値域が小さいほど補助変数が少なく効率的)。「y が整数」という情報を
-McCormick は捨てているが、この分解は使い切る、というのが直感。
+SCIP は「整数 $y$ × 連続 $x$」の積 $w = yx$ を、一般の双線形項と同じく **McCormick 緩和**
+(4本の線形不等式で囲む凸包近似)で扱う。
+
+$$
+\begin{aligned}
+w &\ge \underline{y}x + y\underline{x} - \underline{y}\,\underline{x}, &
+w &\ge \overline{y}x + y\overline{x} - \overline{y}\,\overline{x},\\
+w &\le \overline{y}x + y\underline{x} - \overline{y}\,\underline{x}, &
+w &\le \underline{y}x + y\overline{x} - \underline{y}\,\overline{x}.
+\end{aligned}
+$$
+
+しかし $y$ が整数なら、とりうる値 $v \in \{\underline{y},\dots,\overline{y}\}$ ごとに
+指示変数 $\delta_v$($y=v$ のとき1)を置き、$x$ を分解すれば**緩和ギャップ0**で厳密に
+線形表現できる。
+
+$$
+\sum_v \delta_v = 1,\quad
+y = \sum_v v\,\delta_v,\quad
+x = \sum_v x_v,\quad
+w = \sum_v v\,x_v,\quad
+0 \le x_v \le \overline{x}\,\delta_v .
+$$
+
+$y$ の値域が小さいほど補助変数が少なく効率的。「$y$ が整数」という情報を McCormick は
+捨てているが、この分解は使い切る、というのが直感。
 
 ### 効果(このリポジトリでの実測)
 

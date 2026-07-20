@@ -3,7 +3,7 @@
 /* Premium Typography & Variables */
 :root {
   --md-text-font: "Inter", "Noto Sans JP", -apple-system, sans-serif;
-  --md-code-font: "JetBrains Mono", "Fira Code", monospace;
+  --md-code-font: "Google Sans Code", "JetBrains Mono", "Fira Code", monospace;
   --md-typeset-a-color: #3b82f6; /* Modern Blue */
 }
 
@@ -128,4 +128,51 @@ html:not([data-md-color-scheme="slate"]) .md-search__input {
 [data-md-color-scheme="slate"] .md-typeset table:not([class]) {
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ============================================================
+   数式(KaTeX)
+   pymdownx.arithmatex(generic) + KaTeX auto-render で描画する。
+   ============================================================ */
+
+/* 本文サイズに馴染ませる(KaTeX の既定 1.21em は日本語本文の中で浮く) */
+.md-typeset .katex {
+  font-size: 1.05em;
+}
+
+/* ディスプレイ数式: 長い式は本文を横に伸ばさず、式だけ横スクロールさせる */
+.md-typeset .katex-display {
+  margin: 1.2em 0;
+  padding: 0.2em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* 見出しのグラデーション(-webkit-text-fill-color: transparent)を数式が
+   継承すると不可視になるため打ち消す */
+.md-typeset h1 .katex,
+.md-typeset h2 .katex,
+.md-typeset h1 .katex *,
+.md-typeset h2 .katex * {
+  -webkit-text-fill-color: var(--md-default-fg-color) !important;
+}
+
+/* ダークモードで数式が黒のままにならないようにする */
+[data-md-color-scheme="slate"] .md-typeset .katex,
+[data-md-color-scheme="slate"] .md-typeset .katex * {
+  color: var(--md-default-fg-color);
+}
+
+/* 数式番号・注釈用の小さめキャプション */
+.md-typeset .math-note {
+  display: block;
+  text-align: center;
+  font-size: 0.75em;
+  color: var(--md-default-fg-color--light);
+  margin-top: -0.6em;
+}
+
+/* Mermaid ラベル内の KaTeX(mermaid 11 が katex を同梱、CSS は上で読込済み) */
+.mermaid .katex {
+  font-size: 1em;
 }

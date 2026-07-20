@@ -1,6 +1,6 @@
 # 0. 診断そのもの(analyze/findings/recipe)
 
-[← プレイブック目次](index.md)
+[← 手法ガイド目次](index.md)
 
 ### こんな課題ありませんか
 

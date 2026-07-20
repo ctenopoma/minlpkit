@@ -199,6 +199,25 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
 - 停滞検出は「横ばい(改善イベント不在)」より「**改善レートが平均の半分未満**」の方が実態に合う
   (plantの双対境界は多数の小改善で連続上昇し、劇的な平坦域が稀)。
 
+### 数式レンダリング(KaTeX + arithmatex、mermaidラベル内数式)
+
+- **本文の数式は `pymdownx.arithmatex`(generic)+ KaTeX auto-render**。arithmatex が
+  `$...$`/`$$...$$` を `\(...\)`/`\[...\]` に正規化するので、`docs/javascripts/katex.js` の
+  delimiters は**正規化後の `\(` `\[` だけ**にする。素の `$` を対象に含めると、シェル例や
+  ドル金額を数式と誤認する。
+- **`katex.js` の処理は `document$.subscribe` 内で必ず try/catch + `setTimeout` で非同期化する**。
+  `document$` は Material の**mermaidレンダラーやコードコピーも購読する共有 observable**で、
+  ここで例外を投げると購読チェーンごと停止し **mermaid図が描画されなくなる**。
+- **mkdocs-jupyter のノートブックHTMLは MathJax を `<script src=""></script>`(空src)で吐く**。
+  数式エンジンが実在しないので notebook の LaTeX は素のままでは表示されない。`katex.js` で
+  `.jp-RenderedMarkdown` セルに限り生の `$`/`$$` も拾って KaTeX で描画する(本文側は上記のとおり
+  `$` を拾わない、と対象を分ける)。
+- **mermaidラベル内でも `$$...$$` は使える(mermaid 11 が KaTeX 同梱、CSSはCDNから別途読込済み)**。
+  ただし **`<` `>` `&` `"` の生文字は不可**。superfences がラベルを HTML エスケープして
+  `<` → `&lt;` になり、それが KaTeX に渡ると `KaTeX parse error: Expected 'EOF', got '&'` で
+  例外→図が空白になる。不等号は **`\lt` / `\gt`** を使う(`\ge`/`\le` はそのまま可)。
+  混入検査: `docs/**/*.md` の ```mermaid ブロック内 `$$...$$` に `<>&"` が無いことを確認する。
+
 ## 8. 診断センサス(samplesを診断エンジンのベンチマークにする)
 
 `experiments/run_census.py` で4カテゴリ約50本に `mk.analyze(time_limit=10)` を一括適用した実測
