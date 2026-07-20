@@ -54,6 +54,20 @@ Optuna や ML のような重い判定ではない。閾値はすべてこのリ
 - `dual_stall` や `wide_term_range` は「症状はある」ことしか教えない。効果があるかは
   必ず `mk.compare_variants` で before/after 検証すること(下の各ページ参照)。
 
+### 診断エンジンの中身を手を動かして見る
+
+`report.metrics` の各観測量が実際に何を計算しているかは、収集器ごとに1本ずつ深掘りする
+可視化notebook群で確認できる。
+
+- [1. McCormick緩和+空間分枝木](../notebooks/diagnose/01_mccormick_spatial_tree.ipynb) —
+  `spatial_share` の元になる `NODEBRANCHED` イベントの収集と分枝木の可視化
+- [2. 違反ヒートマップ](../notebooks/diagnose/02_violation_heatmap.ipynb) —
+  `bottleneck_type`/`bottleneck_rel_viol` の元になるルートLP緩和解の違反測定
+- [3. gap停滞とattribution](../notebooks/diagnose/03_gap_stall_attribution.ipynb) —
+  `n_stalls` の停滞区間検出と、双対境界改善の分枝種別への帰属
+- [4. 静的診断(スケール・ブロック構造・対称性)](../notebooks/diagnose/04_static_diagnosis.ipynb) —
+  `residual_coef_ratio`/`max_linking_groups`/`n_sym_groups` の元になる、solve前の静的観測
+
 ### 使い方
 
 ```python

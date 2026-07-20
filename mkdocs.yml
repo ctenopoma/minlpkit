@@ -107,6 +107,11 @@ nav:
           - 列生成: notebooks/improve/06_column_generation.ipynb
           - GPU warm start: notebooks/improve/07_gpu_warmstart.ipynb
           - 条件数・数値健全性: notebooks/improve/08_condition_number.ipynb
+      - 可視化notebook(診断エンジンの中身):
+          - McCormick緩和+空間分枝木: notebooks/diagnose/01_mccormick_spatial_tree.ipynb
+          - 違反ヒートマップ: notebooks/diagnose/02_violation_heatmap.ipynb
+          - gap停滞とattribution: notebooks/diagnose/03_gap_stall_attribution.ipynb
+          - 静的診断(スケール・ブロック構造・対称性): notebooks/diagnose/04_static_diagnosis.ipynb
       - ハンズオン(1)可視化・診断編: notebooks/hands_on_diagnosis.ipynb
       - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb
       - 診断センサス: census.md
