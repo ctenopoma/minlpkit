@@ -88,3 +88,6 @@ nav:
       - 診断ルール (diagnose): api/diagnose.md
       - ライブ可視化 (live): api/live.md
       - チューニング (tune): api/tune.md
+
+extra_css:
+  - stylesheets/extra.css
