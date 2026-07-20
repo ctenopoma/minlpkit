@@ -6,8 +6,8 @@
 
 | サンプル | 事業ストーリー | scale | ソース |
 | --- | --- | :---: | :---: |
-| ⭐ **foundry_charge_mix_multiperiod** | 鋳造の多期チャージ配合計画 (Multi-period Foundry Charge Mix). — 電気炉(EAF)を持つ鋳物工場の「溶解計画係」が、数日〜1週間の計画期間について、 | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/manufacturing_and_blending/foundry_charge_mix_multiperiod.py) |
-| ⭐ **petroleum_pooling** | 石油調達→プーリング→製品ブレンドの多期計画 (Multi-period Petroleum Pooling). — 中堅の石油精製・調達会社の「調達計画部」が、数週間の計画期間について、 | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/manufacturing_and_blending/petroleum_pooling.py) |
+| ⭐ **foundry_charge_mix_multiperiod** ([学習notebook](../notebooks/samples/foundry_charge_mix_multiperiod.ipynb)) | 鋳造の多期チャージ配合計画 (Multi-period Foundry Charge Mix). — 電気炉(EAF)を持つ鋳物工場の「溶解計画係」が、数日〜1週間の計画期間について、 | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/manufacturing_and_blending/foundry_charge_mix_multiperiod.py) |
+| ⭐ **petroleum_pooling** ([学習notebook](../notebooks/samples/petroleum_pooling.ipynb)) | 石油調達→プーリング→製品ブレンドの多期計画 (Multi-period Petroleum Pooling). — 中堅の石油精製・調達会社の「調達計画部」が、数週間の計画期間について、 | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/manufacturing_and_blending/petroleum_pooling.py) |
 | agribusiness_crop_mix | 農業法人の作付計画 (Agribusiness Crop Mix Planning) — 農業法人の営農計画担当者が、来季どの作物をどの圃場にどれだけ作付けするかを決める。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/manufacturing_and_blending/agribusiness_crop_mix.py) |
 | automotive_paint_shop | 自動車塗装順序・段取り最適化 (Automotive Paint Shop Sequencing) — 自動車組立工場の塗装工程管理者が、当直の生産スケジュール(タイムスロットごとにどの色を | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/manufacturing_and_blending/automotive_paint_shop.py) |
 | beverage_bottling_line | 飲料ボトリングライン段取り最適化 (Beverage Bottling Line Scheduling) — 飲料メーカーの生産計画担当者が、1本のボトリングラインで複数SKU(製品銘柄・容量違い)を | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/manufacturing_and_blending/beverage_bottling_line.py) |
