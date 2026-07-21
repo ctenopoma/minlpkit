@@ -1,0 +1,17 @@
+# style: jis-jp — 番号と組織(章節番号・図表番号・目次・ページ番号)
+format:
+  typst:
+    number-sections: true
+    section-numbering: "1.1.1 "
+    toc-depth: 3
+    page-numbering: "1"
+    include-in-header:
+      - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/styles/jis-jp.typ
+fig-supplement: "図"
+tbl-supplement: "表"
+crossref:
+  fig-title: "図"
+  tbl-title: "表"
+  fig-prefix: "図"
+  tbl-prefix: "表"
+  title-delim: ""

@@ -1,0 +1,6 @@
+format:
+  typst:
+    include-in-header:
+      - D:\work_space\minlpkit\docs\.qtpdf-cover-formal.typ
+      - D:\work_space\minlpkit\docs\.qtpdf-history.typ
+      - D:\work_space\minlpkit\docs\.qtpdf-revision-mode.typ

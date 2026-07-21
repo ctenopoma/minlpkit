@@ -1,0 +1,35 @@
+project:
+  type: default
+  output-dir: _pdf
+
+execute:
+  enabled: false   # ノートブックは実行せず、保存済みの出力をそのまま組版する
+
+# `- quarto` の後に置くことで Quarto 本体(crossref 等)の後段で走る。
+# numbering.lua は Quarto が float 化しなかった表・図に番号を振るため、
+# Quarto の処理結果を見てから動く必要がある。
+filters:
+  - quarto
+  - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/filters/strip-numbers.lua
+  - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/filters/pagebreaks.lua
+  - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/filters/revision.lua
+  - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/filters/numbering.lua
+  - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/filters/fit-images.lua
+
+format:
+  typst:
+    papersize: a4
+    margin:
+      x: 2.2cm
+      y: 2.4cm
+    lang: ja
+    mainfont: "Noto Sans CJK JP"
+    monofont: "JetBrains Mono"
+    font-paths: fonts
+    fontsize: 10.5pt
+    toc: true
+    toc-depth: 2
+    include-in-header:
+      - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/base.typ
+      - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/callouts.typ
+      - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/revision.typ

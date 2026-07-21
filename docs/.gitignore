@@ -1,0 +1,14 @@
+
+
+# --- PDF化(Quarto × Typst)の生成物 ---
+/_pdf/
+/_pdfbook/
+*__pdf.qmd
+*__pdf.typ
+*__pdf_files/
+/.quarto/
+**/*.quarto_ipynb
+
+# 持ち込みフォント(バイナリはコミットしない。入手先は fonts/README.md)
+/fonts/*
+!/fonts/README.md

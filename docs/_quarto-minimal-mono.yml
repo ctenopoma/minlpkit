@@ -1,0 +1,7 @@
+# design: minimal-mono — 見た目(配色・フォント・表の体裁)
+format:
+  typst:
+    mainfont: "Noto Sans CJK JP"
+    fontsize: 10pt
+    include-in-header:
+      - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/designs/minimal-mono.typ

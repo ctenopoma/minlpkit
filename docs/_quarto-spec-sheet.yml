@@ -1,0 +1,7 @@
+# design: spec-sheet — 見た目(配色・フォント・表の体裁)
+format:
+  typst:
+    mainfont: "Noto Serif CJK JP"
+    fontsize: 10pt
+    include-in-header:
+      - C:/Users/naoki/.claude/skills/quarto-typst-pdf/assets/designs/spec-sheet.typ
