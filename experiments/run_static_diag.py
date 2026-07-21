@@ -1,4 +1,4 @@
-"""静的診断(数値スケール/Big-M・制約-変数構造)の可視化 (Phase 2.c)
+"""静的診断(数値スケール/Big-M・制約-変数構造)の可視化
 
 solve前にモデルから静的に取れる4つの診断を1画面に出す:
   A. 出所別の係数スケール(箱ひげ・対数)= 数値不安定/Big-Mの兆候
@@ -177,13 +177,13 @@ def main() -> None:
           border-radius:8px; margin-bottom:12px; overflow:hidden; }}
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
 </style></head><body><div class="wrap">
-<h1>静的診断: 数値スケールと構造(Phase 2.c)</h1>
+<h1>静的診断: 数値スケールと構造</h1>
 <div class="sub">{MODELS[args.model]} — solve前にモデルから取れる数値健全性・分解適性。Big-M候補: {bigm_txt}</div>
 <div class="tiles">{''.join(tiles)}</div>
 {chart_html}
 <p class="note">
 <b>係数スケール</b>: 出所別の絶対値レンジ。max/min比が大きい・上に外れる点がある = 数値不安定/Big-Mの兆候。
-Phase 3の「Big-M排除(Indicator/SOS)・スケーリング」の判断材料。
+Big-M排除(Indicator/SOS)・スケーリングの判断材料になる。
 <b>接続行列</b>: RCMで並べ替えると対角ブロックが浮く=その単位で<b>分解可能</b>。
 <b>結合制約</b>(赤)は多数の変数グループをまたぐ制約で、これがベンダーズ/Dantzig-Wolfe分解の境界になる。
 </p>

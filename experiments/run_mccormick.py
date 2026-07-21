@@ -1,4 +1,4 @@
-"""McCormick 包絡の締まりアニメーションHTMLを生成する (Phase 2.a)
+"""McCormick 包絡の締まりアニメーションHTMLを生成する
 
 非凸双線形項 z=x·y の真の曲面と、x区間をk分割した区分McCormick凸下界を
 3Dで重ね、スライダーで分割数kを動かすと緩和が締まる様子を見せる。
@@ -123,7 +123,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>McCormick凸緩和の締まり(Phase 2.a)</h1>
+<h1>McCormick凸緩和の締まり</h1>
 <div class="sub">非凸な双線形項 z=x·y を空間分枝限定法がどう緩和し、区間分割で締めるか</div>
 <div class="card">{div_3d}</div>
 <div class="card">{div_gap}</div>

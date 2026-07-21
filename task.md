@@ -660,6 +660,680 @@ Phase 11 の cuOpt 連携は同一マシンの WSL2 CLI 直叩き固定だった
   SCIP伝播がルートで潰す(結合双線形にして初めてgap残存)、水網は淡水高コスト化まで双線形が働かない。
 - 検証: `uv run pytest -q` 39 passed/2 skipped、`mkdocs build --strict` exit 0、smoke `tests/test_samples_t1.py` 4本パス。
 
+### T2 エネルギー運用クラスタ 完了 — 2026-07-20
+4モデルとも **PASS**(`results/acceptance_t2.md`)。事業ストーリー1行ずつ:
+
+- **weekly_uc_ramp**(`samples/energy_and_microgrid/`, 新規): 電力会社の需給運用部が翌週の
+  起動停止・出力配分を決める週次UC。簡易DC潮流(PTDF)で単一ユニットの出力を全送電線制約に
+  結合する。small(4ユニット×4バス×5線×8時間)最適1.4s / default(15ユニット×8バス×10線×
+  48時間、3984変数)は`numerical_scale`(送電線容量のbig-Mスケール差)発火でPASS(gapはSCIPの
+  presolve/heuristicsがLP緩和とほぼ一致する解を即座に見つけるため実質0%)。
+- **hydro_cascade_efficiency**(`samples/energy_and_microgrid/`, 新規): 水系運用担当者が
+  複数ダムの放流計画を決める。発電量=放流量×水頭(貯水位依存)の双線形、上流放流の1期遅れ
+  流下、灌漑取水下限。small(ダム2×期8)最適2s / default(ダム5×期22、572変数)**gap 28.4% +
+  weak_relaxation/dual_stall/numerical_scale** でPASS。
+- **gas_pipeline_weymouth**(`samples/location_and_network_design/`, 新規): ガス圧送運用部が
+  基本供給・コンプレッサ運転・ピークシェイビングを決める。Weymouth式(流量²∝圧力²差、非凸)+
+  コンプレッサon/off×昇圧量(整数×連続)+ラインパック(配管内ガス在庫)による時間結合。
+  small(ノード4×コンプレッサ1×3期)最適0.1s / default(ノード6×コンプレッサ2×10期、370変数)
+  **gap 0.8%(<10%だが)+ `numerical_scale`** でPASS。
+- **district_heating_detailed_physics**(`samples/physics_and_control_minlp/`, 既存精緻化):
+  地域熱供給プラント運転員の熱源出力・ポンプ動力計画。既存の流量×温度双線形・圧力損失²の
+  物理構造を維持したまま `scale` 引数を追加(ノード数・期数を可変化)、熱源出口温度のランプ
+  制約(熱慣性)で期間の独立分解を防止。small(ノード4×期4)最適(nsols>0, 23.5s) / default
+  (ノード12×期12、708変数)**gap 125.1%(SCIP `getGap()`は(primal-dual)/|dual|なので100%
+  超あり) + `numerical_scale`** でPASS。既存センサスの weak_relaxation 発火実績を維持。
+- 知見(詳細は `results/acceptance_t2.md` 末尾): **`mk.analyze` は `build_fn()` を約7回
+  呼び直すため、非線形制約が多い/変数規模が大きいモデルでは収集器のセットアップコストが
+  乗算され、SCIPの`limits/time`を守っていても全体は数百秒かかりうる**(weekly_uc_ramp を
+  週次168時間×24ユニット・22,500変数の当初案で作ったところ analyze 全体が350秒に)。
+  対策として (a) 二次燃料費など難度に寄与しない非線形項は外して純粋MILP化、(b) 既定scale
+  はT1同様、変数・制約数を低〜中千のオーダーに抑える、の2点を全モデルに適用して解消
+  (32秒/15秒/33秒/69秒に短縮)。また gas_pipeline_weymouth は当初「期ごとに独立した定常状態」
+  設計だったため presolve が期を独立成分に分解し瞬時に最適化してしまい(gap0%・findings無し)、
+  ラインパック(配管内ガス在庫の期間変化)を追加して初めて期をまたぐ結合が生まれた。
+- 検証: `uv run pytest -q` 46 passed/2 skipped、`mkdocs build --strict` exit 0(自セッションの
+  変更分に対して確認。docs/mkdocs.yml は並行セッションの作業中につき不可侵)、smoke
+  `tests/test_samples_t2.py` 5本パス。
+
+### T3 完了 — エネルギー計画(設計+運用の統合意思決定)クラスタ(2026-07-20)
+
+3モデルとも **PASS**(`results/acceptance_t3.md`)。事業ストーリー1行ずつ:
+
+- **transmission_expansion_operation**(`samples/location_and_network_design/`, 新規):
+  系統計画者が「どの候補送電コリドーを増強するか(整数)」と「増強後の複数需要シナリオ
+  それぞれに対する給電運用(DC潮流)」を同時決定する。候補線は disjunctive(big-M)で
+  増強しなければ物理法則(潮流=感受率×位相角差)自体が無効化される真の結合。small
+  (バス5×候補線4×シナリオ3)最適0.0s / default(バス9×候補線8×シナリオ5、83変数)は
+  `numerical_scale` + `symmetry_info` でPASS(gap0.9%、根ノードで最適発見)。
+- **microgrid_design_operation**(`samples/energy_and_microgrid/`, 新規): マイクログリッド
+  設計者が「PV/蓄電池容量(連続)・発電機台数(整数)」と「複数代表日の運用(充放電・
+  出力配分)」を同時決定する。蓄電池の内部抵抗損失を `loss * cap_batt >= k * (充放電出力)^2`
+  という双曲線で表現し、容量(設計)そのものが非線形項に現れる真の結合を作った(T2
+  `hydro_cascade_efficiency` の放流×水頭パターンを設計変数に転用)。small(代表日2×
+  時刻6)最適0.1s / default(代表日4×時刻14、約170変数、`has_nonlinear=True`)は
+  `numerical_scale` でPASS(gap0.1%)。
+- **hydrogen_hub_transport**(`samples/location_and_network_design/`, 新規): 水素サプライ
+  チェーン計画者が「生産・貯蔵ハブの開設・容量(整数+連続)」と「複数期の輸送・在庫
+  計画(連続)」を同時決定する。開設可否を固定すれば残る生産・貯蔵・輸送・外部調達の
+  決定は純粋LPになる(配置=主問題、輸送=サブ問題というベンダーズ分解適性を意図的に
+  保持)。small(候補ハブ4×需要地5×期6)最適0.0s / default(候補ハブ7×需要地10×
+  期10、176変数)は `numerical_scale` + `symmetry_info` でPASS(gap0.0%)。
+- 知見(詳細は `results/acceptance_t3.md` 末尾): T3の3モデルは全て根ノード(`nodes=1`)で
+  最適に到達し、`numerical_scale`(一部`symmetry_info`併発)という非自明findingsのみで
+  PASSを確保した。これはT1(双線形の実行可能性)・T2(`mk.analyze`自身のコスト)に続く
+  **T3固有の教訓**: 設計×運用の統合意思決定を big-M disjunctive で組むと、SCIPの強力な
+  presolve/heuristicsが根ノードでLP緩和相当の解を即座に発見してしまい、gap自体は診断
+  題材にならない(受け入れ基準の「gap≥10% **または** 非自明findings」の「または」で
+  救われる形)。真にgapを残すには disjunctive をやめて双線形/非線形結合に寄せる必要が
+  あり、`microgrid_design_operation` ではその方針(蓄電池損失の双曲線)を1本採用した。
+  また `transmission_expansion_operation` は当初シナリオ別需要が発電総容量を上回る
+  設定にしていたため、送電投資の有無に関わらず常に計画外停電が発生する自明な問題に
+  なっており(T1/T2で繰り返された「バックストップは他制約と整合しないと機能しない」
+  教訓の再確認)、需要係数を発電総容量比0.80・シナリオ倍率上限1.05まで引き下げて解消した。
+- 検証: `uv run pytest -q` 50 passed/2 skipped、smoke `tests/test_samples_t3.py` 4本パス。
+  `mkdocs build --strict` は並行セッションの docs/mkdocs.yml 未完了差分(`docs/hooks.py`
+  がnav未登録)により実行時エラーとなったが、自セッションが `mkdocs.yml`/`docs/` を
+  一切変更していないことを `git status`/`git diff` で確認済み(不可侵の遵守)。
+
+### T4 完了 — サプライチェーン統合クラスタ(2026-07-20)
+
+3モデルとも **PASS**(`results/acceptance_t4.md`)。事業ストーリー1行ずつ:
+
+- **production_distribution_integrated**(`samples/routing_and_logistics/`, 新規):
+  生産・物流統合計画者が複数工場のロットサイジング(段取り+在庫)と複数DCへの
+  トラック配送(共有車隊+共有ドライバー労務時間の多次元ナップサック)を同時決定。
+  small(工場2×DC3×期3)最適0.6s / default(工場9×DC16×期14、4634変数)は
+  30秒でroot LPの求解自体が終わらず `nsols=3` のまま **gap 77.1%** でPASS。
+- **multi_echelon_inventory_realistic**(`samples/routing_and_logistics/`, 新規):
+  サプライチェーン計画者が工場→DC→小売の3段階在庫について、各段の整数ロット
+  発注・リードタイム跨ぎの在庫バランス(時間結合)・工場生産能力の共有(統合
+  意思決定)・安全在庫割れと欠品のペナルティを同時決定。small(DC2×小売4×期4)
+  最適0.9s / default(DC4×小売12×期8、736変数)**gap 4.2% + `numerical_scale`**
+  でPASS。
+- **maritime_inventory_routing_realistic**(`samples/routing_and_logistics/`, 新規、
+  既存 `maritime_inventory_routing.py`(Phase16精緻化版、期あたり隻数の集計変数)
+  とは別に個々の船舶を区別した精緻化版): 海運計画者が異容量の複数タンカーの
+  配船スケジュール(航海サイクル=時間結合)と港湾在庫を同時決定、複数港が
+  同一船隊を取り合う。small(船3×港3×期6)最適7.0s / default(船5×港6×期10、
+  720変数)**gap 19.4% + `dual_stall`** でPASS。
+- 知見(詳細は `results/acceptance_t4.md` 末尾): T4は**T1-T3のどの手法も
+  素直には効かなかった**クラスタ。固定費用ネットワークフロー型MILP
+  (`production_distribution_integrated`)は共有資源(車隊・労務時間)を
+  どれだけタイト化しても多数レーンでの「ならし効果」によりroot nodeで
+  gap<1%に収束してしまい、**唯一有効だったのは変数・制約規模を純粋に
+  拡大してLPソルブ時間そのものを使い切ること**(工場9×DC16×期14まで拡大)
+  だった。また純粋MILPでは `numerical_scale`(big-M残存)を狙って発火させる
+  のも困難(SCIPのbound-tightening presolveが非凸性の無いモデルでは
+  big-Mを完全に締めてしまう)ことを確認した。一方 `maritime_inventory_routing_realistic`
+  は船隊の総スループットと港湾総消費量を臨界点(94%)まで拮抗させることで
+  bin-packing的な組合せ判断を作れ、`multi_echelon_inventory_realistic` は
+  発注-在庫のデカップリング(小売発注はDC在庫と無関係に確定)がDC在庫の
+  負値リスクを生むため緊急補充バックストップが必須という、T1-T3の
+  「バックストップは他制約と整合しないと機能しない」教訓の新パターンを確認した。
+- 検証: `uv run pytest -q` 57 passed/2 skipped、smoke `tests/test_samples_t4.py` 4本パス。
+
+## Phase 13(拡張): 上級ティア — 研究動向ドリブンの高難度クラスタ(着手)
+
+T1-T8(事業課題ドリブン、中難度)の上に、**真に解きづらい**題材の層を追加する。根拠はWeb調査
+(2026-07、出典下記)。数学的難問化が目的ではなく、実際の業界が今まさに苦戦している構造
+(AC潮流の三角関数結合、電気化学劣化の多物理連成、複数列車の時間結合、プラント多設備の同時合成)
+を採用する。受け入れ基準はT1-T8と異なり「**gapが有意に残る/解に時間がかかることを是とする**」
+(小scaleでも証明できなくてよい。教育的visualizationの題材としての価値を優先)。
+
+### 調査で確認した事実(出典)
+- 非凸QCQPは**変数数十個規模でもSCIP/BARON級ソルバーが苦戦する**ケースが2026年時点でも現役の研究対象
+  ([Enhancing QP Solvers via Quadratic Nonconvex Reformulation, arXiv 2508.20897](https://arxiv.org/html/2508.20897v1))。
+  McCormick強化で初めて解けた事例がある = 小規模でも本当に難しい題材が作れる根拠
+- AC-OPF(交流最適潮流)は「非平滑・非凸・非線形、積と三角関数を含む」古典的難問で、
+  DER統合はMINLP化しSCIP/BARONが使われる([ARPA-E Grid Optimization報告, arXiv 2206.07843](https://arxiv.org/pdf/2206.07843)、
+  [離散決定付きAC-OPFの大域最適化, ResearchGate](https://www.researchgate.net/publication/368267843))。
+  多期AC-OPFは蓄電池等の時間結合も持つ([Scalable Multi-Period AC-OPF, arXiv 2405.14032](https://arxiv.org/pdf/2405.14032))
+- 蓄電池は**電気化学-熱-容量劣化の連成非線形モデル**が2026年時点の研究最前線
+  ([高温環境でのLiイオン電池劣化解析, Battery Energy 2026](https://onlinelibrary.wiley.com/doi/10.1002/bte2.20250043)、
+  [非線形劣化モデルによるESS運用最適化, ResearchGate](https://www.researchgate.net/publication/339606265))。
+  容量劣化は温度・Cレート・DoD・平均SOCに依存する非線形関数
+- 鉄道は**時刻表+車両運用+エネルギー(回生電力の授受同期)の同時MINLP**が研究方向
+  ([周期時刻表の走行時間・回生エネルギー同時最適化, arXiv 2605.02355](https://arxiv.org/pdf/2605.02355)、
+  [都市鉄道の時刻表+車両循環+省エネ協調最適化, ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0360544222024859))
+- 熱交換器網(HEN)同時合成は**古典的に強非凸なMINLP**(Yee-Grossmann/Ciric-Floudas型)で、
+  多設備・多ユーティリティの同時決定+反復的な面積/温度近似(=収束計算前提)が今も研究対象
+  ([HENと熱回収サイクルの同時合成MINLP, ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S0098135417300522))
+
+### テーマカタログ(上級ティア T9-T13)
+- **T9 AC電力網(交流潮流)**: 極座標/直交座標のAC-OPF(電圧×電圧×cos/sinの真の非凸結合)、
+  DER/スイッチのon-off混在、セキュリティ制約(N-1)版。現行のDC近似(T2 weekly_uc_ramp)を
+  真の非凸に格上げする対比題材として位置づけ
+- **T10 蓄電池・蓄熱の精緻化**: サイクル劣化コスト(温度・Cレート・DoD依存の非線形容量減衰)を
+  充放電計画に内生化、蓄熱は熱損失が温度差の非線形関数、電力上限との結合
+- **T11 鉄道運行の複雑化**: 複数列車の位置・速度・加減速(運動エネルギー~v²)、駅容量/進路競合、
+  変電所の電力上限を複数列車が共有(結合)、回生電力の授受タイミング同期
+- **T12 プラント多設備の同時物理合成**: 熱交換器網+ユーティリティ系統の同時合成(Yee-Grossmann型)、
+  複数設備(圧縮機・多段分離等)の非線形性能曲線を連成、面積/温度が反復的に決まる構造
+- **T13 横断: 小規模・真の非凸QCQPショーケース**: 変数数十個でもSCIP/BARONが苦戦する規模の
+  合成QCQP(調査文献のパターンを参考に自作)。空間分枝木・McCormickアニメの「本当に効く」実演用
+
+### 進め方
+- T9(AC-OPFの定式化パターン確立、三角関数×非凸のPySCIPOpt実装知見が要る)をOpusで先行
+- T10-T13はパターン確立後Sonnet中心で順次
+- 受け入れは「小scaleで実行可能解が出ること」のみ必須(最適証明は不要)。時間制限内gapが
+  大きく残ることは**成功**とみなす。ライブモニタ・空間分枝木・診断のvisualization題材として
+  有効かを主眼に確認する
+
+### T9 完了 — AC最適潮流(AC-OPF)/ 上級ティアの定式化パターン確立(2026-07-20)
+
+`samples/energy_and_microgrid/ac_opf.py` 新規。極座標形式 AC-OPF に離散コンデンサ
+バンク(整数)を混ぜた MINLP。T2 `weekly_uc_ramp.py`(簡易DC・線形)を**真の交流潮流**
+(電圧×電圧×cos/sin の非凸)へ格上げした対比題材。
+
+**定式化パターン(T10-T13 への申し送り)**
+- **PySCIPOpt の sin/cos は利用可**: `from pyscipopt import sin, cos, sqrt`(6.2.1 で確認)。
+  `cos(theta[i]-theta[j])`(位相角差=アフィン式)がそのまま非線形式ノードになり、SCIP が
+  空間分枝で厳密に扱う。変数分離等の代替表現は不要。Ybus のスパース性を使い隣接バス+自己項
+  のみ和をとる(密和は避ける)。
+- **落とし穴: 非線形目的は SCIP 非対応**。二次発電費用 `c·Pg²` は補助変数の epigraph 制約
+  (`cost_g >= a + b·Pg + c·Pg²`)へ移す。凸なので `>=` で厳密。T10 以降でも二次/非線形目的は
+  epigraph 化が定石。
+- **効いた実行可能性確保策**: 位相角差 ±30°(±π/6)制限・電圧境界を small でやや広め
+  [0.90,1.12]・発電容量をピーク需要の2倍超・基準バス θ=0 固定・整数(コンデンサ)は
+  無効バランスに**線形**に入れて真の非凸を V·V·cos/sin 側へ集約。→ small は**バランス等式の
+  スラック無し**(真の AC のまま)で 30-40 秒に 13-14 実行可能解。緩和変種は不要だった。
+
+**可視化題材としての評価**: 極めて良好。
+- small(5バス)で **weak_relaxation + dual_stall が発火**(非自明findings)、gap≈190%。
+- tree collector で small を解くと **spatial 293 / integer 106 / root 1**(最大深さ16)。
+  空間分枝は連続電圧・位相角(`V_2,V_3,theta_3,...`)に集中 = 非凸潮流の緩和を締める分割、
+  整数分枝はコンデンサ段数。**空間分枝木 × McCormick アニメの「本当に効く」実演材料**。
+- default(14バス)は gap 854%(30秒)、実行可能解5個。求解は一瞬で終わらず診断に十分。
+- 受け入れ: `experiments/acceptance.py` **1/1 PASS**。詳細 `results/acceptance_t9.md`、
+  smoke `tests/test_samples_t9.py`(small 実行可能を time_limit 明示・timelimit 許容)。
+
+**残課題(T10-T13 申し送り)**: 本モデルは整数を線形に入れて実行可能性を優先した。より難な
+「送電線 on/off・離散タップ(アドミタンス自体を離散化 → 非凸項に整数を掛け込む)」や
+セキュリティ制約(N-1)版は未実装。T13 の小規模QCQPショーケースでは本 epigraph 化と
+sin/cos の知見が再利用できる。
+
+### T10 完了 — 蓄電池・蓄熱の精緻化(2026-07-20)
+
+`samples/energy_and_microgrid/battery_degradation_dispatch.py`・
+`samples/energy_and_microgrid/thermal_storage_lossy.py` 新規。2モデルとも
+**PASS**(`experiments/acceptance.py` 2/2、詳細 `results/acceptance_t10.md`)。
+事業ストーリー1行ずつ:
+
+- **battery_degradation_dispatch**: BESS運用者が電力価格差アービトラージと
+  サイクル劣化コスト(Cレート・DoD・外気温のべき乗積で加速、
+  `deg_t >= K_DEG*crate_t^1.5*dod_t^1.3*temp_factor_t`)を同時最適化する充放電
+  計画。容量 `cap_t` を分母に持つ `crate_t*cap_t >= 充放電電力` の双曲線が
+  「容量が痩せるほどCレートが実質的に上がり劣化が加速する」自己強化フィードバックを
+  作り、SOC推移(時間結合1)+ 容量劣化の不可逆累積(時間結合2)の二重構造を持つ。
+  small(24期)最適1.3s / default(72期、has_nonlinear=True)**gap 4.3% +
+  numerical_scale** でPASS。
+- **thermal_storage_lossy**: 蓄熱運用者が複数槽の充放熱を、契約電力上限と共有
+  ヒートポンプ容量の制約下で計画する。自然対流損失(`loss >= UA*dtemp^1.25`)+
+  COPの温度リフト依存(`q_charge == (COP_MAX-K_COP*dtemp)*p_elec` の真の双線形)
+  の二重の非線形構造。small(槽2×24期)最適3.0s / default(槽4×72期)
+  **gap 62.2%(root timelimit)+ numerical_scale** でPASS。
+- 知見(詳細は `results/acceptance_t10.md` 末尾): **「物理的に正しい非線形性」が
+  必ずしも「診断的に難しい」構造を生むとは限らない**。当初 thermal_storage_lossy
+  はCOPを定数とし自然対流損失(温度差^1.25)のみを非線形項としたところ、
+  small・default とも1ノード(root)で即時最適(gap0%)になった——`x^1.25`(x>=0)
+  は単変数の**凸**関数であり、epigraph形の不等式制約はSCIPの凸NLP求解でそのまま
+  厳密に解けてしまうため。T2 hydro_cascade_efficiency・T3 microgrid_design_
+  operation・T10 battery_degradation_dispatch に続き、真の非凸(分枝を要する)には
+  **2つ以上の決定変数の積**(双線形/双曲線)が必要という教訓を再確認し、COPの
+  温度リフト依存(状態変数×運用変数の積、カルノー効率低下の定性的傾向として物理的に
+  正当)を追加して解消した。battery_degradation_dispatch は整数変数を持たない
+  「純粋な連続非凸MINLP」として tree collector で small が spatial 290/root 1
+  (最大深さ34)を記録し、T1-T9にない分枝パターン(整数分枝ゼロ)の可視化題材と
+  なった。
+- 検証: `uv run pytest -q` 53 passed/2 skipped、smoke `tests/test_samples_t10.py`
+  3本パス。`mkdocs build --strict` exit 0(自セッションの変更分に対して確認。
+  `docs/manual.md` に他セッション由来の未コミット差分=cuOptサーバIPアドレスの
+  記載を汎用化した修正=を確認したが、自セッションが変更したものではないため
+  `git add` 対象から明示的に除外し、不可侵を遵守)。
+
+## Phase 15: docs全面刷新(Diataxis化+サンプルカタログ+学習用notebook)— 着手
+
+背景: 現行docsは作業ログの延長で書かれ、(a)開発環境のLAN IPが公開docsに漏れていた、
+(b)リファレンスに内部検討メモ(「ルートA/B」等)が混在、(c)1ページが長すぎ(playbook.md 760行)、
+(d)使い方が「手法を知っている前提」でnotebookが不足、という4点の指摘を受けた。
+目指す形は**scikit-learn/FastAPI/PyTorch的な良いdocsの型**(Diataxis: チュートリアル/
+ハウツー/リファレンス/解説を混在させない)。mkdocs.yml には mermaid(pymdownx.superfences経由)・
+drawio プラグインが有効なので、アーキテクチャ図・決定フローに活用する。
+
+### 15.0 IP漏洩の除去 — 完了(親が直接対応)
+docs/manual.md の cuOptリモートサーバ節から実IP(192.168.50.37)・内部検討メモ(「ルートA/B」
+「FINDINGS §7の実測はここで行われていた」等)を除去し、`<gpu-host>` プレースホルダの
+一般的な手順書(方法A: Docker / 方法B: pipパッケージ)に書き換え済み。
+
+### 15.1 サンプルカタログ(全126本を対象。見せ方の設計が要)
+「1問題1notebookを全部作る」のではなく、**カテゴリ別・自動生成の一覧ページ**にする
+(scikit-learnのExample gallery方式)。各サンプルの docstring 冒頭(事業ストーリー1-2行)を
+抽出してテーブル化するジェネレータスクリプトを作り、手作業で126個書かない(census.mdの
+「実測から自動生成」パターンを踏襲)。カテゴリ(10個)ごとにページを分け(1ページに126行は長すぎる)、
+各行から該当.pyのGitHubソースへリンク。カテゴリごとに1-2行の紹介文。事業ストーリーが薄い/
+docstringが定型のみのサンプルも隠さず一覧に含める(全数を見せるのが今回の要件)
+
+**15.1完了(2026-07-20)**: `experiments/gen_sample_catalog.py`(新規)が `samples/` を `ast` で
+**静的**スキャン(import/solve せず=速く・安全・引数必須でも可)し、モジュール docstring 冒頭から
+事業ストーリー1行を抽出して `docs/samples/` に11ファイル(index + 10カテゴリ)を生成する。
+- **件数: 126本**(全数一致)。カテゴリ内訳: scheduling 21 / energy_and_microgrid 16 /
+  location_and_network_design 14 / routing_and_logistics 13 / others 12 / graph_and_discrete 11 /
+  physics_and_control_minlp 11 / manufacturing_and_blending 10 / finance_and_pricing 9 /
+  packing_and_cutting 9。旗艦 ⭐ 11本(T1×3/T2×4/T3×3/T9×1)、`scale` 引数対応 15本を検出。
+- 各カテゴリページ=テーブル(サンプル名/事業ストーリー/scale/GitHubソースリンク)+ カテゴリ紹介文。
+  index.md はカテゴリ一覧(件数+旗艦数+概要)+ 旗艦一覧。旗艦は ⭐、`docs/notebooks/samples/<stem>.ipynb`
+  が存在すれば学習notebookリンクを**動的**に付与(今は0本なのでリンク非表示)。
+- docstring 抽出品質: 全126本が docstring を持ちファイル名補完(フォールバック)発火は**0本**。
+  RST見出し(「事業ストーリー」+下線)・実行例・数式行はスキップして散文だけを連結する処理を実装。
+- 再生成: `uv run python experiments/gen_sample_catalog.py`(samples/ 動的スキャンなので他クラスタ追加も自動で拾う)。
+  README.md の Documentation 節に再生成コマンドの案内を1行追加。
+- 検証: 11ファイル生成・件数126一致、`uv run mkdocs build --strict` exit 0(docs/samples/ は
+  nav未接続だが orphan は INFO レベルで strict を通過)、`uv run pytest -q` 53 passed/2 skipped。
+- **mkdocs.yml へ追加すべき nav(親が一括反映)**: 「実践」セクション配下に
+  `- サンプルカタログ: samples/index.md` を追加(カテゴリ10ページは index からの相互リンクで到達可能。
+  全11ページを nav 明示したい場合はサブメニュー化も可)。
+
+### 15.2 Diataxis再編(playbook/manual分割)
+- `docs/playbook.md`(760行)→ `docs/playbook/` 配下: `index.md`(症状ジャンプ表のみ)+
+  手法ごとの短いページ(各<5分読了、目安800-1200字+コード)。参考(SCIP既定・非推奨)枠は
+  1ページにまとめてよい
+- `docs/manual.md`(423行)→ `docs/manual/` 配下: インストール/ワークフロー/ライブモニタ/
+  GPU設定/落とし穴・制約、に分割。各ページはリファレンストーン(散文的な作業ログ調を排除)
+- mermaid図: ライブモニタの書き手/読み手分離アーキテクチャ、症状→手法の決定フロー、
+  ベンダーズ/列生成のループ図、診断→改善→検証のパイプライン図
+- 全内部リンク(playbook.html#3-... 等のアンカー参照)を新パスに更新。mkdocs build --strict
+
+**15.2完了(2026-07-20)**: playbook/manual を Diataxis 分割し、index.md のトーン修正・nav 再設計・
+mermaid 図拡充(親からの追加フィードバック)も同一スコープで統合。
+- `docs/playbook.md`(760行)→ `docs/playbook/` 12ファイル: `index.md`(決定フローチャート mermaid +
+  症状ジャンプ表 + 全ページ一覧)/ `00-diagnose.md` / `01-linearize.md` / `02-pwl-sos2.md` /
+  `03-bigm.md` / `04-tuning.md` / `05-benders.md` / `06-column-generation.md` / `07-gpu.md` /
+  `08-condition.md` / `09-live-monitor.md` / `10-reference-scip-handles.md`(対称性除去・被約コスト
+  固定・Perspective を1本化、`#symmetry`/`#redcost`/`#perspective` アンカー)。各ページ<5分読了。
+- `docs/manual.md`(423行)→ `docs/manual/` 5ファイル: `index.md`(インストール+マニュアル構成)/
+  `workflow.md`(パイプライン図 + 一気通貫例 + API表 + 診断ルール表 `#rules`)/ `live-monitor.md` /
+  `gpu-setup.md` / `pitfalls.md`。IP・内部メモの再混入なしを確認(gpu-setup は 15.0 済み内容を移設)。
+- mermaid 図6箇所: index パイプライン(既存)/ playbook index 決定フロー / workflow 診断パイプライン /
+  05-benders マスター↔サブ問題ループ / 06-column-generation RMP↔pricing ループ /
+  manual live-monitor 書き手↔読み手アーキテクチャ。
+- nav 再設計(5トップレベル): ホーム / はじめに(インストール+クイックスタート)/ ガイド(プレイブック
+  12ページ+ハンズオン2本+診断センサス)/ サンプル(カタログ11ページ+ギャラリー)/ リファレンス
+  (利用マニュアル4ページ+API7ページ)。曖昧な「学ぶ」ラベルを廃し Install/Quickstart/Guide/Reference 慣習へ。
+- index.md 文体を declarative・第三人称へ(反語blockquote削除、「あなた」「〜しよう」等除去)。
+- リンク更新: `README.md`(playbook.html→playbook/index.html 等)/ `docs/index.md` / `docs/gallery.md` /
+  `docs/notebooks/quickstart.ipynb` + `notebooks/quickstart.ipynb`(manual.md→manual/index.md)/
+  `minlpkit/gpu.py` 2箇所 + `experiments/check_cuopt_server.py` 2箇所(docs/manual.md 7節→docs/manual/gpu-setup.md)。
+- 旧 `docs/playbook.md` / `docs/manual.md` は `git rm`。`uv run mkdocs build --strict` exit 0
+  (リンク・アンカー切れ0)、`uv run pytest -q` 53 passed / 2 skipped。
+
+### 15.3 学習用notebook(手を動かして学ぶ層。厳選、フォルダ整理)
+方針: 全126本ではなく、**手法・可視化機能・旗艦サンプル**の3系統で厳選する(むやみに量産しない)。
+各notebookは「素朴にやる→診断→手法適用→before/afterをグラフで」の型で、実行結果(グラフ)込み。
+- `docs/notebooks/improve/`(手法、~8-9本): 整数×連続線形化(既存hands_on_improvementを昇華 or 独立化)、
+  PWL-SOS2、Big-M/Indicator、チューニング+スイープ、ベンダーズ、列生成(基礎+安定化+price-and-branch)、
+  GPU warm start(GPU無し環境でのfallback含む)、条件数・数値健全性
+- `docs/notebooks/diagnose/`(可視化機能、~4-5本): McCormick緩和+空間分枝木、違反ヒートマップ、
+  gap停滞とattribution、静的診断(係数スケール・ブロック構造・対称性)
+- `docs/notebooks/samples/`(旗艦サンプル、T1/T2/T3/T9クラスタから2本ずつ程度=7-8本): 事業ストーリー
+  →素朴な定式化→診断→改善、を1本の物語として。既存hands_on_diagnosis/improvementはここに統合 or 参照
+- 既存 docs/notebooks/quickstart.ipynb は「学ぶ」入口として残す
+
+#### 15.3 パターン確立(2本)完了(2026-07-20)— 後続Sonnet量産のテンプレート
+最初の2本 `docs/notebooks/improve/01_linearize_product.ipynb`(整数×連続の厳密線形化)と
+`02_pwl_sos2.ipynb`(PWL近似SOS2)を、**原理も結果も図で見せる**型で確立した。後続はこの手順で量産する。
+
+**確立したnotebookの型(セクション構成、declarative文体・第三人称)**:
+1. 冒頭md: タイトル `<技法> — 適用前・原理・適用・効果` + 4ステップの箇条書き + 題材(実サンプル)の明示
+2. `## 1. 課題(before)`: `mk.analyze` で診断し発火する finding を確認(または素朴版の弱さを提示)
+3. `## 2. 原理(principle)`: **numpy+plotlyで原理図**(緩和ギャップ・折れ点近似など)。数式だけで終えない
+4. `## 3. 適用(how)`: ヘルパー1行呼び出し + 最小の動作確認セル
+5. `## 4. 効果(before/after)`: `mk.compare_variants` の表 + **plotly棒グラフ**(root_dual/gap/nodes)
+6. `## まとめ`: なぜSCIPが自動でやらないか + 効かない条件 + プレイブック/APIへのリンク
+
+**再現手順(重要・そのまま踏襲すること)**:
+- **生成**: nbformat でセルを組む Python スクリプトを scratchpad に書き、`uv run python gen_XX.py` で
+  `.ipynb` を吐く(手書きJSONより堅牢・再現可能)。
+- **パス解決**: notebook 先頭セルは `pyproject.toml` を目印にルートを探す
+  (`while not (ROOT/"pyproject.toml").is_file(): ROOT = ROOT.parent`)。
+  **注意**: `docs/samples/`(カタログ)が存在するため、旧来の「`samples/` 有無で探す」方式は `docs` で
+  止まり import 失敗する。必ず `pyproject.toml` を目印にする。
+- **グラフ表示**: `fig.show()` は使わない(plotly の `notebook_connected`/`notebook` レンダラは
+  requirejs シムに `{{` を吐き、**macros(Jinja2)プラグインが構文エラーで strict build を落とす**)。
+  代わりに次のヘルパーで表示する:
+  ```python
+  from IPython.display import HTML, display
+  def show(fig):
+      display(HTML(fig.to_html(include_plotlyjs="cdn", full_html=False,
+                               config={"displayModeBar": False})))
+  ```
+  `to_html(include_plotlyjs="cdn")` は `{{` を含まず、CDN の plotly.js で静的サイトに描画される。
+  **コードセル内でも `{{` を出さない**(mkdocs-jupyter は source も表示するため。plotly の
+  hovertemplate は f-string を避け `"...%{y:.1f}..."` のように単一波括弧で書く)。
+- **配色**: `minlpkit.live.plots` と統一(dataviz 参照パレット: `s1=#2a78d6` 青, `s2=#008300` 緑,
+  `muted=#898781` グレー, `warn=#c25a00`, `surface=#fcfcfb`)。before=グレー / after=青 の棒。
+- **効果グラフの流用元**: `mk.compare_variants(...)` の返す DataFrame(列 `root_dual`/`final_dual`/
+  `final_gap`/`nodes`)を `make_subplots(1,3)` の棒グラフ3枚にする(01 の該当セルをコピー)。
+- **playbook 画像埋め込み**: 効果図/原理図を別スクリプト(`gen_pngs.py` 相当)で `fig.write_image(...,
+  scale=2)`(kaleido)して `docs/assets/playbook/<page>-<kind>.png` に保存し、該当 `docs/playbook/*.md` に
+  `![説明](../assets/playbook/xxx.png)` で埋め込み + 「手法notebookで詳しく」リンクを追加。
+- **実行焼き込み**: `uv run jupyter nbconvert --to notebook --execute --inplace <nb>`(mkdocs-jupyter は
+  `execute: false`)。実行後 `grep -c "{{" <nb>` が **0** であることを確認してから strict build。
+- **nav**: mkdocs.yml「ガイド」に `手法notebook(原理→適用→効果)` サブメニューを新設済み。後続はここへ追記。
+- **検証**: `uv run mkdocs build --strict` exit 0、`uv run pytest -q`。
+  ※新規 .ipynb は git 未追跡だと git-revision-date プラグインが WARNING を出し strict が落ちるため、
+  mkdocs.yml で当プラグインに `strict: false` を設定済み(未コミットの新規notebookでも通す。
+  後続Sonnetが notebook を足すたびに strict が落ちるのを防ぐ恒久設定)。
+
+作成/変更: `docs/notebooks/improve/{01_linearize_product,02_pwl_sos2}.ipynb`(新規・実行済)、
+`docs/assets/playbook/{01-linearize-effect,02-pwl-sos2-principle}.png`(新規)、
+`docs/playbook/{01-linearize,02-pwl-sos2}.md`(画像+notebookリンク追記)、`mkdocs.yml`(nav追加)。
+既存 `docs/notebooks/hands_on_improvement.ipynb` は簡易版として残置(参照リンクは維持)。
+
+#### 15.3 量産(Big-M/Indicator・条件数の2本)完了(2026-07-20)
+
+確立済みパターンをそのまま踏襲し、`03_bigm_indicator.ipynb`(Big-M排除)と
+`08_condition_number.ipynb`(条件数・数値健全性)を追加した。
+
+- **03 Big-M/Indicator**: 題材は `samples/others/fixed_charge.py`(loose/tight Big-M/indicator
+  の3変種)。原理図は連動制約 `x<=M・y` の LP緩和領域が M の大小でどう広がるかを可視化
+  (`y≈0` でも loose M なら x がほぼフル生産できる「ただ乗り」を強調)。
+  **正直な検証結果**: `mk.compare_variants` の既定設定(presolve/cutあり)では
+  `root_dual`/`final_gap`/`nodes` が3変種でほぼ**同一**になった(この8施設規模では presolve が
+  自動でBig-Mをタイト化するため、playbook既知の「効かないとき」と整合)。真の定式化差は
+  presolve/cut offの**純粋LP緩和境界**(1594→7127、+347%)でのみ見える。効果セクションは
+  「定式化の質(純粋LP緩和)」と「既定設定での実測」を並べて両方を正直に示す構成にした。
+- **08 条件数・数値健全性**: 既存サンプルだけでは単位変換によるκ(A)改善を実演できないため
+  (`experiments/run_condition.py` は Big-M tight化の再利用のみで、単位変換そのものの例が無い)、
+  CLAUDE.mdの方針に従い**notebook内で検証可能な最小モデルを自作**(原材料mg/g単位+添加剤の
+  配合計画、`nutrient_x`/`energy_x` 係数がmg単位で極小・g単位で添加剤側と同オーダーに揃う設計)。
+  κ(A) 5.80e3→1.25e1(463倍改善)を実測。**副次的な正直な発見**: この2変数トイモデルは
+  presolveだけで解けてしまい `scip_basis_condition`(`getCondition()`)が測定不可の
+  `1e+99` を返す。presolveを切ると基底κ≈1(定式化の静的κ(A)が悪くても実際に解いた基底は
+  安定というケース)。基底κが実際に大きくなる実例として `samples/scheduling/unit_commitment.py`
+  を追加(静的κ(A)=9.6e2 に対し基底κ=2.6e11、FINDINGS/playbookの既存claim通り)。
+  静的κ(A)とSCIP基底κが乖離しうる(相補的な指標である)ことをまとめで明示した。
+- 両notebookとも `uv run jupyter nbconvert --to notebook --execute --inplace` で実行焼き込み済み、
+  `grep -c "{{"` は両方とも0。
+
+作成/変更: `docs/notebooks/improve/{03_bigm_indicator,08_condition_number}.ipynb`(新規・実行済)、
+`docs/assets/playbook/{03-bigm-effect,08-condition-principle}.png`(新規)、
+`docs/playbook/{03-bigm,08-condition}.md`(画像+notebookリンク追記)、`mkdocs.yml`(nav2件追加)。
+検証: `uv run mkdocs build --strict` exit 0、`uv run pytest -q` 57 passed / 2 skipped(既存回帰なし)。
+
+#### 15.3 量産(ベンダーズ分解・列生成の2本)完了(2026-07-20)
+
+確立済みパターンをそのまま踏襲し、`05_benders.ipynb`(ベンダーズ分解)と
+`06_column_generation.ipynb`(列生成)を追加した。反復ループ構造を持つ分解手法のため、
+01/02の型(mk.compare_variantsの棒グラフ)に加えて**実測データでの収束曲線**(反復ごとの
+上界/下界・LP境界の推移)をplotlyで追加している。
+
+- **05 ベンダーズ分解**: 題材は同梱の `samples/location_and_network_design/facility.py` と
+  同じ数理構造(開設 y / 輸送 x)だが、同梱サンプルは4施設5顧客と小さすぎて
+  (a) 診断の `decomposable` 発火条件(`n_heavy_linking<=3`)を満たさない、
+  (b) 開設上限3に対し容量が足りない `y` の組み合わせがあり `mk.benders`(実行可能性カット
+  非対応)が初手で破綻する、という2つの理由で検証に使えなかった。CLAUDE.mdの方針通り、
+  同じ数理構造で規模と容量マージンを制御できる合成インスタンス(14施設・20顧客、乱数シード
+  固定)をnotebook内で生成して検証した(「アグリゲート容量≥総需要」を主問題に直接張ることで
+  実行可能性を保証)。65反復・64カットで下界=上界=monolithicの最適値1537に厳密収束を実測。
+  **正直な検証結果**: この規模ではmonolithic自体がルート1ノードで解けてしまい、全カットを
+  張った最終主問題(輸送変数280個を持たない)の方がむしろ分枝(109ノード)を要した ——
+  「主問題を小さく保ったまま厳密収束する」ことがベンダーズの核心的効果であり、
+  素朴なノード数比較で常に勝つとは限らない(playbook既知の「小規模ならmonolithicの方が
+  速いこともある」と整合)ことを効果セクションで正直に示した。
+- **06 列生成**: 題材は `samples/packing_and_cutting/cutting_stock.py`。「before」は
+  コンパクト定式化(Kantorovich)を `mk.analyze` で診断し、対称性(60本のロールが入替可能、
+  `good` finding=SCIPが自動処理)を検出してなお5231ノードを要することを提示。列生成は
+  総131パターン中13個(9.9%)だけ生成してLP境界23.55(材料下界と同等)に8反復で到達。
+  効果セクションでは生成済み列だけを使った制限主問題(整数)を `mk.compare_variants` の
+  2変種目としてそのまま渡し、コンパクト定式化の5231ノードに対し**1ノード**で同じ整数最適
+  (24ロール)に到達することを実測。`price_and_branch` の `lp_lb==int_obj` 判定
+  (浮動小数点誤差を考慮し `abs(...)<1e-6`)で最適性証明も確認。
+- 両notebookとも `uv run jupyter nbconvert --to notebook --execute --inplace` で実行焼き込み済み、
+  `grep -c "{{"` は両方とも0。
+
+作成/変更: `docs/notebooks/improve/{05_benders,06_column_generation}.ipynb`(新規・実行済)、
+`docs/assets/playbook/{05-benders-convergence,06-colgen-convergence}.png`(新規)、
+`docs/playbook/{05-benders,06-column-generation}.md`(画像+notebookリンク追記)、`mkdocs.yml`
+(nav2件追加)。検証: `uv run mkdocs build --strict` exit 0、`uv run pytest -q` 57 passed / 2 skipped
+(既存回帰なし)。
+
+#### 15.3 量産(SCIPパラメータチューニング・GPU warm startの2本)完了(2026-07-20)
+
+確立済みパターンをそのまま踏襲し、`04_tuning.ipynb`(SCIPパラメータチューニング)と
+`07_gpu_warmstart.ipynb`(GPU warm start)を追加した。
+
+- **04 チューニング**: 題材は `samples/others/scheduling_plant.py`(`linearize_ns=True`、
+  手法notebook1の厳密線形化を既に適用済み)。原理図は既定/手動候補A(fast系)/手動候補B
+  (aggressive+heuristics off)の3設定を実際に解き、`SolveMonitor` で双対境界の時間発展を
+  重ねて可視化(どれが勝つかは事前に決め打たず、実測順位をそのまま見せる構成)。適用は
+  `minlpkit.tune.tune`(Optuna/TPE、12試行)。
+  **正直な検証結果**: Optunaは「固定時間の双対境界」のみを目的関数にするため、最良設定
+  (`heuristics=off` を含む)は双対境界こそ既定を上回った(139.5→151.1)ものの、
+  `mk.compare_variants` の7秒枠で**可行解を1つも見つけられなかった**(`final_gap` 定義不可)。
+  双対境界の改善と実用上の解の有無は別軸であるという実例をそのグラフ・まとめに正直に反映した
+  (棒グラフは「可行解なし」ケースをNaNのまま描かず明示ラベル化)。
+- **07 GPU warm start**: 題材は `gap_large.make_instance` を使い、`SCALES["large"]`
+  (1500×50=75,000バイナリ、root LPだけで数分)は本notebookの実行時間予算に合わないため
+  CLAUDE.mdの方針通り**検証可能な規模を自作**(500タスク×20エージェント=10,000バイナリ、
+  容量タイトネス0.985、`gpu_primal`診断の閾値=バイナリ1万個以上を満たす最小規模)。
+  実行時点でLAN上のcuOptサーバ(`http://192.168.50.37:8001`)への接続を実際に試み、
+  接続成功(`mk.cuopt_available` True)したため実サーバでの実測になった(接続不可時用の
+  fallback— 短時間SCIP探索の解を`addSol`注入 — も同じ`inject_warmstart`ヘルパー経由で実装、
+  未検証だが実行可能)。原理図は深さ5の合成二分木(善悪分枝が混在)でincumbentの有無が
+  枝刈り数を0→42(全63ノード中)に変える模式図。効果は`mk.compare_variants`
+  (final_gap 22.0%→1.4%、ノード40→42)と`SolveMonitor`ベースのTTFI実測
+  (baseline 0.25s、warm start 0.0s=求解開始時点で既に保持)の両方を掲載。
+- 両notebookとも `uv run jupyter nbconvert --to notebook --execute --inplace` で実行焼き込み済み、
+  `grep -c "{{"` は両方とも0。
+
+作成/変更: `docs/notebooks/improve/{04_tuning,07_gpu_warmstart}.ipynb`(新規・実行済)、
+`docs/assets/playbook/{04-tuning-effect,07-gpu-effect}.png`(新規)、
+`docs/playbook/{04-tuning,07-gpu}.md`(画像+notebookリンク追記)、`mkdocs.yml`(nav2件追加)。
+検証: `uv run mkdocs build --strict` exit 0、`uv run pytest -q`(既存回帰なし)。
+
+#### 15.3 `docs/notebooks/diagnose/`(可視化機能4本)完了(2026-07-20、Sonnet)
+
+「手法」でなく「診断エンジンが何を見ているか」を可視化機能ごとに深掘りする4本を新規ディレクトリ
+`docs/notebooks/diagnose/` に追加した。既存 `hands_on_diagnosis.ipynb`(題材:
+`district_heating_detailed_physics`、violation+attributionの初歩)は先に読んだ上で、
+重複させず各収集器を専用notebookとして発展させた。型は「1. 何を見るか(収集器の観測量)/
+2. 可視化(principle)/ 3. 読み解き(診断ルールとの対応)/ 4. まとめ」の4節構成(手法notebookの
+5節構成から「適用」を省いた診断寄りの調整)。
+
+- **01 McCormick緩和+空間分枝木**(`minlpkit.collectors.tree`、題材 `scheduling_plant`):
+  `viz.mccormick`(既存の3Dアニメーション資産)を再利用してbox分割で緩和ギャップが `O(1/k)` で
+  縮む原理を示したあと、実際に `solve_and_collect` で分枝木を収集し tidy tree で可視化。
+  spatial(連続)/integer/binaryの色分けに加え、`minlpkit.collectors.attribution.gain_by_kind`
+  で「分枝**回数**」と「双対境界改善への**寄与**」が別物であることを実測(spatial寄与約6割)。
+- **02 違反ヒートマップ**(`minlpkit.collectors.violation`、題材 `scheduling_plant`):
+  既存hands_onは非線形制約1タイプ主体の `district_heating` だったが、plantは
+  energy/conversion/arrhenius/jobtime/batchtime/demand/load/cooling/tmaxと9タイプ持つため、
+  「多変数の積が絡む項ほど緩和が緩くなりやすい」傾向がタイプ横断の対比で見える
+  (実測: energy平均相対違反0.9995・conversion0.446 vs arrhenius0.011・jobtime/tmax=0)。
+- **03 gap停滞とattribution**(`minlpkit.collectors.attribution`、題材 `scheduling_plant`、
+  60s実行でgap95.2%の難問): `detect_stalls`(横ばいでなく「平均より遅い」判定)による停滞区間検出、
+  型別・変数別の双対境界寄与、`dual_stall`/`weak_relaxation`両ルールの発火確認までを1本にまとめた。
+- **04 静的診断**(`minlpkit.collectors.static_diag` + `symmetry`): 3診断を最も特徴が際立つ
+  モデルで個別に見せる構成にした(1モデルに無理に押し込めない判断)。
+  係数スケール/Big-M候補は `unit_commitment`(presolve後も残存する比2.62e3・Big-M候補10件)、
+  ブロック構造/結合制約は `scheduling_plant`(`load_M1`/`load_M2`が全ジョブグループにまたがる)、
+  対称性検出は `parallel_machines`(6群・52/53変数対称、健全判定True)+
+  対照として plant(非線形ありのため `sound=False`、偽陽性回避の仕組み)を確認。
+- 4本とも `uv run jupyter nbconvert --to notebook --execute --inplace` で実行焼き込み済み、
+  `grep -c "{{"` は全て0、出力にエラーなし。全ての実測値(相対違反ランキング・残存Big-M比・
+  対称群数等)をノートブック生成後に再計算して本文の記述と突き合わせ済み。
+
+作成/変更: `docs/notebooks/diagnose/{01_mccormick_spatial_tree,02_violation_heatmap,
+03_gap_stall_attribution,04_static_diagnosis}.ipynb`(新規・実行済)、`mkdocs.yml`
+(「ガイド」に「可視化notebook(診断エンジンの中身)」サブメニュー新設、4件追加)、
+`docs/playbook/00-diagnose.md`(4本へのリンク節を追記)。
+検証: `uv run mkdocs build --strict` exit 0(警告ゼロ)、`uv run pytest -q` 57 passed / 2 skipped
+(既存回帰なし)。`docs/notebooks/samples/` 配下・`docs/samples/`・`docs/gallery.md` は
+並行エージェントの担当のため未変更。
+
+#### 15.3 `docs/notebooks/samples/`(旗艦サンプル、T3クラスタ2本+T9の1本)完了(2026-07-20、Sonnet)
+
+新規ディレクトリ `docs/notebooks/samples/` に、T3から2本
+(`transmission_expansion_operation.ipynb`・`microgrid_design_operation.ipynb`)、T9
+(現状唯一のac_opf)から1本(`ac_opf.ipynb`)を追加した。型は「1. 素朴な定式化(規模・
+非線形項の所在)/ 2. 診断(`mk.analyze`)/ 3. 診断の中身を見る(該当collectorを直叩き)/
+4. 改善を試す(findingsのrecipeを実測、効かない場合も正直に記載)/ まとめ(実務対応)」の
+5節構成(手法notebookとは異なる「事業ストーリー→診断→改善」の物語型)。T3の2本は
+`transmission_expansion_operation`・`microgrid_design_operation` を選び、
+`hydrogen_hub_transport`(既存05_bendersのfacilityと構造が近い)は見送った。
+
+- **transmission_expansion_operation**(バス9・候補線8・シナリオ5、`has_nonlinear=False`
+  の純粋MILP): `numerical_scale`+`symmetry_info`が発火するが、`residual_coef_ratio`≈1e19の
+  実体を`extract_coefficients`で直接確認すると、presolveが導出した実質ゼロ境界
+  (6.7e-16、既存線1本の実効潮流域がゼロに近い)由来の見かけ上の値であり、対処すべき
+  Big-Mの緩さではないことを実測で切り分けた。対称性群(最大5)は同一バスのθが5シナリオに
+  またがって真に対称になる理由(θはKirchhoff等式=需要非依存の位相結合にしか現れない)を
+  制約構造から説明した。改善は共通`BIG_M=400`を候補線ごとのタイトな値(最大7.5、約50倍の
+  タイト化)に置換。**正直な検証結果**: 既定設定(presolve/cutあり)ではroot_dual/gap/nodesが
+  ほぼ不変(SCIPのpresolveが実質的に同じ仕事をする)。presolve/cut/heuristicsを切った純粋LP
+  緩和でのみ定式化差(-0.2%程度)が見える——03_bigm_indicatorで確立した「Big-Mが効かない
+  とき」パターンの再確認。
+- **microgrid_design_operation**(代表日4×時刻14、`has_nonlinear=True`、蓄電池損失の双曲線
+  `loss*cap_batt>=k*p^2`): `numerical_scale`のみ発火、`nodes=1`・`spatial_share=0`。
+  `collect_root_violations`でルートLP緩和の`batt_loss`違反が最大35%もあるにもかかわらず
+  空間分枝ゼロである理由を掘り、`loss*cap_batt>=k*p^2`(cap_batt>0)が凸2次関数の
+  **perspective変換**(下側エピグラフが結合凸)であることを突き止めた——「設計変数が
+  非線形項に現れる結合の強さ」と「非線形が探索を難しくするか」は別軸であるという、
+  T2 hydro_cascade・T10 thermal_storageに続く教訓の具体例になった。`residual_coef_ratio`は
+  投資費(ドル、最大5.5万)とPV出力比率(無次元0-1)の単位系の違いが原因(presolve由来では
+  ない)で、目的関数を$k単位に変換すると係数レンジ比は3.2e5→5.7e4に縮むがroot_dual/gap/
+  nodesは不変(すでにroot 1ノードで解けているため効果測定不能)——正直に記録した。
+- **ac_opf**(5バス、真の非凸=電圧×電圧×三角関数): T1-T3(big-M disjunctive、非凸なし)が
+  軒並みroot 1ノードで解けたのと対照的に、`weak_relaxation`+`dual_stall`(+参考の
+  `decomposable`)が発火し、35秒でgap150-190%・spatial_share約60%。`collect_root_violations`
+  で`pbal`(有効電力バランス)がルートLP緩和で60-90%の相対違反を持つことを確認、
+  `solve_and_collect`の空間分枝木で分枝が`V_*`/`theta_*`(電圧・位相角)に集中し整数分枝
+  (コンデンサ段数)はごく少数であることを可視化(教科書的な空間分枝限定法の挙動)。
+  改善は「真の非凸ゆえ最適性証明でなく実行可能解の質を軸にする」という方針で
+  `setHeuristics(AGGRESSIVE)`を試験。**正直な検証結果**: 見つかる実行可能解の個数は
+  増える(13→21-22個)がプライマル解の質(発電費用)はほぼ変わらず、双対境界は明確に悪化
+  (ヒューリスティクスに割いた時間分、分枝によるルート緩和の締め込みが減る)——
+  「改善が効かない」ことを含めて正直に示した。
+- 3本とも `uv run jupyter nbconvert --to notebook --execute --inplace` で実行焼き込み済み、
+  `grep -c "{{"` は全て0、出力にエラーなし。全ての実測値をノートブック実行後に再取得して
+  本文の記述と突き合わせ済み。
+
+作成/変更: `docs/notebooks/samples/{transmission_expansion_operation,
+microgrid_design_operation,ac_opf}.ipynb`(新規・実行済)、`mkdocs.yml`(「ガイド」に
+「旗艦サンプルnotebook(事業ストーリー→診断→改善)」サブメニュー新設、担当3件追加。
+並行するT1/T2担当エージェントの4件と合わせて計7件になった)、`experiments/
+gen_sample_catalog.py` 再実行で `docs/samples/index.md` 他5ファイルに学習notebookリンクを
+動的反映(T1/T2/T3/T9の旗艦7本+並行T4クラスタの新規3サンプルも同時に反映)。
+検証: `uv run mkdocs build --strict` exit 0(警告ゼロ)、`uv run pytest -q` 57 passed /
+2 skipped(既存回帰なし、`git pull`で最新化後に実行)。`docs/notebooks/diagnose/`配下は
+不可侵を遵守(未変更)。
+
+#### 15.3 `docs/notebooks/samples/`(旗艦サンプル、T1クラスタ2本+T2クラスタ2本)完了(2026-07-21、Sonnet)
+
+`docs/notebooks/samples/` に T1から2本(`petroleum_pooling.ipynb`・
+`foundry_charge_mix_multiperiod.ipynb`)、T2から2本(`weekly_uc_ramp.ipynb`・
+`hydro_cascade_efficiency.ipynb`)を追加した(district_heating_detailed_physicsは
+`hands_on_diagnosis.ipynb`と重複するため見送り、gas_pipeline_weymouthはgap0.8%と
+findings発火が控えめなため今回は見送り)。T3/T9クラスタと同じ5節構成(素朴な定式化/
+診断/診断の中身/改善を試す/まとめ)を踏襲。
+
+- **petroleum_pooling**(原料8×プール5×製品4×期8): `numerical_scale`のみ発火(gap3.8%)。
+  `residual_scale`で拾われた大係数の実体は take-or-pay リンク制約の`avail[i,t]`(恣意性の
+  ない物理上限)と判明。`addConsIndicator`でBig-Mを排除しても既定設定の`root_dual`/
+  `final_gap`/`nodes`はほぼ不変(107828→107675、3.8%→4.8%、222→137ノード)——真因は
+  濃度×流量の双線形(`conc_def`、相対違反0.99)側にあり、Indicator化は症状(numerical_scale)
+  には触れても真因には届かないことを正直に示した。
+- **foundry_charge_mix_multiperiod**(ロット12×注文8×期8): `dual_stall`発火(gap52.6%、
+  空間分枝の双対寄与89.5%)。attribution/violation収集器で真因を切り分けたところ、
+  `melt=n・s`(整数×連続、期の数だけ)ではなく`carbon_bal`(濃度×質量、注文×期の数だけ、
+  プーリング型結合)が支配的と判明。`mk.linearize_product`を`melt`に適用すると
+  root_dual 127172→133018(+4.6%)、gap 52.7%→48.9%、nodes 3936→3041と**改善はしたが
+  限定的**——3節の帰属分析どおり真因は別項にあることが実測でも裏付けられた。
+- **weekly_uc_ramp**(ユニット15×バス8×送電線10×48時間、純粋MILP): `numerical_scale`+
+  `symmetry_info`発火もgapは既に0.02%(ノード1)。`p<=pmax*u`のBig-M→Indicator化は
+  root_dual/gap/nodesをほぼ変えなかった(gapはむしろ0.02%→0.26%と微悪化)のに加え、
+  **静的κ(A)は4.6e4→2.76e7と600倍近く悪化**、SCIP基底κも235171→260790と悪化する
+  意外な実測が出た——SCIP内部でIndicator制約がスラック変数を介した線形制約として
+  保持されるため、「Big-M排除=常に数値的健全化」という直感に反する結果になりうることを
+  正直に記録した。
+- **hydro_cascade_efficiency**(ダム5×期22): `weak_relaxation`(serious)+`dual_stall`+
+  `numerical_scale`の3件発火(gap27.9%、空間分枝の双対寄与100%)。violation収集器で
+  `gen_def`(発電量=放流量×水頭)の違反が全ダムに広く分布することを確認し、FBBT
+  (到達可能性に基づく境界伝播)で貯水量`S`の上限をタイト化する変種を実装・検証。
+  最上流ダムの序盤期では明確にタイト化される一方、下流ダムは越流`sp`が無制限なため
+  伝播が弱く、既定scaleでのroot_dual/gap/nodesの改善は限定的(むしろgapは27.8%→30.7%と
+  この実行では微悪化、nodesは9000→2800に減少)——境界タイト化という技法自体ではなく
+  「越流無制限」というモデル前提がFBBTの効きを弱めていることを正直に示した。
+- 4本とも `uv run jupyter nbconvert --to notebook --execute --inplace` で実行焼き込み済み、
+  `grep -c "{{"` は全て0。weekly_uc_ramp は実測後にκ(A)悪化という予想外の結果が出たため、
+  markdown解説を実測値に合わせて`NotebookEdit`で修正済み(推測ベースの記述を残さない)。
+
+作成/変更: `docs/notebooks/samples/{petroleum_pooling,foundry_charge_mix_multiperiod,
+weekly_uc_ramp,hydro_cascade_efficiency}.ipynb`(新規・実行済)、`mkdocs.yml`
+(「旗艦サンプルnotebook」サブメニューに4件追加、T3/T9担当の3件と合わせて計7件)、
+`experiments/gen_sample_catalog.py` 再実行で `docs/samples/index.md` 他に学習notebookリンクを
+動的反映。検証: `uv run mkdocs build --strict` exit 0、`uv run pytest -q` 57 passed /
+2 skipped(既存回帰なし、`git pull`で最新化後に実行)。`docs/notebooks/diagnose/`配下・
+T3/T9クラスタ・サンプル.pyファイル自体は不可侵を遵守(未変更)。
+
+### 進め方
+- 15.1(カタログ生成)と15.2(Diataxis分割)はOpusで先行(編集判断が要る)。mkdocs.yml競合を避け**逐次**実行
+- 15.3(notebook群)はパターン確立(Opus、2-3本)後Sonnetで量産。既存の run_*.py / results/*.html の
+  実測を可能な限り再利用し新規solveを増やしすぎない
+- 各段階でmkdocs build --strict・pytest・push・CI成功を確認
+
+### 15.4 4原則(バッジ用語/内部コード名/読者への語りかけ/自己格付け)に基づく全体洗い直し — 完了(2026-07-21)
+
+これまで独立レビュアー視点の監査を複数回行い、その都度「見つかった箇所だけ」直す場当たり対応に
+なっていた(例: 「旗艦サンプル」→「厳選サンプル」への単純置換が同じ問題の繰り返しだったと指摘を
+受けた)。今回は個別の単語探しではなく、4原則(①1語のバッジ用語を作らない、②内部の開発コード名
+[Phase N/T番号/ティア番号]を露出させない、③読者の知識レベルを名指しして語りかけない、④「旗艦」
+「厳選」等の自己格付け命名を避ける)に基づき `grep -rn` で機械的に候補出しした上で、
+`docs/`・`mkdocs.yml`・`README.md`・`experiments/gen_sample_catalog.py`・`docs/gallery/*.html`
+(公開サイトに同梱される生成済みダッシュボード)を含めて洗い直した。
+
+**発見した違反と修正**:
+- **原則②(内部コード名)が最多かつ最も広範囲**: 開発中の内部クラスタ/フェーズ番号「Phase N」
+  (N=1〜13)が `experiments/run_*.py`(20本)のHTML生成コード(`<h1>`タイトル・本文)に埋め込まれ、
+  それがそのまま `docs/gallery/*.html`(26ファイル)に焼き込まれて公開されていた。加えて
+  `minlpkit/render.py`・`minlpkit/live/plots.py`(ライブラリ本体のダッシュボード描画コード)にも
+  「Phase 1-4」「Phase 1」の記述があり、`mk.analyze().dashboard()` を使う利用者にも露出していた。
+  すべて除去し、`docs/gallery/*.html` の該当箇所も手動で同期(再ソルブ不要な文字列置換のみのため
+  ソルバー再実行はせず、生成元コードと成果物HTMLの両方を編集)。ほかに `docs/samples/others.md`
+  (`samples/others/{parallel_machines,fixed_charge}.py` のdocstring由来)の「Phase 4」、
+  `docs/playbook/09-live-monitor.md` の「task.md Phase 10-B」引用、
+  `docs/notebooks/samples/ac_opf.ipynb`(2月20日T1-T9除去コミットで一度対応したはずが見落とし
+  ていた)の「T2」、`docs/samples/index.md`/`energy_and_microgrid.md`(カタログ再生成で連動)の
+  同箇所を修正。**教訓**: 前回の除去コミットは `grep "T1[0-9]?[^0-9a-zA-Z]"` のような正規表現の
+  誤り(T1x台しか拾えずT2-T9を見逃す)で不完全だった。今回は `T[0-9]{1,2}[^0-9a-zA-Z]` に修正し、
+  鉄道サンプルの列車ID「T1」等の実データ由来の偽陽性を除外した上で確認。
+- **原則①(バッジ用語)**: 前回コミットで「センサス」「ギャラリー自称」は一部除去済みだったが、
+  `docs/playbook/00-diagnose.md`・`01-linearize.md`・`05-benders.md` に「診断センサス」が
+  再出現(census.mdへのリンクテキストとして)。`docs/manual/index.md` で定義された「手法notebook」
+  という複合バッジ語が `docs/playbook/01〜08` の8ページと `docs/notebooks/diagnose/`
+  配下3本・`docs/notebooks/samples/foundry_charge_mix_multiperiod.ipynb` に伝播していた。
+  いずれも、バッジ語自体を廃し前後の文脈で平叙文に説明する形(例: 「手法notebook: X」→文脈の
+  説明文に続けて単に「[X](path)」)に置き換えた。「診断センサス」は既存タイトル
+  「診断ベンチマーク」に統一。
+- **原則③(読者への語りかけ)**: `README.md` の「列生成・ベンダーズ・再定式化などの手法を
+  知らない場合は」を、プレイブック自体の機能を説明する第三者視点の文("症状から探して読める")に
+  書き換えた。
+- **原則④(自己格付け)**: 新規の該当箇所なし(⭐マークの意味・「学習notebook」等は既に事実ベース
+  の説明に統一済み)。念のため「精選」「最良」「一級」等を再チェックしたが、いずれも実測値
+  ("最良143.7")や実世界の固有名詞("一級河川")で自己格付けではないことを確認。
+
+**ペルソナ検証**: `docs/index.md`・`docs/samples/index.md`・`docs/playbook/index.md`・
+`docs/manual/index.md` の4ページを読み直し、視点A(モデリングはできるが高度な手法・内部事情に
+馴染みがないエンジニア)・視点B(Stripe/scikit-learn水準の辛口レビュアー)の両方で追加の
+違反は検出されなかった(いずれも第三者視点・declarative文体は既存修正で維持されていた)。
+
+**検証**: `uv run mkdocs build --strict` exit 0(エラーなし、mkdocs 2.0移行に関する情報ログのみ)、
+`uv run pytest -q` 57 passed / 2 skipped(既存回帰なし)。編集ファイル数: 76(`experiments/run_*.py`
+20本、`docs/gallery/*.html` 26本、`docs/notebooks/**/*.ipynb` 7本、`docs/playbook/*.md` 9本、
+`docs/samples/*.md` 3本[カタログ再生成による連動反映]、`samples/**/*.py` docstring 3本、
+`minlpkit/*.py` 2本、`README.md`・`docs/manual/index.md` 各1本)。
+
 ## スコープ外
 
 - **ML/GNN系(Forge、学習分岐等)・LLM支援**: 基盤の導入可否判断が必要なため当面除外。診断ルール表の将来拡張候補として名前だけ残す
@@ -694,3 +1368,66 @@ Phase 11 の cuOpt 連携は同一マシンの WSL2 CLI 直叩き固定だった
   35 passed / 2 skipped(既存回帰、触っていないことを確認)
 - [x] **公開**: main直コミット→push→GitHub Actionsでdocsビルド→
   https://ctenopoma.github.io/minlpkit/playbook.html が200であることを確認
+
+## Phase 16: 薄いサンプル51本の精緻化(docstring+モデル)— 着手
+
+15.1のカタログ生成で判明: 126本中51本(40%)が「実務問題ベースの数理最適化サンプルモデルです。」
+という定型docstringで、実体も2-4変数の純LP(トイ)に留まる(T1-T3以前のバルク生成時のまま)。
+ユーザー承認(2026-07-20)により、docstring(事業ストーリー)+モデル(現実的な構造)の両方を
+改善する。T1-T3ほどの重い精緻化(scale引数・受け入れハーネスPASS必須)は51本には不釣り合いなので、
+軽量な基準にする:
+
+### 改善基準(51本共通)
+- docstring: 誰の・何の意思決定か+主要制約の業務的意味を2-4文(T1-T3の書き方を踏襲)
+- モデル: 「2-4変数の純LP」のようなトイのままにしない。業務的に自然な範囲で
+  複数期/複数品目/整数決定/自然な非線形結合のいずれかを足す(**難易度昇華が目的ではなく
+  リアリズムの底上げ**。T1-T3のような重いacceptance harness必須化はしない)
+- 動作確認: import・build_model()・短時間optimize()が正常終了することのみ必須
+
+### 進め方(5バッチ、Sonnet並列、ファイル非重複)
+各バッチは samples/ 内の自分の担当ファイルのみ編集し、task.md・docs/samples/・mkdocs.yml・
+カタログ生成スクリプトには触れない(結果は `results/refine_batch<N>.md` に個別記録、
+最終統合は親が一括で行う)。
+
+- バッチ1: agribusiness_crop_mix, airline_overbooking, airport_gate_assignment,
+  assembly_line_balancing_2, automotive_paint_shop, beverage_bottling_line,
+  bike_sharing_rebalancing, bus_driver_rostering, cement_mill_scheduling, credit_scoring_tree
+- バッチ2: cross_docking, district_heating_grid, dynamic_pricing_hotel, ev_charging_network,
+  facility_location_capacitated, foundry_charge_mix, gas_network_opt, geothermal_heat_pump,
+  glass_cutting_2d, hub_and_spoke
+- バッチ3: hydro_thermal_coordination, job_shop_flexible, last_mile_delivery,
+  loan_portfolio_optimization, maritime_inventory_routing, media_mix_advertising,
+  microgrid_islanded, molded_parts_cutting, multi_echelon_distribution, portfolio_cvar
+- バッチ4: price_optimization_markdown, r_and_d_project_portfolio, railway_line_planning,
+  retail_markdown_clearance, ride_hailing_matching, semiconductor_wafer_fab,
+  smart_home_appliances, solar_pv_inverter, steel_continuous_casting, supply_chain_multi_commodity
+- バッチ5: supply_chain_multi_period, supply_contract_selection, telecom_5g_slicing,
+  traffic_light_sync, transmission_expansion, urban_parking_allocation, virtual_power_plant,
+  vrp_tw, warehouse_slotting, waste_collection_routing, wind_battery_dispatch
+
+**注意(重要)**: 上記の一部は名前が似た"旗艦"版(T1/T2/T3/T9/T10)と混同しないこと。
+`foundry_charge_mix`(このバッチ対象)≠`foundry_charge_mix_multiperiod`(T1旗艦、触らない)、
+`transmission_expansion`(このバッチ対象)≠`transmission_expansion_operation`(T3旗艦、触らない)。
+petroleum_pooling / weekly_uc_ramp / hydro_cascade_efficiency / water_network_reuse /
+gas_pipeline_weymouth / district_heating_detailed_physics / ac_opf / microgrid_design_operation /
+hydrogen_hub_transport / battery_degradation_dispatch / thermal_storage_lossy も対象外。
+
+全バッチ完了後、親が docs/samples/ カタログを再生成し、task.mdへ統合記録する。
+
+### Phase 16 完了(全51本)
+
+5バッチ(Sonnet並列)で完了。全51本のdocstringを事業ストーリー2-4文に書き換え、
+2-4変数のトイLPを業務的に自然な範囲で拡張(複数期/複数拠点/整数決定/自然な非線形結合)。
+カタログ自動生成(15.1のスクリプト)で再チェックした結果、**docstring薄い判定=0本**
+(126本全て)。バッチ実行の記録は `results/refine_batch{1..5}.md` に個別保存。
+
+- バッチ1(10本)commit 3f62aad、バッチ2(10本)+バッチ3(10本)は並行実行の巻き込みで
+  commit 6ff58c6 に合算(両者とも diff 検証済みで内容は正しい。コミット境界が意図と
+  ずれただけでデータ損失なし)、バッチ4(10本)commit 05f412d、バッチ5(11本)commit ef9f552
+- 各ファイルで変数数・制約数を有意に拡張(目安: 10-30変数・5-20制約)、全て`optimal`到達を確認
+- 途中でモデルバグ(実行不能設定・非線形目的関数の不使用箇所等)を複数発見・修正(結果ファイルに記録)
+- カタログ再生成(`uv run python experiments/gen_sample_catalog.py`)→ 全10カテゴリで
+  「docstring薄い0本」を確認、`mkdocs build --strict` exit 0
+
+Phase 15(docs全面刷新)は 15.0(IP漏洩除去)・15.1(全126本カタログ)が完了。
+15.2(playbook/manual のDiataxis分割)・15.3(学習用notebook厳選)は継続タスクとして残る。

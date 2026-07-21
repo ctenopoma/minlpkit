@@ -1,15 +1,15 @@
-"""線形制約のスラック(拘束)とIISの分析 (Phase 2.b)
+"""線形制約のスラック(拘束・影の価格)の分析 (Phase 2.b)
 
-2つの診断を提供する:
-1. スラック/拘束制約: LP緩和解で各線形制約のスラックと双対値(影の価格)を測る。
-   スラック≈0 かつ 双対値が大きい制約 = 双対境界を押し下げる強固なボトルネック。
-2. IIS(既約不整合部分系): 実行不能モデルに対し、削除フィルタ法で
-   「これ以上どれを外しても不能でなくなる」最小の矛盾制約集合を抽出する。
+LP緩和解で各線形制約のスラックと双対値(影の価格)を測る。スラック≈0 かつ 双対値が
+大きい制約 = 双対境界を押し下げる強固なボトルネック(実行可能なモデルが対象)。
+
+実行不能(infeasible)モデルの矛盾制約特定(IIS核 = 削除フィルタ、必要な緩和量 = 弾性緩和)は
+``minlpkit.collectors.infeasibility`` に一本化した(``mk.deletion_filter`` / ``mk.elastic_filter`` /
+``mk.diagnose_infeasibility``)。旧 ``compute_iis``(active-set ビルダー契約)はそちらの
+delete-by-name 実装へ置き換え済み。
 """
 
 from __future__ import annotations
-
-from typing import Callable
 
 import pandas as pd
 from pyscipopt import Model
@@ -52,35 +52,3 @@ def analyze_slack(model: Model) -> pd.DataFrame:
             binding=abs(slack) < 1e-6,
         ))
     return pd.DataFrame(rows)
-
-
-def compute_iis(build_fn: Callable[[set[str]], Model], all_cons: list[str],
-                verbose: bool = False) -> tuple[list[str], list[dict]]:
-    """削除フィルタ法でIISを求める。
-
-    build_fn(active) は active に含む名前の制約だけを張ったモデルを返す。
-    前提: build_fn(all) は実行不能。
-    返り値: (IIS制約名リスト, 各試行のログ)
-    """
-    def infeasible(active: set[str]) -> bool:
-        m = build_fn(active)
-        m.setParam("limits/solutions", 1)  # 実行可能解が1つ出れば十分
-        m.hideOutput()
-        m.optimize()
-        return m.getStatus() == "infeasible"
-
-    active = set(all_cons)
-    assert infeasible(active), "初期モデルが実行不能ではない(IIS抽出の前提を満たさない)"
-
-    log = []
-    for c in list(all_cons):
-        trial = active - {c}
-        still_infeasible = infeasible(trial)
-        if still_infeasible:
-            active = trial  # c は無くても不能 → IISに不要、恒久的に除去
-            log.append(dict(constraint=c, removed=True, note="外しても不能→IISに不要"))
-        else:
-            log.append(dict(constraint=c, removed=False, note="外すと実行可能→IISに必須"))
-        if verbose:
-            print(log[-1])
-    return sorted(active), log

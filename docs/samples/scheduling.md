@@ -1,0 +1,31 @@
+# スケジューリング
+
+ジョブショップ・シフト・保守・列車運行など時間軸の割当計画。本リポジトリ最大のカテゴリで、対称性や時間結合の題材が揃う。
+
+**21 本** / `scale` 引数対応 1 本。`scale` 列 ✓ は `build_model(scale=...)` で規模可変。
+
+| サンプル | 事業ストーリー | scale | ソース |
+| --- | --- | :---: | :---: |
+| airline_overbooking | 航空便オーバーブッキング・収益管理 (Airline Overbooking Control) — 航空会社の収益管理(レベニューマネジメント)部門が、複数便・複数運賃クラス(ビジネス/エコノミー)について、ノーショー(無連絡不搭乗)を見込んだ許容予約数を決める。予約を座席数より多く受け付けるほど期待収益は増えるが、実際の搭乗希望者が座席数を超えた場合はデナイドボーディング(搭乗拒否)補償金という高コストが発生する。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/airline_overbooking.py) |
+| airport_gate_assignment | 空港フライト・ゲート自動割当 (Airport Gate Assignment) — 空港の地上運航管理者(グランドオペレーション)が、当日の到着便をどのゲートに割り当てるかを決める。ゲートは機材サイズ(ワイドボディ対応可否)で制約があり、割り当てられなかった便はリモートスポット(バス移動)に回されるが乗客満足度が下がる。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/airport_gate_assignment.py) |
+| assembly_line | 組立ラインバランシング (Assembly Line Balancing Problem) — 家電メーカーの生産技術者が、新製品の組立ラインを設計する。1台の製品を完成させるまでに必要な12の組立タスク(配線・ねじ締め・検査など)を、複数の作業ステーション(作業員1人分の持ち場)に割り当てる。タスクには「この部品を取り付ける前に土台を組んでおく必要がある」といった前後関係があり、また各ステーションの作業時間がタクトタイム(1台あたりに許される最大サイクルタイム)を超えてはならない。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/assembly_line.py) |
+| assembly_line_balancing_2 | アセンブリラインバランシング Type-II (Assembly Line Balancing) — 製造ラインの工程設計担当者(インダストリアルエンジニア)が、既に決まっているステーション数(設備投資済み)のもとで、各作業タスクをどのステーションに割り当てればサイクルタイム(1台あたりの生産に要する最長ステーション時間)を最小化できるかを決める。Type-II ALB(ステーション数固定・サイクルタイム最小化)は、増産・平準化のたびに現場で繰り返し解かれる典型的な工程再設計問題である。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/assembly_line_balancing_2.py) |
+| battery_train_scheduling | 蓄電池列車(BEMU)の運行ダイヤ・充電スケジュール統合最適化 (MILP) — 電化区間と非電化区間が混在する路線において、蓄電池搭載型列車 (BEMU) の | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/battery_train_scheduling.py) |
+| bus_driver_rostering | バス運転士勤務表自動生成 (Bus Driver Rostering) — バス営業所の運行管理者が、1週間分の運転士シフトを決める。曜日ごとに必要な出勤人数(平日は通勤需要で多く、週末は少ない)を満たしつつ、労働基準(週の最大勤務日数・最低週休日数)を守った勤務表を組む必要がある。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/bus_driver_rostering.py) |
+| cement_mill_scheduling | セメントミル操業スケジュール (Cement Mill Scheduling) — セメント工場のエネルギー管理担当者が、2基あるミル(粉砕設備)の稼働スケジュールを決める。電力は時間帯別料金(ピーク時は高額)であり、ピーク時間帯は極力停止したいが、一定の生産量は日々確保する必要がある。ミルは起動のたびに大きな起動電力(スパイク)を要するため、頻繁なオンオフはコスト増につながる。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/cement_mill_scheduling.py) |
+| hydro_scheduling | 揚水式水力発電の運転計画 (Pumped-Storage Hydroelectric Scheduling) — 電力トレーディング担当者が、揚水式水力発電所の1日(24時間)の運転計画を決める。電力市場価格は深夜・早朝は安く、夕方の需要ピーク時には高騰する。この価格差を利用し、価格が安い時間帯には電力を買って水を汲み上げ(揚水)、価格が高い時間帯にその水を放流して発電・売電することで利益を最大化する。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/hydro_scheduling.py) |
+| job_shop | ジョブショップスケジューリング (Job Shop Scheduling Problem) — 金属加工工場の生産管理者が、5件の受注ロット(ジョブ)を5台の機械で加工する順序を決める。各ジョブは決まった機械の通過順(ルーティング)を持ち、機械ごとに加工時間が異なる。同一機械では一度に1ジョブしか処理できないため、機械上での処理順をうまく組まないと機械待ちが発生し、全ジョブの完了時刻(メイクスパン)が伸びてしまう。機械ごとの処理順(ジョブ間の前後関係)を決めて、工場全体の生産完了を最も早くする。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/job_shop.py) |
+| job_shop_flexible | フレキシブルジョブショップスケジューリング (Flexible Job Shop). — 生産管理者が、複数のジョブ(受注ロット)を複数の工程(オペレーション)からなる | ✓ | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/job_shop_flexible.py) |
+| maintenance_production_scheduling | 予防保全と生産の同時スケジューリング (Simultaneous Production and Maintenance Scheduling) — 工場内の複数の製造ラインにおいて、製品の生産計画（ジョブ割り当て）と、 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/maintenance_production_scheduling.py) |
+| power_aware_scheduling | 電力価格連動型の生産スケジューリング (Power-Aware Production Scheduling) — 時間帯ごとに大きく変動する電力価格（リアルタイムプライシング）を考慮し、 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/power_aware_scheduling.py) |
+| rcpsp | 資源制約付きプロジェクトスケジューリング (Resource-Constrained Project Scheduling Problem, RCPSP) — 建設・プラント工事の現場所長が、複数の作業(基礎工事・配管・電気工事など)からなるプロジェクトの着工日程を決める。各作業には「配管工事は基礎工事が終わってから」といった前後関係があり、さらにクレーンや作業員チームなど台数・人数に限りのある資源を複数の作業が奪い合う。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/rcpsp.py) |
+| sequence_dependent_flowshop | 順序依存の段取り時間を考慮したフローショップスケジューリング問題 (SDST Flowshop) — 複数種類の製品（ジョブ）を複数の連続する工程（マシン）で処理するフローショップにおいて、 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/sequence_dependent_flowshop.py) |
+| shift_scheduling | シフトスケジューリング (Shift Scheduling Problem) — コールセンターの運営マネージャーが、1日24時間分の時間帯別必要人数(午前は少なく夕方の問い合わせ集中時間帯に多い)を満たすよう、8時間勤務のシフトを何本・何時から組むかを決める。シフトは1時間刻みで開始でき、開始時刻から8時間(日をまたぐ場合を含む)にわたってその時間帯をカバーする。必要人数を割り込むとサービスレベル(応答率)が悪化するため、各時間帯の必要人数を満たしつつ、投入するシフト本数(=人件費)を最小化する。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/shift_scheduling.py) |
+| sports_scheduling | スポーツリーグの試合日程編成 (Sports Scheduling Problem) — 地域バスケットボールリーグの運営担当者が、4チームによるシングルラウンドロビン(総当たり戦を1回ずつ)の試合日程を組む。全チームが週に1試合ずつ、他の全チームとちょうど1回対戦するように組み合わせと開催週を決める必要がある。アウェーチームの移動距離が長いほど遠征コスト・選手の疲労が増えるため、リーグ全体の総移動距離(アウェー側の移動)を最小化する日程を編成する。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/sports_scheduling.py) |
+| stn_batch_scheduling | 化学プラントのバッチプロセススケジューリング (STNモデル) — State-Task Network (STN)モデルに基づき、原料から中間体を経て最終製品を生産する | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/stn_batch_scheduling.py) |
+| traffic_light_sync | 信号制御同期化・渋滞緩和 (Traffic Light Synchronization) — 自治体の交通管制センターが、幹線道路沿いに並ぶ複数交差点の信号サイクルにおける | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/traffic_light_sync.py) |
+| train_rescheduling_disruption | 列車運行の障害時再スケジュール (Rescheduling under Disruption) モデル (MILP) — 事故や災害などによる急なダイヤ乱れ（特定区間での速度制限、駅での出発遅延など）が発生した際に、 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/train_rescheduling_disruption.py) |
+| train_scheduling | 電車運行計画・列車ダイヤグラム最適化問題 (Train Timetable Scheduling) — 同一の鉄道路線（複数駅）を走行する複数の列車（急行列車と普通列車など）のダイヤグラム（運行時間表）を最適化します。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/train_scheduling.py) |
+| unit_commitment | プラント系 Unit Commitment (MINLP) — ユニットON/OFF(バイナリ) + 出力(連続)。 | — | [source](https://github.com/ctenopoma/minlpkit/blob/main/samples/scheduling/unit_commitment.py) |
+
+[← カタログ全体へ戻る](index.md)

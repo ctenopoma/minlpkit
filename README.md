@@ -69,16 +69,38 @@ print(df[["variant", "root_dual", "final_dual", "final_gap", "nodes"]].to_string
 表で並べます。厳密線形化は最適値を変えずに緩和を締める変換で、規模のある問題ではルート双対境界と探索コストの差として
 現れます。
 
+### ライブ監視(TensorBoard 型の書き手 / 読み手分離)
+
+求解を計器化する側(書き手)は `solve_with_monitor` に `RunLogger` を渡すだけ。別プロセスの
+サーバ(読み手)が run を tail してブラウザへライブ push します(extras `viz` が必要):
+
+```python
+from minlpkit.live import solve_with_monitor, RunLogger, new_run_id
+
+logger = RunLogger(new_run_id("plant"), meta={"model": "plant"})
+mon, summary = solve_with_monitor(model, time_limit=30, logger=logger)   # 求解しつつ run へ追記
+```
+
+```powershell
+uv run python -m minlpkit.live.server   # 読み手: http://127.0.0.1:5000 でライブ表示 + 成果ギャラリー
+```
+
+**何ができるかの全体像**は、機能とAPI・試すコマンド・出力を対応づけた
+[機能マップ](https://ctenopoma.github.io/minlpkit/manual/capabilities.html)にまとめています
+(観測・診断・改善・検証・ライブ監視・実行不可能診断・チューニング・GPU warm start)。
+
 ## Documentation
 
 ドキュメントは <https://ctenopoma.github.io/minlpkit/> にあります。
-列生成・ベンダーズ・再定式化などの手法を知らない場合は
-[プレイブック(症状→打ち手)](https://ctenopoma.github.io/minlpkit/playbook.html)から読むのが近道です。
-[利用マニュアル](https://ctenopoma.github.io/minlpkit/manual.html)と
+[プレイブック(症状→打ち手)](https://ctenopoma.github.io/minlpkit/playbook/index.html)は
+列生成・ベンダーズ・再定式化などの手法を、「gapが縮まらない」等の症状から探して読めます。
+[利用マニュアル](https://ctenopoma.github.io/minlpkit/manual/index.html)と
 [API リファレンス](https://ctenopoma.github.io/minlpkit/api/pipeline.html)を参照してください。
 [チュートリアル](https://ctenopoma.github.io/minlpkit/notebooks/quickstart.html)は
 [Colab で直接実行](https://colab.research.google.com/github/ctenopoma/minlpkit/blob/main/notebooks/quickstart.ipynb)できます。
 実際の求解結果は[ギャラリー](https://ctenopoma.github.io/minlpkit/gallery.html)にまとめています。
+同梱する 129 本のサンプルは[サンプルカタログ](https://ctenopoma.github.io/minlpkit/samples/index.html)で
+カテゴリ別に一覧できます(`uv run python experiments/gen_sample_catalog.py` で `docs/samples/` を再生成)。
 
 ## Development
 

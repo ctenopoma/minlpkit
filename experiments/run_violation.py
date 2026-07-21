@@ -1,8 +1,8 @@
-"""非線形制約の違反量ヒートマップを生成する (Phase 2.b)
+"""非線形制約の違反量ヒートマップを生成する
 
 ルートLP緩和解が各非線形制約をどれだけ違反するか(相対違反)を、
 制約タイプ×エンティティ(ジョブ/マシン)のヒートマップと、タイプ別ランキングで示す。
-違反が集中する制約 = 凸緩和が最も緩い支配的ボトルネック → Phase 3の再定式化対象。
+違反が集中する制約 = 凸緩和が最も緩い支配的ボトルネック。再定式化の対象になる。
 
 実行: uv run python experiments/run_violation.py --model plant
 出力: results/violation.html
@@ -112,7 +112,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>非線形制約の違反量ヒートマップ(Phase 2.b)</h1>
+<h1>非線形制約の違反量ヒートマップ</h1>
 <div class="sub">{MODELS[args.model]} — ルートLP緩和解を真の非線形制約に代入した相対違反</div>
 <div class="card">{d1}</div>
 <div class="card">{d2}</div>
@@ -120,10 +120,11 @@ def main() -> None:
 相対違反 = 違反量 / (|活動値|+1)。濃い(大きい)ほど、その制約の凸緩和がルートで真の値から離れている
 = <b>双対境界を押し下げる支配的ボトルネック</b>。plantでは <code>energy</code>(三重積 n·s·(T−T0))と
 <code>conversion</code>(ネストexp)が緩く、<code>arrhenius</code>/<code>tmax</code>/<code>jobtime</code> は
-ほぼタイト。これは Phase 2.c で空間分枝が <code>t_k</code>・<code>t_tau</code> に集中した所見と整合する。
-Phase 3の改善候補: energy/conversion の<b>区分線形近似・凸包再定式化・変数境界タイト化</b>。
-<br>※ 線形制約のIIS/スラック可視化は、このモデルでは全線形制約がpresolveで非線形/varboundに吸収され
-純粋な線形制約が残らないため対象外(別モデルで別途)。
+ほぼタイト。これは空間分枝が <code>t_k</code>・<code>t_tau</code> に集中していた所見と整合する。
+改善候補: energy/conversion の<b>区分線形近似・凸包再定式化・変数境界タイト化</b>。
+<br>※ この違反可視化は<b>実行可能だが緩和が緩い</b>制約(双対境界のボトルネック)を対象にする。
+<b>実行不可能(infeasible)</b>のときに矛盾する制約(IIS核)・必要な緩和量を特定するには
+<code>run_infeasibility.py</code>(弾性緩和 + 削除フィルタ)を使う。
 </p>
 </div></body></html>"""
     out.write_text(html, encoding="utf-8")

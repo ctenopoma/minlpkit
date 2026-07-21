@@ -62,7 +62,7 @@ _INSTALL_HINT = (
     "  uv venv --python 3.12 ~/cuopt-env && "
     "VIRTUAL_ENV=~/cuopt-env uv pip install "
     "--extra-index-url=https://pypi.nvidia.com 'cuopt-cu13==25.10.*'\n"
-    "詳細は docs/manual.md 7節(GPU warm start)。導入確認は mk.cuopt_available()。")
+    "詳細は docs/manual/gpu-setup.md(GPU warm start)。導入確認は mk.cuopt_available()。")
 
 def _http_hint(server_url: str, detail: str = "") -> str:
     """HTTPバックエンドの接続失敗時の案内(サーバ起動docker手順を1行含む)。"""
@@ -72,7 +72,7 @@ def _http_hint(server_url: str, detail: str = "") -> str:
         "  docker run --gpus all --rm -p 8000:8000 -e CUOPT_SERVER_PORT=8000 "
         "nvcr.io/nvidia/cuopt/cuopt:25.10\n"
         f"クライアントは環境変数 {_ENV_URL}=http://<server>:8000 か server_url= で指す。"
-        "健全性は GET /cuopt/health、詳細は docs/manual.md 7節(リモートサーバ構成)。"
+        "健全性は GET /cuopt/health、詳細は docs/manual/gpu-setup.md(リモートサーバ構成)。"
         + tail)
 
 

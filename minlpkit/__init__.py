@@ -13,6 +13,8 @@ model非依存のパイプラインAPIに再構成したもの。
 """
 
 from .collectors.diagnose import RULES, Rule, evaluate
+from .collectors.infeasibility import (deletion_filter, diagnose_infeasibility,
+                                       elastic_filter, presolve_infeasible)
 
 from .compare import compare_variants
 from .frameworks import benders, column_generation, price_and_branch
@@ -23,7 +25,9 @@ from .transforms import linearize_product, perspective_quadratic, pwl_sos2
 __all__ = ["analyze", "collect_metrics", "Report", "compare_variants",
            "RULES", "Rule", "evaluate", "linearize_product", "perspective_quadratic",
            "pwl_sos2", "column_generation", "price_and_branch", "benders",
-           "cuopt_warmstart", "cuopt_concurrent", "cuopt_available", "sweep", "rerun"]
+           "cuopt_warmstart", "cuopt_concurrent", "cuopt_available", "sweep", "rerun",
+           "diagnose_infeasibility", "elastic_filter", "deletion_filter",
+           "presolve_infeasible"]
 
 _LAZY_LIVE = {"sweep", "rerun"}
 

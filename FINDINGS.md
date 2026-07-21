@@ -168,7 +168,7 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   開発マシンにcuopt-envが無いのは当然で、実GPUは 192.168.50.37 側に存在する。
   GPU機能は完全に任意なので False でも本体・診断・UIは全て正常動作(未導入時の設計どおり)。
   ヘッダの `/api/gpu` インジケータがこの利用可否を可視化する。
-- **cuOpt self-hosted サーバの LP/MILP REST API 仕様**(2026-07-20 Phase 11.2、調査。実サーバE2E未実施):
+- **cuOpt self-hosted サーバの LP/MILP REST API 仕様**(2026-07-20 Phase 11.2、調査):
   エンドポイントは `GET /cuopt/health`(200)/ `POST /cuopt/request`(JSON body)/
   非同期なら `GET /cuopt/solution/{reqId}` をポーリング。**生MPSを受けるHTTPエンドポイントは無い** —
   公式クライアント `cuopt-sh-client` は `cuopt_mps_parser` でMPSを**クライアント側で**
@@ -180,8 +180,16 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   出典: docs.nvidia.com/cuopt/user-guide/25.10.00/cuopt-server/(quick-start / client-api / examples)、
   wire形式は github.com/NVIDIA/cuopt の `python/cuopt_self_hosted/cuopt_sh_client`。
   → `minlpkit.gpu` に `server_url=` / 環境変数 `MINLPKIT_CUOPT_URL` でHTTPバックエンドを追加
-  (標準ライブラリ urllib のみ、新規依存なし)。無限境界は JSON制約から `±1e20` センチネルに丸め(実サーバ未検証)。
+  (標準ライブラリ urllib のみ、新規依存なし)。無限境界は JSON制約から `±1e20` センチネルに丸め。
   モック契約テスト `tests/test_gpu_http.py`、疎通確認 `experiments/check_cuopt_server.py`。
+- **実サーバE2E成功(2026-07-20)**: LAN上のGPUサーバ `http://192.168.50.37:8001`(cuopt-server)に対し
+  `uv run python experiments/check_cuopt_server.py --url http://192.168.50.37:8001` を実行し疎通確認。
+  ヘルスチェック `GET /cuopt/health` → 200 OK、続けて超小型MILP(`min x+y s.t. x+y>=1`、2値変数)を
+  投入し cuOpt目的値 = 1.0(期待値どおり)・bound/gap = 1.0/0.0・wall_time 1.20s を取得、
+  SCIPへの `addSol` 注入も `accepted=True`(SCIP最終primal = 1.0、注入解から証明継続)で成功。
+  これによりHTTPバックエンド(Phase 11.2)の「モック契約テストのみ・実サーバ未検証」という
+  制約は解消。無限境界の `±1e20` センチネル丸めもこの実サーバ疎通で経路上は通過している
+  (ただし今回のテスト問題に無限境界は含まれないため、無限境界そのものの厳密さは引き続き未検証)。
 
 ## 6. 可視化・配信
 
@@ -190,6 +198,25 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
 - 3D Surface は角度依存で読みにくい。対称box + `aspectmode="cube"` + `eye≈(1.6,1.6,1.15)` が良い。
 - 停滞検出は「横ばい(改善イベント不在)」より「**改善レートが平均の半分未満**」の方が実態に合う
   (plantの双対境界は多数の小改善で連続上昇し、劇的な平坦域が稀)。
+
+### 数式レンダリング(KaTeX + arithmatex、mermaidラベル内数式)
+
+- **本文の数式は `pymdownx.arithmatex`(generic)+ KaTeX auto-render**。arithmatex が
+  `$...$`/`$$...$$` を `\(...\)`/`\[...\]` に正規化するので、`docs/javascripts/katex.js` の
+  delimiters は**正規化後の `\(` `\[` だけ**にする。素の `$` を対象に含めると、シェル例や
+  ドル金額を数式と誤認する。
+- **`katex.js` の処理は `document$.subscribe` 内で必ず try/catch + `setTimeout` で非同期化する**。
+  `document$` は Material の**mermaidレンダラーやコードコピーも購読する共有 observable**で、
+  ここで例外を投げると購読チェーンごと停止し **mermaid図が描画されなくなる**。
+- **mkdocs-jupyter のノートブックHTMLは MathJax を `<script src=""></script>`(空src)で吐く**。
+  数式エンジンが実在しないので notebook の LaTeX は素のままでは表示されない。`katex.js` で
+  `.jp-RenderedMarkdown` セルに限り生の `$`/`$$` も拾って KaTeX で描画する(本文側は上記のとおり
+  `$` を拾わない、と対象を分ける)。
+- **mermaidラベル内でも `$$...$$` は使える(mermaid 11 が KaTeX 同梱、CSSはCDNから別途読込済み)**。
+  ただし **`<` `>` `&` `"` の生文字は不可**。superfences がラベルを HTML エスケープして
+  `<` → `&lt;` になり、それが KaTeX に渡ると `KaTeX parse error: Expected 'EOF', got '&'` で
+  例外→図が空白になる。不等号は **`\lt` / `\gt`** を使う(`\ge`/`\le` はそのまま可)。
+  混入検査: `docs/**/*.md` の ```mermaid ブロック内 `$$...$$` に `<>&"` が無いことを確認する。
 
 ## 8. 診断センサス(samplesを診断エンジンのベンチマークにする)
 

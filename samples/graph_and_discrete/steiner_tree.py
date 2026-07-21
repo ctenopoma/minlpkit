@@ -1,7 +1,24 @@
-"""
-Steiner Tree Problem in Graphs.
-Finds a minimum-weight tree connecting a designated set of terminal nodes.
-Reference: Hwang, F. K., Richards, D. S., & Winter, P. (1992). The Steiner tree problem. Elsevier.
+"""シュタイナー木問題 (MIP) — Steiner Tree Problem in Graphs
+
+事業ストーリー
+--------------
+通信キャリアのネットワーク敷設担当者が、複数の拠点(データセンターや基地局など
+必ず接続しなければならない「端点」)をすべて接続する光ファイバー網を、
+敷設コスト(距離・工事費)最小で設計する。端点以外の中継ノードを経由してもよいが、
+経由すること自体には追加コストが乗らず、実際に敷設した回線(エッジ)のコストのみが
+かかるため、端点だけを直接結ぶ木より安く済む場合がある(これがシュタイナー木問題)。
+
+各制約の業務的意味:
+- **flow_cons(多端末フロー保存)**: 各端点tについて、根ノードから1単位の
+  仮想フローを流し、端点tでちょうど吸収されるようにする。これにより
+  「根から各端点まで経路が存在する=接続されている」ことを保証する。
+- **cap(容量制約)**: 仮想フローは、実際に回線(エッジ)を敷設した(y=1)区間
+  にしか流せない。これにより、フローが通る経路が必ず実際の配線として
+  選択されることを強制する。
+- **目的関数**: 実際に敷設するエッジの総コスト(距離・工事費)を最小化する。
+
+参考文献: Hwang, F. K., Richards, D. S., & Winter, P. (1992). The Steiner tree
+problem. Elsevier.
 """
 from pyscipopt import Model, quicksum
 

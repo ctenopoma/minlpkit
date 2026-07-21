@@ -1,4 +1,4 @@
-"""Phase 4: Big-M改善(loose→tight/indicator)の効果検証
+"""Big-M改善(loose→tight/indicator)の効果検証
 
 診断 numerical_scale/Big-M の推薦「Big-M排除(Indicator/SOS)」を実施し、
 before(緩いBig-M)/ after(tight・indicator)を比較する。
@@ -135,7 +135,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>Big-M改善の効果検証(Phase 4)</h1>
+<h1>Big-M改善の効果検証</h1>
 <div class="sub">診断 numerical_scale の推薦「Big-M排除(Indicator/SOS)」を fixed_charge モデルで実施・検証</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>

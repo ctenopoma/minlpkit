@@ -6,7 +6,7 @@
   tight     : M_i = 実際に可能な最大生産量 = min(容量, 総需要)→ LP緩和が締まる
   indicator : SCIPのIndicator制約(y_i=0 ⟹ x_i=0)→ Big-Mを使わず最も締まる
 
-Phase 4「Big-M排除(Indicator/SOS)」の効果を root LP 境界で明確に示す題材。
+「Big-M排除(Indicator/SOS)」の効果を root LP 境界で明確に示す題材。
 """
 
 from __future__ import annotations

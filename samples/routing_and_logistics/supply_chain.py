@@ -1,11 +1,26 @@
-"""
-Multi-echelon Supply Chain Network Design.
+"""多段階サプライチェーン網の設計 (Multi-echelon Supply Chain Network Design)
 
-This model determines which plants and distribution centers to open
-and the flow of products between them to minimize total costs.
-Reference: Geoffrion, A. M., & Graves, G. W. (1974). 
-Multicommodity distribution system design by Benders decomposition. 
-Management science, 20(5), 822-844.
+事業ストーリー
+--------------
+消費財メーカーのサプライチェーン企画担当者が、工場と物流拠点(ディストリビューション
+センター、DC)をどこに開設し、顧客への出荷までの物流網をどう組むかを決める。工場・
+DCにはそれぞれ開設すると固定費がかかり、稼働させる拠点数を絞ればコストは下がるが
+供給能力・輸送距離とのトレードオフが生じる。全顧客の需要を満たしながら、拠点の
+開設固定費と工場→DC→顧客の輸送変動費の合計を最小化するネットワークを設計する。
+
+各制約の業務的意味:
+- **需要充足**: 各顧客の需要は、開設したDCからの出荷合計でちょうど満たされなければ
+  ならない。
+- **DCでのフロー保存**: 各DCに工場から流入する量と、顧客へ流出する量は釣り合う
+  (DCは在庫を溜め込まず素通しする前提)。
+- **工場の生産能力**: 工場が稼働している場合のみ出荷可能で、出荷量は工場の生産
+  能力を超えられない(未開設の工場からは出荷できない)。
+- **DCの処理能力**: DCが開設されている場合のみ出荷可能で、出荷量はDCの処理能力を
+  超えられない。
+
+(元の参考文献: Geoffrion, A. M., & Graves, G. W. (1974).
+Multicommodity distribution system design by Benders decomposition.
+Management science, 20(5), 822-844.)
 """
 
 from pyscipopt import Model, quicksum

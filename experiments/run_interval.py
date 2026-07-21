@@ -1,7 +1,7 @@
-"""非線形項の値域(区間演算)の可視化 (Phase 2.c)
+"""非線形項の値域(区間演算)の可視化
 
 plantの各非線形項の値域を区間演算で見積もり、値域スパン(対数)と相対幅で
-「どの項の凸緩和が緩くなるか」を静的に予測する。Phase 2.bの違反ヒートマップと突き合わせ可能。
+「どの項の凸緩和が緩くなるか」を静的に予測する。違反ヒートマップと突き合わせ可能。
 
 実行: uv run python experiments/run_interval.py  ->  results/interval.html
 """
@@ -87,17 +87,17 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>非線形項の値域概算(区間演算, Phase 2.c)</h1>
+<h1>非線形項の値域概算(区間演算)</h1>
 <div class="sub">scheduling_plant — 変数境界だけから各項の値域を区間演算で見積もり、緩和の緩さを静的予測</div>
 <div class="card">{d1}</div>
 <div class="card">{d2}</div>
 <p class="note">
 変数境界だけで(solveせず)各非線形項が取り得る値域を区間演算で計算。相対幅が大きい項ほど
 凸緩和が緩くなりやすい。<b>最大は <code>energy</code>(n·s·(T−T0), 値域[100, 38400])</b>で、これは
-Phase 2.bの違反ヒートマップでenergyが支配的ボトルネックだった観測と一致する(静的予測が動的観測を的中)。
+違反ヒートマップでenergyが支配的ボトルネックだった観測と一致する(静的予測が動的観測を的中)。
 ただし <code>arrhenius</code> は値域は広いが単変数expのためSCIPは緩和をタイトに張れる(違反は小)—
 <b>多変数の積(energy/demand/cooling)で「値域が広い×緩和が緩い」が重なる</b>のが真の律速。
-Phase 3では energy 等の区分線形近似・変数境界タイト化が候補。
+energy 等の区分線形近似・変数境界タイト化が改善候補。
 </p>
 </div></body></html>"""
     out.write_text(html, encoding="utf-8")

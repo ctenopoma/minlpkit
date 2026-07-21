@@ -1,4 +1,4 @@
-"""Phase 4: 被約コスト固定の効果検証(SCIP内蔵 redcost 伝播器)
+"""被約コスト固定の効果検証(SCIP内蔵 redcost 伝播器)
 
 被約コスト固定はSCIPが redcost 伝播器(既定ON)で自動実施する。手動再実装は冗長なので、
 内蔵機能のON/OFF比較で技術の価値を示す。定式化の質と同様、効果は補償機構を切った
@@ -98,7 +98,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>被約コスト固定の効果検証(Phase 4)</h1>
+<h1>被約コスト固定の効果検証</h1>
 <div class="sub">knapsack(強相関45品)— SCIP内蔵 redcost 伝播器の価値をON/OFFで確認</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>

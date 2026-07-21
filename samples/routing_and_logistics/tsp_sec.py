@@ -1,11 +1,23 @@
-"""
-Traveling Salesman Problem (TSP) with Subtour Elimination Constraints.
+"""巡回セールスマン問題(部分巡回路除去付き) (Traveling Salesman Problem with Subtour Elimination Constraints)
 
-This model implements the TSP using MTZ-like continuous variables
-for subtour elimination (a simplified version of MTZ for TSP).
-Reference: Dantzig, G., Fulkerson, R., & Johnson, S. (1954).
+事業ストーリー
+--------------
+訪問営業担当者が、拠点(自社オフィス)から出発して全ての訪問先を1回ずつ回り、
+再び拠点に戻ってくる最短ルートを決める。訪問先同士の移動距離はあらかじめ
+分かっており、総移動距離を最小化する巡回順を求める必要がある。単純に「各地点は
+1回入って1回出る」という制約だけでは、全体を1周する経路ではなく複数の小さな
+閉ループ(部分巡回路)に分裂した解が最適に見えてしまうため、それを禁止する
+補助変数を導入する。
+
+各制約の業務的意味:
+- **出次数・入次数制約**: 各訪問先には他のちょうど1地点から到着し、他のちょうど
+  1地点へ出発する(全地点を1回ずつ訪問する経路の必要条件)。
+- **部分巡回路除去制約(MTZ型)**: 各地点に訪問順を表す補助変数を持たせ、経路上で
+  訪問順が単調に増加するよう縛ることで、全体を含まない小さな閉ループの発生を防ぐ。
+
+(元の参考文献: Dantzig, G., Fulkerson, R., & Johnson, S. (1954).
 Solution of a large-scale traveling-salesman problem.
-Journal of the operations research society of America, 2(4), 393-410.
+Journal of the operations research society of America, 2(4), 393-410.)
 """
 
 from pyscipopt import Model, quicksum

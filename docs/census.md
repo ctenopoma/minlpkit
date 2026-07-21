@@ -1,6 +1,6 @@
-# 診断センサス(サンプル群のベンチマーク)
+# 診断ベンチマーク結果
 
-minlpkit の診断エンジン(`mk.analyze`)を samples の多数のモデルに一括適用し、どの症状(finding)がどのモデルで発火するかを棚卸しした結果。サンプル群を「診断のベンチマーク=センサス」として使う。
+minlpkit の診断エンジン(`mk.analyze`)を samples の多数のモデルに一括適用し、どの症状(finding)がどのモデルで発火するかを集計した結果。
 
 - 対象カテゴリ: energy_and_microgrid, packing_and_cutting, physics_and_control_minlp, scheduling
 - 各モデル `mk.analyze(build_model, time_limit=10)` を1回実行

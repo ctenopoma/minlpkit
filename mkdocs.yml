@@ -7,10 +7,9 @@ theme:
   name: material
   logo: assets/icon.jpg
   favicon: assets/icon.jpg
-  language: ja
   font:
     text: Inter
-    code: JetBrains Mono
+    code: Google Sans Code
   features:
     - navigation.sections
     - navigation.top
@@ -33,11 +32,94 @@ theme:
         name: ライトモードへ
 
 plugins:
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      languages:
+        - locale: ja
+          default: true
+          name: 日本語
+          build: true
+        - locale: en
+          name: English
+          build: true
+          nav_translations:
+            ホーム: Home
+            はじめに: Getting Started
+            セットアップ: Setup
+            クイックスタート: Quickstart
+            ガイド: Guide
+            症状から手法を選ぶ: Choose method by symptom
+            目次: Contents
+            "0. 診断そのもの": "0. Diagnosis"
+            空間分枝木: Spatial Branch and Bound
+            違反ヒートマップ: Violation Heatmap
+            gap停滞とattribution: Gap Stagnation and Attribution
+            静的診断(スケール・ブロック構造・対称性): Static Diagnosis
+            "1. 整数×連続の厳密線形化": "1. Exact Linearization"
+            ノートブックで確認: Check in Notebook
+            "2. PWL近似(SOS2)": "2. PWL Approximation (SOS2)"
+            "3. Big-M排除": "3. Big-M Elimination"
+            "4. SCIPパラメータチューニング": "4. SCIP Parameter Tuning"
+            "5. ベンダーズ分解": "5. Benders Decomposition"
+            "6. 列生成": "6. Column Generation"
+            "7. GPU warm start": "7. GPU Warm Start"
+            セットアップ手順: Setup Procedure
+            "8. 条件数・数値健全性": "8. Condition Number"
+            "9. ライブ監視・run記録・再現": "9. Live Monitoring"
+            "参考: SCIPが自動でやること": "Reference: SCIP Features"
+            "サンプルnotebookで学ぶ(事業ストーリー→診断→改善)": "Learn with Sample Notebooks"
+            石油プーリング多期計画: Petroleum Pooling
+            鋳造の多期チャージ配合: Foundry Charge Mix
+            週次UC+送電混雑: Weekly UC
+            水頭依存効率の水力カスケード: Hydro Cascade
+            送電線増強計画+運用: Transmission Expansion
+            マイクログリッド設計+運用: Microgrid Design
+            交流最適潮流 AC-OPF: AC-OPF
+            診断ベンチマーク結果(全サンプル一括診断): Diagnosis Benchmark Results
+            サンプル: Samples
+            サンプルカタログ: Sample Catalog
+            概要(全129本): Overview
+            スケジューリング: Scheduling
+            エネルギー・マイクログリッド: Energy & Microgrid
+            立地・ネットワーク設計: Location & Network Design
+            経路・物流: Routing & Logistics
+            その他(基礎・拡張題材): Others
+            グラフ・離散構造: Graph & Discrete Structures
+            物理・制御MINLP: Physics & Control MINLP
+            製造・ブレンド: Manufacturing & Blending
+            金融・価格設計: Finance & Pricing
+            パッキング・カッティング: Packing & Cutting
+            ギャラリー: Gallery
+            リファレンス: Reference
+            利用マニュアル: User Manual
+            マニュアル概要: Manual Overview
+            ワークフロー全体像: Workflow Overview
+            制約・落とし穴: Limitations & Pitfalls
+            "パイプライン (analyze/Report)": "Pipeline"
+            "比較 (compare_variants)": "Compare"
+            "変換 (transforms)": "Transforms"
+            "フレームワーク (frameworks)": "Frameworks"
+            "診断ルール (diagnose)": "Diagnosis Rules"
+            "ライブ可視化 (live)": "Live Visualization"
+            "チューニング (tune)": "Tuning"
   - search
+  - drawio
+  - glightbox
+  - git-revision-date-localized:
+      type: timeago
+      strict: false  # 未コミットの新規notebook等でも WARNING を出さない(mkdocs build --strict を通す)
+  - macros
   - mkdocs-jupyter:
       include_source: true
       execute: false
       ignore_h1_titles: true
+  # i18n が API 頁を ja(ルート)/en(/en/)へ二重生成するため、mkdocstrings のアンカーは
+  # 各識別子につき2 URL 持つ。autorefs を明示し resolve_closest=true にすると、参照は
+  # 最も近い(同一言語の)URL へ解決され「Multiple primary URLs」警告(strictでabort)を出さない。
+  # ※ autorefs は mkdocstrings より前に列挙する必要がある。
+  - autorefs:
+      resolve_closest: true
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -55,9 +137,15 @@ plugins:
 
 markdown_extensions:
   - attr_list
+  - pymdownx.arithmatex:
+      generic: true
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
@@ -70,17 +158,77 @@ markdown_extensions:
       permalink: true
 
 nav:
-  - はじめに: index.md
-  - 学ぶ:
+  - ホーム: index.md
+  - はじめに:
+      - セットアップ: manual/index.md
+      - 機能マップ(できること一覧): manual/capabilities.md
       - クイックスタート: notebooks/quickstart.ipynb
-  - プレイブック(症状→打ち手): playbook.md
-  - 実践:
-      - ハンズオン(1)可視化・診断編: notebooks/hands_on_diagnosis.ipynb
-      - ハンズオン(2)改善編: notebooks/hands_on_improvement.ipynb
-      - 診断センサス: census.md
+  - ガイド:
+      - 症状から手法を選ぶ:
+          - 目次: playbook/index.md
+          - 0. 診断そのもの:
+              - ガイド: playbook/00-diagnose.md
+              - 空間分枝木: notebooks/diagnose/01_mccormick_spatial_tree.ipynb
+              - 違反ヒートマップ: notebooks/diagnose/02_violation_heatmap.ipynb
+              - gap停滞とattribution: notebooks/diagnose/03_gap_stall_attribution.ipynb
+              - 静的診断(スケール・ブロック構造・対称性): notebooks/diagnose/04_static_diagnosis.ipynb
+          - 1. 整数×連続の厳密線形化:
+              - ガイド: playbook/01-linearize.md
+              - ノートブックで確認: notebooks/improve/01_linearize_product.ipynb
+          - 2. PWL近似(SOS2):
+              - ガイド: playbook/02-pwl-sos2.md
+              - ノートブックで確認: notebooks/improve/02_pwl_sos2.ipynb
+          - 3. Big-M排除:
+              - ガイド: playbook/03-bigm.md
+              - ノートブックで確認: notebooks/improve/03_bigm_indicator.ipynb
+          - 4. SCIPパラメータチューニング:
+              - ガイド: playbook/04-tuning.md
+              - ノートブックで確認: notebooks/improve/04_tuning.ipynb
+          - 5. ベンダーズ分解:
+              - ガイド: playbook/05-benders.md
+              - ノートブックで確認: notebooks/improve/05_benders.ipynb
+          - 6. 列生成:
+              - ガイド: playbook/06-column-generation.md
+              - ノートブックで確認: notebooks/improve/06_column_generation.ipynb
+          - 7. GPU warm start:
+              - ガイド: playbook/07-gpu.md
+              - セットアップ手順: manual/gpu-setup.md
+              - ノートブックで確認: notebooks/improve/07_gpu_warmstart.ipynb
+          - 8. 条件数・数値健全性:
+              - ガイド: playbook/08-condition.md
+              - ノートブックで確認: notebooks/improve/08_condition_number.ipynb
+          - 9. ライブ監視・run記録・再現:
+              - ガイド: playbook/09-live-monitor.md
+              - セットアップ手順: manual/live-monitor.md
+          - "参考: SCIPが自動でやること": playbook/10-reference-scip-handles.md
+      - サンプルnotebookで学ぶ(事業ストーリー→診断→改善):
+          - 石油プーリング多期計画: notebooks/samples/petroleum_pooling.ipynb
+          - 鋳造の多期チャージ配合: notebooks/samples/foundry_charge_mix_multiperiod.ipynb
+          - 週次UC+送電混雑: notebooks/samples/weekly_uc_ramp.ipynb
+          - 水頭依存効率の水力カスケード: notebooks/samples/hydro_cascade_efficiency.ipynb
+          - 送電線増強計画+運用: notebooks/samples/transmission_expansion_operation.ipynb
+          - マイクログリッド設計+運用: notebooks/samples/microgrid_design_operation.ipynb
+          - 交流最適潮流 AC-OPF: notebooks/samples/ac_opf.ipynb
+      - 診断ベンチマーク結果(全サンプル一括診断): census.md
+  - サンプル:
+      - サンプルカタログ:
+          - 概要(全129本): samples/index.md
+          - スケジューリング: samples/scheduling.md
+          - エネルギー・マイクログリッド: samples/energy_and_microgrid.md
+          - 立地・ネットワーク設計: samples/location_and_network_design.md
+          - 経路・物流: samples/routing_and_logistics.md
+          - その他(基礎・拡張題材): samples/others.md
+          - グラフ・離散構造: samples/graph_and_discrete.md
+          - 物理・制御MINLP: samples/physics_and_control_minlp.md
+          - 製造・ブレンド: samples/manufacturing_and_blending.md
+          - 金融・価格設計: samples/finance_and_pricing.md
+          - パッキング・カッティング: samples/packing_and_cutting.md
       - ギャラリー: gallery.md
   - リファレンス:
-      - 利用マニュアル: manual.md
+      - 利用マニュアル:
+          - マニュアル概要: manual/index.md
+          - ワークフロー全体像: manual/workflow.md
+          - 制約・落とし穴: manual/pitfalls.md
       - パイプライン (analyze/Report): api/pipeline.md
       - 比較 (compare_variants): api/compare.md
       - 変換 (transforms): api/transforms.md
@@ -88,3 +236,19 @@ nav:
       - 診断ルール (diagnose): api/diagnose.md
       - ライブ可視化 (live): api/live.md
       - チューニング (tune): api/tune.md
+
+extra_css:
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css
+  - stylesheets/extra.css
+
+extra:
+  minlpkit_version: "0.1.0"
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js
+  - javascripts/katex.js
+  - javascripts/copy_md.js
+
+hooks:
+  - hooks.py

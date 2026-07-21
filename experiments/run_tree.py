@@ -1,4 +1,4 @@
-"""空間分枝木の可視化HTMLを生成する (Phase 2.b)
+"""空間分枝木の可視化HTMLを生成する
 
 実行: uv run python experiments/run_tree.py --model plant --max-nodes 400
 出力: results/tree.html
@@ -146,7 +146,7 @@ def main() -> None:
           border-radius:8px; margin-bottom:12px; overflow:hidden; }}
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
 </style></head><body><div class="wrap">
-<h1>空間分枝木の可視化(Phase 2.b)</h1>
+<h1>空間分枝木の可視化</h1>
 <div class="sub">{MODELS[args.model]} — 先頭{len(df)}分枝ノード。青=連続変数への空間分枝(非凸緩和を締める)</div>
 <div class="card">{div_tree}</div>
 <div class="card">{div_bar}</div>

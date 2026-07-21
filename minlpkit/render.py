@@ -81,7 +81,7 @@ def render_report(report, path: str) -> None:
  a {{ color:#2a78d6; text-decoration:none; }}
 </style></head><body><div class="wrap">
 <h1>minlpkit レポート — {report.name}</h1>
-<div class="sub">analyze() による観測量収集 + 診断(Phase 1-4を一気通貫)</div>
+<div class="sub">analyze() による観測量収集・診断・改善提案を一気通貫で表示</div>
 <h2>観測量</h2>
 <div class="tiles">{_metric_tiles(report.metrics)}</div>
 <h2>検出した症状 → 推薦する改善({len(report.findings)}件)</h2>

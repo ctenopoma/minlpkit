@@ -1,4 +1,4 @@
-"""Phase 6: SOS2区分線形近似(Big-M回避)の効果検証
+"""SOS2区分線形近似(Big-M回避)の効果検証
 
 非凸関数 f(x) を区分線形近似して最小化。SOS2(隣接2重み)版と Big-M(セグメントバイナリ)版が
 同じ最適値になり、SOS2はバイナリ/Big-M定数を使わずに済む(SCIP native SOS2分岐)ことを示す。
@@ -105,7 +105,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>SOS2 区分線形近似(Phase 6 / 2.d Big-M回避)</h1>
+<h1>SOS2 区分線形近似(Big-M回避)</h1>
 <div class="sub">非凸関数 f(x)=sin(1.5x)+0.15(x−5)² を{pw.N_BREAK}折れ点でPWL近似し最小化</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>

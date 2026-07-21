@@ -1,11 +1,26 @@
-"""
-Capacitated Vehicle Routing Problem (CVRP) using MTZ formulation.
+"""容量制約付き配送計画問題 (Capacitated Vehicle Routing Problem, CVRP) - MTZ定式化
 
-This model implements the classic Miller-Tucker-Zemlin (MTZ) formulation
-for subtour elimination in the CVRP.
-Reference: Miller, C. E., Tucker, A. W., & Zemlin, R. A. (1960). 
-Integer programming formulation of traveling salesman problems. 
-Journal of the ACM (JACM), 7(4), 326-329.
+事業ストーリー
+--------------
+物流センターの配送計画担当者が、倉庫(デポ)から出発する複数台のトラックで、
+複数の顧客先に商品を届けるルートを決める。各トラックには積載容量の上限があり、
+1台で全顧客を回りきれない場合は複数台に配送先を分担させる必要がある。使える
+トラック台数にも上限があるため、「どの顧客をどのトラックが回るか」と「各トラック
+内での訪問順」を同時に決め、総移動距離(燃料費・配送時間に直結)を最小化する。
+
+各制約の業務的意味:
+- **各顧客の一意訪問**: 各顧客にはちょうど1回、いずれかのトラックが訪問し出発する
+  (未配達や重複配送を防ぐ)。
+- **デポから出発する台数の上限**: デポから出るルートの本数は、保有するトラック
+  台数を超えられない。
+- **MTZ型の部分巡回路除去・容量制約**: 各顧客に「その地点までの積載量」を表す
+  補助変数を持たせ、ルート上で積載量が需要分だけ単調に積み上がるよう縛ることで、
+  デポを経由しない小さな閉ループの発生を防ぐと同時に、各トラックの積載量が容量を
+  超えないことも保証する。
+
+(元の参考文献: Miller, C. E., Tucker, A. W., & Zemlin, R. A. (1960).
+Integer programming formulation of traveling salesman problems.
+Journal of the ACM (JACM), 7(4), 326-329.)
 """
 
 from pyscipopt import Model, quicksum

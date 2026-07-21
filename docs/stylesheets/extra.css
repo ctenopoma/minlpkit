@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
+
+/* Premium Typography & Variables */
+:root {
+  --md-text-font: "Inter", "Noto Sans JP", -apple-system, sans-serif;
+  --md-code-font: "Google Sans Code", "JetBrains Mono", "Fira Code", monospace;
+  --md-typeset-a-color: #3b82f6; /* Modern Blue */
+}
+
+/* Gradient Headings for a "wow" factor */
+.md-typeset h1, 
+.md-typeset h2 {
+  font-family: 'Righteous', sans-serif;
+  background: linear-gradient(135deg, #2563eb, #9333ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: block;
+  font-weight: 400; /* Righteous uses 400 */
+  letter-spacing: 0.02em; /* Slightly spaced out looks better for Righteous */
+}
+
+/* Fix for inline code (`code`) inside gradient headings becoming invisible */
+.md-typeset h1 code,
+.md-typeset h2 code {
+  -webkit-text-fill-color: var(--md-default-fg-color) !important;
+  color: var(--md-default-fg-color) !important;
+  background-color: rgba(128, 128, 128, 0.1) !important;
+}
+
+/* Fix for Table of Contents (目次) or navigation links accidentally inheriting transparent text-fill-color */
+.md-nav__link,
+.md-nav__link code,
+.md-nav__link * {
+  -webkit-text-fill-color: initial !important;
+}
+
+/* Fix text and icon colors in the header for light mode (white text on white bg issue) */
+html:not([data-md-color-scheme="slate"]) .md-header__button,
+html:not([data-md-color-scheme="slate"]) .md-header__title,
+html:not([data-md-color-scheme="slate"]) .md-header__topic,
+html:not([data-md-color-scheme="slate"]) .md-tabs__link,
+html:not([data-md-color-scheme="slate"]) .md-search__icon {
+  color: var(--md-default-fg-color) !important;
+}
+html:not([data-md-color-scheme="slate"]) .md-search__input {
+  color: var(--md-default-fg-color) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Glassmorphism for the Top Navigation Header */
+.md-header {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: none !important;
+}
+
+[data-md-color-scheme="slate"] .md-header {
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Modern Card-like Admonitions with Hover Lift */
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: var(--md-default-bg-color);
+}
+
+.md-typeset .admonition:hover,
+.md-typeset details:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition,
+[data-md-color-scheme="slate"] .md-typeset details {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Smooth Code Blocks */
+.md-typeset pre > code {
+  border-radius: 12px;
+}
+.md-typeset .highlight, 
+.md-typeset pre {
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+[data-md-color-scheme="slate"] .md-typeset .highlight, 
+[data-md-color-scheme="slate"] .md-typeset pre {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* Images with subtle shadow and zoom effect on hover */
+.md-typeset img {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  transition: transform 0.3s ease;
+}
+.md-typeset img:hover {
+  transform: scale(1.02);
+}
+
+/* Modern Tables */
+.md-typeset table:not([class]) {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.md-typeset table:not([class]) th {
+  background-color: var(--md-default-fg-color--lightest);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.85em;
+  letter-spacing: 0.05em;
+}
+.md-typeset table:not([class]) tr:hover td {
+  background-color: var(--md-default-fg-color--lightest);
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ============================================================
+   数式(KaTeX)
+   pymdownx.arithmatex(generic) + KaTeX auto-render で描画する。
+   ============================================================ */
+
+/* 本文サイズに馴染ませる(KaTeX の既定 1.21em は日本語本文の中で浮く) */
+.md-typeset .katex {
+  font-size: 1.05em;
+}
+
+/* ディスプレイ数式: 長い式は本文を横に伸ばさず、式だけ横スクロールさせる */
+.md-typeset .katex-display {
+  margin: 1.2em 0;
+  padding: 0.2em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* 見出しのグラデーション(-webkit-text-fill-color: transparent)を数式が
+   継承すると不可視になるため打ち消す */
+.md-typeset h1 .katex,
+.md-typeset h2 .katex,
+.md-typeset h1 .katex *,
+.md-typeset h2 .katex * {
+  -webkit-text-fill-color: var(--md-default-fg-color) !important;
+}
+
+/* ダークモードで数式が黒のままにならないようにする */
+[data-md-color-scheme="slate"] .md-typeset .katex,
+[data-md-color-scheme="slate"] .md-typeset .katex * {
+  color: var(--md-default-fg-color);
+}
+
+/* 数式番号・注釈用の小さめキャプション */
+.md-typeset .math-note {
+  display: block;
+  text-align: center;
+  font-size: 0.75em;
+  color: var(--md-default-fg-color--light);
+  margin-top: -0.6em;
+}
+
+/* Mermaid ラベル内の KaTeX(mermaid 11 が katex を同梱、CSS は上で読込済み) */
+.mermaid .katex {
+  font-size: 1em;
+}

@@ -1,11 +1,27 @@
-"""
-Resource-Constrained Project Scheduling Problem (RCPSP).
+"""資源制約付きプロジェクトスケジューリング (Resource-Constrained Project Scheduling Problem, RCPSP)
 
-This model schedules a set of project tasks under precedence and resource 
-capacity constraints to minimize the total project makespan.
-Reference: Pritsker, A. A. B., Watters, L. J., & Wolfe, P. M. (1969). 
-Multiproject scheduling with limited resources: A zero-one programming approach. 
-Management science, 16(1), 93-108.
+事業ストーリー
+--------------
+建設・プラント工事の現場所長が、複数の作業(基礎工事・配管・電気工事など)からなる
+プロジェクトの着工日程を決める。各作業には「配管工事は基礎工事が終わってから」
+といった前後関係があり、さらにクレーンや作業員チームなど台数・人数に限りのある
+資源を複数の作業が奪い合う。資源の取り合いで作業が同時に進められない場合は
+開始を遅らせる必要があり、前後関係と資源制約の両方を満たしながらプロジェクト
+全体の完了(メイクスパン)を最短化する。
+
+各制約の業務的意味:
+- **開始時刻の一意性**: 各作業はちょうど1つの時刻に開始する(分割不可・重複開始
+  不可)。
+- **前後関係制約**: 後続作業は先行作業の完了(開始時刻+所要時間)を待ってからしか
+  開始できない。
+- **資源容量制約**: クレーンや作業員チームなど、各時刻に同時稼働している作業の
+  資源使用量の合計が、保有する資源の台数・人数の上限を超えてはならない。
+- **メイクスパン最小化**: プロジェクト全体を表すダミー終了タスクの開始時刻
+  (=全作業完了時刻)を最小化する。
+
+(元の参考文献: Pritsker, A. A. B., Watters, L. J., & Wolfe, P. M. (1969).
+Multiproject scheduling with limited resources: A zero-one programming approach.
+Management science, 16(1), 93-108.)
 """
 
 from pyscipopt import Model, quicksum
@@ -64,11 +80,13 @@ def build_model(infeasible=False):
         for t in time_periods:
             # Active jobs at time t
             active_sum = 0
+            has_terms = False
             for j in jobs:
                 if req[j][k] > 0:
                     for tau in range(max(0, t - duration[j] + 1), t + 1):
                         active_sum += req[j][k] * x[j, tau]
-            if active_sum != 0:
+                        has_terms = True
+            if has_terms:
                 model.addCons(active_sum <= capacity[k], name=f"res_{k}_{t}")
                 
     return model

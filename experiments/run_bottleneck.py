@@ -1,4 +1,4 @@
-"""線形制約のスラック(拘束)とIISの可視化 (Phase 2.b)
+"""線形制約のスラック(拘束)とIISの可視化
 
 facility モデル(純粋線形MILP)で:
 1. LP緩和のスラック=0 かつ 双対値(影の価格)が大きい制約 = 双対境界のボトルネック
@@ -15,11 +15,16 @@ from pathlib import Path
 
 import plotly.graph_objects as go
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "samples"))
+_SAMPLES = Path(__file__).parent.parent / "samples"
+# サンプルはカテゴリ別サブディレクトリにあるため、samples/ 本体と各サブディレクトリを path に載せる
+for _p in [_SAMPLES, *(d for d in _SAMPLES.iterdir() if d.is_dir() and d.name != "__pycache__")]:
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 from run_tree import C, FONT
-from viz.bottleneck import analyze_slack, compute_iis
+from viz.bottleneck import analyze_slack
 
+import minlpkit as mk
 import facility
 
 # 制約タイプ色(dataviz categorical 固定順)/ IISは status critical
@@ -89,9 +94,10 @@ def main() -> None:
           f"strongest bottleneck: {top['constraint']} (影の価格 {top['dual']:.1f})")
 
     print("extracting IIS on infeasible facility model ...")
+    # IIS(削除フィルタ)は minlpkit に一本化。通常の build_model を delete-by-name で縮約する
+    res = mk.deletion_filter(lambda: facility.build_model(infeasible=True))
     all_cons = facility.constraint_names(infeasible=True)
-    build_fn = lambda active: facility.build_model(infeasible=True, active_cons=active)
-    iis, log = compute_iis(build_fn, all_cons)
+    iis = sorted(res["core"])
     print(f"IIS ({len(iis)} constraints): {iis}")
 
     outdir = Path(__file__).parent.parent / "results"
@@ -113,7 +119,7 @@ def main() -> None:
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
  code {{ background:#eee; padding:1px 5px; border-radius:4px; }}
 </style></head><body><div class="wrap">
-<h1>線形制約のスラック(拘束)とIIS(Phase 2.b)</h1>
+<h1>線形制約のスラック(拘束)とIIS</h1>
 <div class="sub">facility(純粋線形MILP)— ボトルネック制約の特定と、実行不能原因の最小核の抽出</div>
 <div class="card">{d1}</div>
 <div class="card">{d2}</div>
@@ -121,9 +127,11 @@ def main() -> None:
 <b>上図(スラック/影の価格)</b>: LP緩和でスラック=0の拘束制約のうち、影の価格(双対値)が大きいものほど
 目的関数を強く制限する<b>ボトルネック</b>。<code>open_limit</code>(開設上限)が突出=これを緩めれば双対境界が最も動く。
 これはノートの「スラックが0に張り付く制約=双対境界を押し下げる強固なボトルネック」の実装。
-<br><b>下図(IIS)</b>: 実行不能版を削除フィルタ法にかけ、「これ以上どれを外しても不能でなくなる」最小の
-矛盾制約集合を抽出。赤=IIS必須。ここでは全capacity + 吊り上げた <code>demand_C4</code> + <code>open_limit</code> が核で、
-他の需要制約は無関係と判定。Phase 3の「IIS起点の修正ループ」の入力になる。
+<br><b>下図(IIS)</b>: 実行不能版を削除フィルタ法(<code>mk.deletion_filter</code>)にかけ、「これ以上どれを外しても
+不能でなくなる」最小の矛盾制約集合を抽出。赤=IIS必須。ここでは全capacity + 吊り上げた <code>demand_C4</code> +
+<code>open_limit</code> が核で、他の需要制約は無関係と判定。IIS起点で修正ループへの入力に使える。
+<br>※ <b>どれだけ緩めれば通るか</b>(弾性緩和スラック)や presolve当たり・診断ルール込みの実行不能診断は
+<code>run_infeasibility.py</code>(<code>mk.diagnose_infeasibility</code>)を参照。
 </p>
 </div></body></html>"""
     out.write_text(html, encoding="utf-8")

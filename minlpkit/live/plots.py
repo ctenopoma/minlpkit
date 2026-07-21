@@ -148,7 +148,7 @@ def build_dashboard(df: pd.DataFrame, pg: pd.DataFrame, summary: dict,
 </style></head>
 <body><div class="wrap">
 <h1>{title}</h1>
-<div class="sub">SCIP収束モニタ — Eventhdlrで取得したbound推移(Phase 1)</div>
+<div class="sub">SCIP収束モニタ — Eventhdlrで取得したbound推移</div>
 <div class="tiles">{''.join(tiles)}</div>
 {chart_html}
 </div></body></html>"""

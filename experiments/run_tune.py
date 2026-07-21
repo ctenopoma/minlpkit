@@ -1,4 +1,4 @@
-"""Phase 4: SCIPパラメータ自動チューニング(Optuna)の効果検証
+"""SCIPパラメータ自動チューニング(Optuna)の効果検証
 
 線形化版plantで、固定時間の双対境界を最大化するSCIPパラメータをOptunaで探索。
 SCIPが自動ではやらない問題クラス特化のメタ最適化。
@@ -104,7 +104,7 @@ def main() -> None:
  td:first-child {{ color:{C['muted']}; }}
  .note {{ color:{C['ink2']}; font-size:12px; line-height:1.7; }}
 </style></head><body><div class="wrap">
-<h1>SCIPパラメータ自動チューニング(Phase 4)</h1>
+<h1>SCIPパラメータ自動チューニング</h1>
 <div class="sub">線形化版plant — Optunaで固定{TIME_LIMIT:.0f}sの双対境界を最大化する設定を探索</div>
 <div class="tiles">{''.join(tiles)}</div>
 <div class="card">{d1}</div>

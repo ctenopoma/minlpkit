@@ -147,11 +147,10 @@ def write_markdown(df: pd.DataFrame, path: Path, time_limit: float) -> None:
     weak_rate = (len(nl_weak) / len(nl)) if len(nl) else 0.0
 
     lines: list[str] = []
-    lines.append("# 診断センサス(サンプル群のベンチマーク)\n")
+    lines.append("# 診断ベンチマーク結果\n")
     lines.append(
         "minlpkit の診断エンジン(`mk.analyze`)を samples の多数のモデルに一括適用し、"
-        "どの症状(finding)がどのモデルで発火するかを棚卸しした結果。"
-        "サンプル群を「診断のベンチマーク=センサス」として使う。\n")
+        "どの症状(finding)がどのモデルで発火するかを集計した結果。\n")
     lines.append(
         f"- 対象カテゴリ: {', '.join(sorted(df['category'].unique()))}\n"
         f"- 各モデル `mk.analyze(build_model, time_limit={time_limit:g})` を1回実行\n"
