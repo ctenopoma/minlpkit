@@ -1431,3 +1431,29 @@ hydrogen_hub_transport / battery_degradation_dispatch / thermal_storage_lossy �
 
 Phase 15(docs全面刷新)は 15.0(IP漏洩除去)・15.1(全126本カタログ)が完了。
 15.2(playbook/manual のDiataxis分割)・15.3(学習用notebook厳選)は継続タスクとして残る。
+
+## Phase 17: OpsOps(campaign層 + OpenTelemetry/Grafana連携)— 完了 2026-07-31
+
+「MLOpsならぬOpsOps」: 3つの定型シナリオ(入力切替/パラメータ調整/収束しない犯人探し)を
+campaign(軸を1つ変えたrun群)に統一し、テレメトリをOTLPでGrafanaへ流す。
+
+- [x] `minlpkit/live/campaign.py` — `ablate`(制約グループOn/Off。groups省略で制約名から
+      自動グループ化)/ `scenario_sweep`(入力インスタンス切替)。各メンバーは通常run +
+      `meta.campaign`、提案(verdicts)は `results/campaigns/<id>/campaign.json`。
+      既存 `sweep` も campaign(kind=sweep)として記録
+- [x] verdictルール: baseline infeasible→Offで可解=critical(実行不可能性に関与)/
+      gap残存→Offでほぼ閉じる=serious(収束ボトルネック)/ 時間1/3以下=warning
+- [x] `/campaigns` ビュー(server.py + campaign_page.html): campaign一覧+マトリクス
+      (gap熱バー)+提案パネル。live_page.html に `?run=` ディープリンク追加
+- [x] `minlpkit/otel.py`(extras `otel`): export_run / export_campaign。
+      trace(campaign=親スパン、incumbent=スパンイベント)/ metrics(opt_gap等、実時刻
+      バックフィル)/ logs(run完了+verdictをseverity付き)。`opt.*` semantic conventions
+- [x] `ops/` — docker compose(Alloy受口→Tempo/Loki/Prometheus振分け+Grafana
+      provisioning済みダッシュボード「minlpkit OpsOps」)。Prometheus OOO ingestion設定済み
+- [x] `experiments/run_campaign.py`(--kind ablate|scenario, --otel)。
+      scheduling_plant に demand_scale 引数追加(シナリオ軸)
+- [x] tests: test_campaign.py(実SCIPでablate犯人特定/auto_groups/scenario/sweep統合)、
+      test_otel.py(in-memoryエクスポータでスパン親子・実時刻・severity写像を検証)
+- [x] docs: manual/opsops.md(+en)、api/otel.md(+en)、api/live.mdにcampaign節、nav追加
+- 実測: plant ablation 15s — baseline gap 122%、demand(三重積)Offで0.09%
+      → 「demandが収束ボトルネック」をライブラリが自動提案(FINDINGS 9節)

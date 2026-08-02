@@ -51,3 +51,11 @@ Requires additional dependencies (flask / plotly / kaleido). Install with `uv ad
       members:
         - sweep
         - rerun
+## Campaigns (ablation / scenario)
+
+::: minlpkit.live.campaign
+    options:
+      members:
+        - ablate
+        - scenario_sweep
+        - auto_groups

@@ -243,3 +243,35 @@ graph_coloring)での実測値(2026-07、SCIP via PySCIPOpt 6.2.1)。
   `rows` が空のときは列を明示した空DataFrameを返すようガード。回帰テスト
   `tests/test_pipeline.py::test_analyze_airline_overbooking_no_constraints` を追加。
   census再実行で `airline_overbooking` は `optimal`/`error 2本`に更新済み)。
+
+## 9. OpsOps(campaign + OpenTelemetry / Grafana)
+
+- **トレースの汎用規格は OTLP(OpenTelemetry)**。Grafana Tempo は規格ではなく保存庫で、
+  OTLP を受けるバックエンドの一つ。LLMOps 界隈(Langfuse/Phoenix)と同じく
+  「汎用転送(OTLP)+ ドメイン語彙 + ドメインUI」の3層で作るのが定石。
+  minlpkit は `opt.*` 属性を最適化ドメインの semantic conventions として使う。
+- **SDK の Meter API では過去タイムスタンプのメトリクスを送れない**(エクスポート時刻が
+  自動採番される)。記録済み run の実時刻でバックフィルするには `MetricsData` /
+  `NumberDataPoint(time_unix_nano=...)` を直接組み立てて exporter.export() に渡す
+  (公式データモデル準拠なので Alloy/Prometheus はそのまま受ける)。
+- **Prometheus は out-of-order ingestion(`storage.tsdb.out_of_order_time_window`)必須**。
+  無いと過去時刻のサンプルは送信成功に見えて黙って捨てられる。Loki の受入れ窓は既定約1週間。
+- opentelemetry-sdk 1.44 では `LogRecord` は API 側(`opentelemetry._logs`)から import する
+  (`opentelemetry.sdk._logs.LogRecord` は存在しない。in-memory テスト用エクスポータは
+  `InMemoryLogRecordExporter`。`InMemoryLogExporter` は deprecated)。
+- 診断 severity → OTel severity の写像: good→INFO / warning→WARN / serious→ERROR /
+  critical→FATAL。提案(verdict)をログ+スパンイベントとして「他のテレメトリと同じレール」に
+  乗せると、Grafana 側は Loki パネル1枚で提案一覧になり、trace_id 相関で該当 campaign の
+  トレースへ飛べる。
+- **ablation(制約 On/Off)は雑だが速い犯人探し**として診断ルールと補完関係にある。実測
+  (scheduling_plant, 15s):baseline gap 122% → `demand_*`(n·s·X 三重積)Off で 0.09%。
+  weak_relaxation ルールの判定(demand の緩和が弱い)と一致する結論が、モデル知識なしの
+  総当たりで得られる。厳密な IIS は従来どおり `diagnose_infeasibility` で。
+- **(実測で判明した3つの罠)** (1) Alloy `otelcol.exporter.prometheus` は unit "1" のゲージに
+  `_ratio` サフィックスを付ける(opt_gap→opt_gap_ratio)。`add_metric_suffixes = false` で無効化
+  (ops/alloy/config.alloy 設定済み)。(2) 同 exporter は**数分より古いデータポイントを stale として
+  黙って落とす**(Prometheus 側の OOO 設定では救えない)。よってメトリクスは「求解直後の送信」
+  (`--otel` フラグの設計)でのみ完全。古い run のバックフィルは trace(Tempo は任意時刻OK)と
+  logs のみ。(3) Loki は古いログ(>3h)を受理するが、チャンク flush まで**クエリに出ない**
+  (querier が ingester に問い合わせるのは既定 `query_ingesters_within=3h` 以内のため)。
+  `POST /flush` で強制 flush すれば即見える。16.7h 前の run 群で実測確認。

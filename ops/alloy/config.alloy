@@ -1,0 +1,51 @@
+// minlpkit OpsOps: OTLP 受口 → 3シグナルをバックエンドへ振り分ける
+//
+// trace   → Tempo (OTLP gRPC)
+// logs    → Loki  (ネイティブOTLP取り込み /otlp)
+// metrics → Prometheus (remote_write)
+//
+// バックエンドを差し替えたいときはこのファイルの exporter だけ変えればよい
+// (アプリ側は OTLP を Alloy に投げるだけで無変更)。
+
+otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  output {
+    traces  = [otelcol.exporter.otlp.tempo.input]
+    metrics = [otelcol.exporter.prometheus.default.input]
+    logs    = [otelcol.exporter.otlphttp.loki.input]
+  }
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls {
+      insecure = true
+    }
+  }
+}
+
+otelcol.exporter.otlphttp "loki" {
+  client {
+    endpoint = "http://loki:3100/otlp"
+  }
+}
+
+// OTel メトリクス → Prometheus 形式(属性はラベルへ。opt.run_id → opt_run_id)
+// add_metric_suffixes=false: 既定では unit "1" のゲージに `_ratio` が付いて
+// opt_gap → opt_gap_ratio になる。ダッシュボードのクエリ名を素直に保つため無効化。
+otelcol.exporter.prometheus "default" {
+  add_metric_suffixes = false
+  forward_to          = [prometheus.remote_write.default.receiver]
+}
+
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}

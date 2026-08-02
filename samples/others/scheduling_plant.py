@@ -54,8 +54,12 @@ K_LB = ARRH_A * math.exp(-EA_R / T_MIN)
 K_UB = ARRH_A * math.exp(-EA_R / T_MAX)
 
 
-def build_model(linearize_ns: bool = False) -> Model:
+def build_model(linearize_ns: bool = False, demand_scale: float = 1.0) -> Model:
     """linearize_ns=True で n·s を整数×連続の厳密線形化(分解)に置換する。
+
+    demand_scale は需要シナリオの倍率(campaign の scenario 軸用)。1.0 が基準で、
+    上げるほど需要充足がきつくなり、2.0 で除熱・時間制約と両立できず実行不可能になる
+    (実測: 1.5 は可行、2.0 で infeasible)。
 
     n は整数なので、指示変数 δ_v(n=v)と s の分解 s=Σ_v s_v(s_v は n=v のとき有効)で
     ns = Σ_v v·s_v が n·s を厳密に表す(McCormick緩和のギャップを消す)。
@@ -94,7 +98,7 @@ def build_model(linearize_ns: bool = False) -> Model:
         m.addCons(k[j] == ARRH_A * exp(-EA_R / T[j]), name=f"arrhenius_{j}")
         m.addCons(X[j] == 1 - exp(-k[j] * tau[j]), name=f"conversion_{j}")
         # --- 需要充足 (有効生産量 = n·s·X) ---
-        m.addCons(ns_expr[j] * X[j] >= d["demand"], name=f"demand_{j}")
+        m.addCons(ns_expr[j] * X[j] >= d["demand"] * demand_scale, name=f"demand_{j}")
         # --- 時間構造: 1バッチ = 段取り + 昇温 + 反応 ---
         m.addCons(tb[j] == d["setup"] + s[j] * (T[j] - T0) / P_HEAT + tau[j], name=f"batchtime_{j}")
         m.addCons(tt[j] == n[j] * tb[j], name=f"jobtime_{j}")

@@ -1,0 +1,64 @@
+# minlpkit OpsOps スタック: app → Alloy(OTLP受口) → Tempo / Loki / Prometheus → Grafana
+#
+# 起動:  docker compose -f ops/docker-compose.yml up -d
+# 送信:  uv run python experiments/run_campaign.py --kind ablate --otel http://localhost:4318
+#        (または minlpkit.otel.export_run / export_campaign)
+# 閲覧:  http://localhost:3000 (Grafana, 匿名Admin) → Dashboards → minlpkit
+# 停止:  docker compose -f ops/docker-compose.yml down   (-v でデータも削除)
+services:
+  alloy:
+    image: grafana/alloy:latest
+    command: ["run", "--server.http.listen-addr=0.0.0.0:12345", "/etc/alloy/config.alloy"]
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC(アプリからの受口)
+      - "4318:4318"   # OTLP HTTP(minlpkit.otel の既定送信先)
+      - "12345:12345" # Alloy UI(パイプラインのデバッグ用)
+    depends_on: [tempo, loki, prometheus]
+
+  tempo:
+    image: grafana/tempo:latest
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo API(デバッグ用)
+
+  loki:
+    image: grafana/loki:latest
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "3100:3100"   # Loki API(OTLP受口 /otlp はAlloy経由で使用)
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"   # Alloyのremote_writeを受ける
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom-data:/prometheus
+    ports:
+      - "9090:9090"   # Prometheus UI(デバッグ用)
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      # ローカル実験用: ログイン無しの匿名Admin(公開環境では使わないこと)
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on: [tempo, loki, prometheus]
+
+volumes:
+  tempo-data:
+  prom-data:
+  grafana-data:

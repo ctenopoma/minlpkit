@@ -51,6 +51,13 @@ MINLPの最新動向キャッチアップを目的とした実験リポジトリ
 - **書き手**: `run_monitor.py`(ソルバー)が `results/runs/<run_id>/` にログを追記
 - **読み手**: `uv run python -m minlpkit.live.server`(Flask+SSE)がそれを tail してブラウザへライブpush(後方互換で `python -m viz.server` も可)
 - 2コマンド運用(train.py + tensorboard と同型)。ライブ表示は http://127.0.0.1:5000
+- **campaign 層**(軸を1つ変えた run 群): `mk.ablate`(制約On/Off犯人探し)/ `mk.scenario_sweep`(入力切替)/
+  `mk.sweep`(パラメータ)。各メンバーは通常 run + `meta.campaign`、提案(verdicts)は
+  `results/campaigns/<id>/campaign.json`。横断ビューは http://127.0.0.1:5000/campaigns
+- **OpsOps(OTel/Grafana)**: `minlpkit/otel.py`(extras `otel`)が run/campaign を OTLP の
+  trace(campaign=親スパン)/metrics(実時刻バックフィル)/logs(提案=severity付き)へ写像。
+  送信先は Grafana Alloy(`ops/docker-compose.yml`: Alloy+Tempo+Loki+Prometheus+Grafana)。
+  **Prometheusはout-of-order ingestion必須**(設定済み)。詳細は `ops/README.md`
 - 詳細は `minlp-viz` スキル参照
 
 ## minlpkit(Phase 5: 統合ライブラリ)
@@ -69,9 +76,11 @@ Phase 1-4を一体化したmodel非依存のパイプライン。`import minlpki
   - `pipeline.py`/`compare.py`/`render.py`/`transforms.py`/`frameworks.py` — 統合API
   - `collectors/` — 観測量収集器・診断ルールの**実体**(diagnose/attribution/tree/static_diag/symmetry/violation)。
     Phase 1-4 の収集器をここへ移設し、minlpkit は viz に依存しなくなった
-  - `live/` — ライブ可視化の**実体**(monitor/run_logger/server/plots/live_page.html)。**extras `viz`**(flask/plotly/kaleido)。
+  - `live/` — ライブ可視化の**実体**(monitor/run_logger/server/plots/live_page.html/
+    campaign.py/campaign_page.html)。**extras `viz`**(flask/plotly/kaleido)。
     起動: `python -m minlpkit.live.server`。extras未導入で `import minlpkit.live` すると案内付きImportError
   - `tune.py` — SCIPパラメータ自動チューニングの**実体**。**extras `tune`**(optuna)
+  - `otel.py` — OpenTelemetryエクスポートの**実体**。**extras `otel`**(opentelemetry-sdk/otlp-http)
   - **コア**の実行時依存は pyscipopt/pandas/numpy/scipy のみ(`[project.dependencies]`)。extras は
     `[project.optional-dependencies]` の `viz`/`tune`。ビルドは hatchling、wheel対象は minlpkit(live/live_page.html 同梱)
 - `viz/` — **後方互換シム専用**。収集器6本は `minlpkit.collectors` へ、
@@ -81,8 +90,11 @@ Phase 1-4を一体化したmodel非依存のパイプライン。`import minlpki
 - `experiments/run_*.py` — 各機能の調査用CLI(monitor/tree/attribution/violation/bottleneck/static_diag/
   interval/symmetry/diagnose/improve_*/colgen/stabilize/benders/bnp/sos/condition/perspective/tune/
   infeasibility=弾性緩和+削除フィルタでinfeasibleの矛盾制約(IIS核)特定/
-  gpu_heuristic=cuOpt(WSL2/GPU)×SCIPハイブリッド)。
+  gpu_heuristic=cuOpt(WSL2/GPU)×SCIPハイブリッド/
+  campaign=ablation・scenarioの一括実行(`--otel` でGrafanaへ送信))。
   実行は `uv run python experiments/run_<name>.py ...`(出力は `results/` へ)
+- `ops/` — OpsOpsスタック(docker compose: Alloy+Tempo+Loki+Prometheus+Grafana、
+  データソース/ダッシュボードprovisioning込み)。`ops/README.md` 参照
 - `demo.py` — minlpkit一気通貫デモ(ルート残置のクイックスタート)
 - `docs/` — 利用マニュアル(`manual.md`)+ MkDocs(`mkdocs.yml`)。`uv run mkdocs serve` でAPIリファレンス閲覧
 - `tests/` — pytest(実SCIPで回すtransforms/frameworks/diagnose/pipelineのテスト。`uv run pytest`)
@@ -99,5 +111,13 @@ Phase 1-4を一体化したmodel非依存のパイプライン。`import minlpki
 - **Draw.io**: `mkdocs-drawio` プラグインを使用し、`![図](...drawio)` でインライン描画。
 - **Lightbox**: `mkdocs-glightbox` プラグインを使用し、画像のクリック拡大を有効化。
 - **最終更新日**: `mkdocs-git-revision-date-localized-plugin` プラグインを使用し、Gitのコミットから更新日時を自動付与。
+- **Notebookレンダリング(mkdocs-jupyter × i18n の非互換)**: `mkdocs-static-i18n` は `on_files` を
+  `event_priority(-100)`(最後)で実行し、各ロケール向けに File を作り直す際に `mkdocs-jupyter` の
+  `NotebookFile` ラッパー(`is_documentation_page()`→True)を外す。結果、`.ipynb` が静的ファイル扱いに
+  なり **全 notebook 頁が生の JSON のまま配信される**(`--strict` はこの故障を検知せず素通りするので気づけない)。
+  対処は `hooks.py` の `on_files` を **`@event_priority(-200)`**(i18nより後)で走らせ、`.ipynb` を
+  `NotebookFile` に再ラップすること。ただし `NotebookFile` は dest を src_path から再計算するため、
+  **i18n が付けたロケール別 dest(`en/...`)を上書きで維持**しないと en の notebook がルートへ衝突して消える。
+  検証はビルド後HTMLに生JSON(`"cells": [`)が無く jupyter マークアップがあることを確認する(ヘッドレスChromeで目視可)。
 - **変数マクロ**: `mkdocs-macros-plugin` プラグインを使用し、`mkdocs.yml` の `extra` で定義した変数(例: `{{ minlpkit_version }}`)をMarkdown内に埋め込み可能。
   - ※注意: `macros` を有効にすると Jinja2 構文が有効になるため、MkDocsの `attr_list` 用の見出しID `{#id-name}` が「Jinja2の未終端コメント」と解釈されて構文エラーになる。これを回避するため、見出しIDには必ずスペースを入れた `{: #id-name }` を使用すること。

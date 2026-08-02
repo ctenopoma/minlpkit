@@ -47,6 +47,7 @@ plugins:
             ホーム: Home
             はじめに: Getting Started
             セットアップ: Setup
+            機能マップ(できること一覧): "Feature Map (What it can do)"
             クイックスタート: Quickstart
             ガイド: Guide
             症状から手法を選ぶ: Choose method by symptom
@@ -200,6 +201,7 @@ nav:
           - 9. ライブ監視・run記録・再現:
               - ガイド: playbook/09-live-monitor.md
               - セットアップ手順: manual/live-monitor.md
+          - 10. campaignとOpsOps(Grafana連携): manual/opsops.md
           - "参考: SCIPが自動でやること": playbook/10-reference-scip-handles.md
       - サンプルnotebookで学ぶ(事業ストーリー→診断→改善):
           - 石油プーリング多期計画: notebooks/samples/petroleum_pooling.ipynb
@@ -236,6 +238,7 @@ nav:
       - 診断ルール (diagnose): api/diagnose.md
       - ライブ可視化 (live): api/live.md
       - チューニング (tune): api/tune.md
+      - OTelエクスポート (otel): api/otel.md
 
 extra_css:
   - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css

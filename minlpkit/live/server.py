@@ -33,6 +33,7 @@ RESULTS_ROOT = RUNS_ROOT.parent  # results/ (runs/ はこの直下)
 
 app = Flask(__name__)
 _PAGE = (Path(__file__).parent / "live_page.html").read_text(encoding="utf-8")
+_CAMPAIGN_PAGE = (Path(__file__).parent / "campaign_page.html").read_text(encoding="utf-8")
 _PLOTLYJS = get_plotlyjs()
 _LIVE_RULES_JS = (Path(__file__).parent / "live_rules.js").read_text(encoding="utf-8")
 
@@ -98,6 +99,46 @@ def list_runs() -> Response:
             runs.append(meta)
     runs.sort(key=lambda m: m.get("created", ""), reverse=True)
     return jsonify(runs)
+
+
+@app.route("/campaigns")
+def campaigns_page() -> Response:
+    """campaign 横断ビュー(ablation / scenario / sweep のマトリクス + 提案)。"""
+    return Response(_CAMPAIGN_PAGE, mimetype="text/html")
+
+
+@app.route("/api/campaigns")
+def list_campaigns() -> Response:
+    """campaign 一覧を新しい順で返す(メンバーには現在の summary を混ぜ込む)。
+
+    ``results/campaigns/<id>/campaign.json``(`minlpkit.live.campaign` が書く)を列挙し、
+    各メンバー run の ``summary.json`` から status / gap / nodes / time を取り込んで返す。
+    書き手(campaign実行)と読み手(このAPI)はファイルのみを介して結合する(runs と同方針)。
+    """
+    campaigns_root = RESULTS_ROOT / "campaigns"
+    out = []
+    if campaigns_root.exists():
+        for d in campaigns_root.iterdir():
+            c = _read_json(d / "campaign.json") if d.is_dir() else None
+            if c is None:
+                continue
+            members = []
+            for mem in c.get("members", []):
+                summary = _read_json(RUNS_ROOT / mem["run_id"] / "summary.json") or {}
+                members.append({
+                    "run_id": mem["run_id"], "axis": mem.get("axis"),
+                    "status": summary.get("status", "running"),
+                    "gap": summary.get("gap"), "nodes": summary.get("nodes"),
+                    "time": summary.get("time"),
+                })
+            out.append({
+                "campaign_id": c.get("campaign_id", d.name), "kind": c.get("kind"),
+                "name": c.get("name"), "created": c.get("created"),
+                "baseline_run": c.get("baseline_run"),
+                "members": members, "verdicts": c.get("verdicts", []),
+            })
+    out.sort(key=lambda c: c.get("created") or "", reverse=True)
+    return jsonify(out)
 
 
 @app.route("/api/gpu")

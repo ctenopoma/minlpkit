@@ -15,8 +15,9 @@ site/
 # Test cache
 .pytest_cache/
 
-# Live-monitor run logs (generated per-run, not distributed)
+# Live-monitor run logs / campaign summaries (generated per-run, not distributed)
 results/runs/
+results/campaigns/
 
 # Notebook execution checkpoints
 .ipynb_checkpoints/

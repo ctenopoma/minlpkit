@@ -30,6 +30,7 @@
 - **アルゴリズムフレームワーク** — ベンダーズ分解・列生成・branch-and-price をモデル非依存のドライバとして提供
 - **before/after 検証** — `compare_variants` がルート双対境界・最終 gap・ノード数を並べ、改善の効果を定量化する
 - **ライブモニタと自動チューニング** — 求解中の境界をブラウザへライブ配信し、Optuna で SCIP パラメータを探索(extras `viz` / `tune`)
+- **campaign と OpsOps** — 入力シナリオ切替(`scenario_sweep`)・制約 On/Off の犯人探し(`ablate`)を run 群として量産し提案(verdict)を自動生成。OpenTelemetry(OTLP)で Grafana Alloy → Tempo / Loki / Prometheus へ送って継続監視(extras `otel`、`ops/` 参照)
 
 ## Installation
 
@@ -85,6 +86,23 @@ mon, summary = solve_with_monitor(model, time_limit=30, logger=logger)   # 求�
 uv run python -m minlpkit.live.server   # 読み手: http://127.0.0.1:5000 でライブ表示 + 成果ギャラリー
 ```
 
+### campaign(犯人探し / シナリオ一括)と Grafana 連携
+
+「収束しない原因を制約を1個ずつ外して探す」「入力シナリオを切り替えて一括求解する」は
+campaign として自動化できます。結果は http://127.0.0.1:5000/campaigns のマトリクス +
+提案パネルで見るか、OTLP で Grafana へ送れます:
+
+```python
+df = mk.ablate(build_model, name="plant", time_limit=15)   # groups省略=制約名から自動グループ化
+print(df[["axis", "status", "final_gap", "verdict"]])      # 「demandが収束ボトルネック」等の提案付き
+```
+
+```powershell
+docker compose -f ops/docker-compose.yml up -d   # Alloy+Tempo+Loki+Prometheus+Grafana
+uv run python experiments/run_campaign.py --kind ablate --otel http://localhost:4318
+# → http://localhost:3000 の「minlpkit OpsOps」ダッシュボード
+```
+
 **何ができるかの全体像**は、機能とAPI・試すコマンド・出力を対応づけた
 [機能マップ](https://ctenopoma.github.io/minlpkit/manual/capabilities.html)にまとめています
 (観測・診断・改善・検証・ライブ監視・実行不可能診断・チューニング・GPU warm start)。
@@ -92,7 +110,7 @@ uv run python -m minlpkit.live.server   # 読み手: http://127.0.0.1:5000 で�
 ## Documentation
 
 ドキュメントは <https://ctenopoma.github.io/minlpkit/> にあります。
-[プレイブック(症状→打ち手)](https://ctenopoma.github.io/minlpkit/playbook/index.html)は
+[手法ガイド(症状→打ち手)](https://ctenopoma.github.io/minlpkit/playbook/index.html)は
 列生成・ベンダーズ・再定式化などの手法を、「gapが縮まらない」等の症状から探して読めます。
 [利用マニュアル](https://ctenopoma.github.io/minlpkit/manual/index.html)と
 [API リファレンス](https://ctenopoma.github.io/minlpkit/api/pipeline.html)を参照してください。

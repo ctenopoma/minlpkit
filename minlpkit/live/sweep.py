@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
@@ -90,9 +91,16 @@ def sweep(
 
         ```
     """
+    # campaign 層(campaign.py)は本モジュールの _unique_run_id を import するため、
+    # 循環を避けてここでは遅延 import する
+    from .campaign import CAMPAIGNS_ROOT, _write_campaign_json, new_campaign_id
+
     root = runs_root if runs_root is not None else RUNS_ROOT
+    campaigns_root = CAMPAIGNS_ROOT if runs_root is None else Path(runs_root).parent / "campaigns"
+    cid = new_campaign_id(name, "sweep", campaigns_root)
     n = len(param_sets)
     rows = []
+    members = []
     for i, param_set in enumerate(param_sets):
         m = build_fn()
         m.hideOutput()
@@ -108,7 +116,10 @@ def sweep(
             root=root,
         )
         _, summary = solve_with_monitor(m, time_limit=time_limit, logger=logger)
-        logger.update_meta({"sweep": {"name": name, "index": i, "param_set": param_set}})
+        axis = {"param_set": param_set}
+        logger.update_meta({"sweep": {"name": name, "index": i, "param_set": param_set},
+                            "campaign": {"id": cid, "kind": "sweep", "axis": axis}})
+        members.append({"run_id": run_id, "axis": axis})
 
         row = dict(
             index=i, param_set=str(param_set), run_id=run_id,
@@ -120,8 +131,24 @@ def sweep(
         print(f"[{i + 1}/{n}] {run_id}  param_set={param_set}  "
               f"dual={row['final_dual']}  gap={gap_pct}  nodes={row['nodes']}")
 
-    return pd.DataFrame(rows, columns=["index", "param_set", "run_id", "final_dual",
-                                        "final_gap", "nodes", "time", "status"])
+    df = pd.DataFrame(rows, columns=["index", "param_set", "run_id", "final_dual",
+                                     "final_gap", "nodes", "time", "status"])
+    # 最良パラメータ(gap最小→時間最短)を verdict として campaign.json に残す
+    best = min(rows, key=lambda r: (r["final_gap"] if r["final_gap"] is not None else 2.0,
+                                    r["time"] if r["time"] is not None else 1e19))
+    verdicts = [dict(
+        group=best["param_set"], severity="good",
+        verdict=f"最良パラメータは {best['param_set']}",
+        evidence=f"gap={best['final_gap']}, time={best['time']:.1f}s ({best['run_id']})",
+        recipe=f"mk.rerun(build_fn, {best['run_id']!r}) で同条件を再現、"
+               "または本採用時に setParam で適用",
+    )]
+    _write_campaign_json(campaigns_root / cid, dict(
+        campaign_id=cid, kind="sweep", name=name,
+        created=datetime.now().isoformat(timespec="seconds"), baseline_run=None,
+        members=members, verdicts=verdicts,
+    ))
+    return df
 
 
 def rerun(

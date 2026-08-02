@@ -52,3 +52,12 @@
       members:
         - sweep
         - rerun
+
+## campaign(ablation / scenario)
+
+::: minlpkit.live.campaign
+    options:
+      members:
+        - ablate
+        - scenario_sweep
+        - auto_groups

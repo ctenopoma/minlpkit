@@ -1,0 +1,11 @@
+# minlpkit OpsOps 用 Prometheus 設定
+#
+# minlpkit.otel は「記録済み run の実時刻」でメトリクスを送る(過去タイムスタンプの
+# バックフィル)ため、out-of-order ingestion を必ず有効にする。これが無いと
+# 送信は成功してもサンプルが "out of order" で黙って捨てられる。
+global:
+  scrape_interval: 15s
+
+storage:
+  tsdb:
+    out_of_order_time_window: 30d

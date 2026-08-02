@@ -260,6 +260,8 @@
         <ul class="reports-list" id="reportsList"></ul>
       </div>
     </div>
+    <a class="reports-btn" href="/campaigns" style="text-decoration:none"
+       title="campaign(ablation / scenario / sweep)の横断ビュー">campaigns</a>
     <span class="spacer"></span>
     <span class="gpu-ind off" id="gpuInd" title="GPU(cuOpt)状態を確認中…"><span class="gdot"></span>GPU</span>
     <span class="hint">runs一覧は5秒ごとに更新</span>
@@ -945,8 +947,12 @@ async function refreshGpuStatus() {
 
 (async function init() {
   refreshGpuStatus();
+  // ?run=<id> ディープリンク(campaignビューからの遷移用)
+  const wantRun = new URLSearchParams(location.search).get('run');
   await refreshRuns(false);
-  if (mode === 'single' && singleRunId) enterSingleMode(singleRunId);
+  if (wantRun && lastRuns.some(r => r.run_id === wantRun)) {
+    selectSingle(wantRun);
+  } else if (mode === 'single' && singleRunId) enterSingleMode(singleRunId);
 
   setInterval(async () => {
     const hadSingle = singleRunId;

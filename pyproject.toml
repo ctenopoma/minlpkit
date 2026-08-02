@@ -17,9 +17,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# `uv add "minlpkit[viz]"` / `[tune]` で導入。minlpkit.live / minlpkit.tune が使う。
+# `uv add "minlpkit[viz]"` / `[tune]` / `[otel]` で導入。
+# minlpkit.live / minlpkit.tune / minlpkit.otel が使う。
 viz = ["flask>=3.1", "plotly>=6.9", "kaleido>=1.3"]
 tune = ["optuna>=4.9"]
+otel = ["opentelemetry-sdk>=1.27", "opentelemetry-exporter-otlp-proto-http>=1.27"]
 
 [build-system]
 requires = ["hatchling"]
@@ -33,9 +35,9 @@ packages = ["minlpkit"]
 
 [dependency-groups]
 dev = [
-    # リポジトリ運用で extras 機能(live server / チューニング)も使うため、
-    # 自プロジェクトの extras を dev に取り込む(flask/optuna/plotly/kaleido の一元管理)。
-    "minlpkit[viz,tune]",
+    # リポジトリ運用で extras 機能(live server / チューニング / OTelエクスポート)も
+    # 使うため、自プロジェクトの extras を dev に取り込む。
+    "minlpkit[viz,tune,otel]",
     "pytest>=8.0",
     "mkdocs-material>=9.7.7",
     "mkdocstrings[python]>=1.0.6",

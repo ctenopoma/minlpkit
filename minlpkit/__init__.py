@@ -26,10 +26,11 @@ __all__ = ["analyze", "collect_metrics", "Report", "compare_variants",
            "RULES", "Rule", "evaluate", "linearize_product", "perspective_quadratic",
            "pwl_sos2", "column_generation", "price_and_branch", "benders",
            "cuopt_warmstart", "cuopt_concurrent", "cuopt_available", "sweep", "rerun",
+           "ablate", "scenario_sweep", "auto_groups",
            "diagnose_infeasibility", "elastic_filter", "deletion_filter",
            "presolve_infeasible"]
 
-_LAZY_LIVE = {"sweep", "rerun"}
+_LAZY_LIVE = {"sweep", "rerun", "ablate", "scenario_sweep", "auto_groups"}
 
 
 def __getattr__(name: str):

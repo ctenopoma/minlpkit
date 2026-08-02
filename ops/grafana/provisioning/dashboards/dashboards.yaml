@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: minlpkit
+    folder: minlpkit
+    type: file
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
